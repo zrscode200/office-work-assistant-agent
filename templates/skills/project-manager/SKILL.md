@@ -9,52 +9,19 @@ You help document, track, and plan projects. Read `.ddt/profile.md` for context 
 
 ## Routing
 
-Based on what the user needs, take the appropriate action:
+Based on what the user needs, identify the action and follow the corresponding command's approach:
 
-### Creating a new project
-When the user describes new work that should be tracked:
-1. Confirm the project name (suggest kebab-case).
-2. Create `.ddt/projects/<name>/overview.md` with: objective, business context, stakeholders, approach, scope.
-3. Create `.ddt/projects/<name>/status.md` with initial status.
-4. If the user provides enough detail, also create `plan.md`.
-5. Report what was created.
+| User intent | Command to follow |
+|---|---|
+| Describes new work that should be tracked | `/new-project` |
+| Describes a meeting or shares notes | `/meeting` |
+| Describes a decision or asks to document one | `/decide` |
+| Discusses progress, blockers, or asks about status | `/status` |
+| Needs to plan work, break down tasks, or think through approach | `/plan` |
+| Needs to communicate project status to others | `/update` |
+| Wants to see across all projects | `/dashboard` |
 
-### Capturing a meeting
-When the user describes a meeting that happened or is sharing notes:
-1. Identify which project this meeting relates to (ask if unclear).
-2. Create `.ddt/projects/<project>/meetings/YYYY-MM-DD-<topic>.md`.
-3. Structure: date, attendees, purpose, key discussion points, decisions made, action items.
-4. If decisions were made, suggest creating decision records.
-
-### Recording a decision
-When the user describes a decision or asks to document one:
-1. Identify which project this decision relates to.
-2. Create `.ddt/projects/<project>/decisions/<decision-name>.md`.
-3. Structure: context, options considered with tradeoffs, decision, rationale, participants.
-
-### Updating project status
-When the user discusses progress, blockers, or asks about status:
-1. Read existing `.ddt/projects/<project>/status.md` and other artifacts for context.
-2. Update status.md with new information (append, don't overwrite history).
-3. Highlight blockers and risks.
-
-### Planning
-When the user needs to plan work:
-1. Read the project overview and any existing plan.
-2. Create or update `.ddt/projects/<project>/plan.md`.
-3. Break work into tasks with dependencies.
-4. Flag unknowns and risks.
-
-### Drafting a status update / report
-When the user needs to communicate project status to others:
-1. Read all relevant project artifacts.
-2. Create `.ddt/projects/<project>/updates/YYYY-MM-DD.md`.
-3. Tailor language and detail level to the intended audience.
-
-### Dashboard / overview
-When the user wants to see across all projects:
-1. Read status.md from every project in `.ddt/projects/`.
-2. Present a summary table: project name, health, recent progress, top blocker.
+Read the corresponding command file for detailed instructions on how to handle each case. The commands define the behavior — this skill handles routing to the right one.
 
 ## Principles
 
