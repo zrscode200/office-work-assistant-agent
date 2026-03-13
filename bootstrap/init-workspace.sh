@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap/init-workspace.sh /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] /path/to/target-dir
 
 Stamps a target directory with the office work assistant agent:
   - CLAUDE.md (agent operating manual — project management assistant)
@@ -16,15 +16,33 @@ Stamps a target directory with the office work assistant agent:
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update)
 
+Options:
+  --update    Update system files (CLAUDE.md, skill, commands) in an existing workspace.
+              User files (.ddt/config.md, profile.md, norms.md, projects/) are never touched.
+
 If no path is given, the current directory is used.
-Existing files are never overwritten.
+Existing files are never overwritten unless --update is specified.
 EOF
 }
 
-if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
-  usage
-  exit 0
-fi
+UPDATE_MODE=false
+
+# Parse flags
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --update)
+      UPDATE_MODE=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
 
 TARGET_INPUT="${1:-.}"
 
@@ -68,24 +86,65 @@ mkdir -p "$TARGET_DIR/.ddt/personal/scratch"
 mkdir -p "$TARGET_DIR/.claude/commands"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
 
+# Copy a file, skipping if it already exists
 copy_if_missing() {
   src="$1"
   dst="$2"
   label="$3"
 
   if [ -e "$dst" ]; then
-    echo "skip: $label already exists at $dst"
+    echo "skip: $label already exists"
     return
   fi
 
   cp "$src" "$dst"
-  echo "create: $label -> $dst"
+  echo "create: $label"
 }
 
-# Core files
-copy_if_missing "$REPO_ROOT/templates/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
+# Copy a file, overwriting if it exists (for --update mode)
+copy_and_overwrite() {
+  src="$1"
+  dst="$2"
+  label="$3"
 
-# Workspace config and templates
+  if [ -e "$dst" ]; then
+    if cmp -s "$src" "$dst"; then
+      echo "unchanged: $label"
+      return
+    fi
+    cp "$src" "$dst"
+    echo "update: $label"
+  else
+    cp "$src" "$dst"
+    echo "create: $label"
+  fi
+}
+
+# --- System files (updated with --update) ---
+
+if [ "$UPDATE_MODE" = true ]; then
+  echo "=== Update mode: refreshing system files ==="
+  copy_fn="copy_and_overwrite"
+else
+  copy_fn="copy_if_missing"
+fi
+
+# CLAUDE.md
+$copy_fn "$REPO_ROOT/templates/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
+
+# Project manager skill
+$copy_fn "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
+  "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
+  ".claude/skills/project-manager/SKILL.md"
+
+# Slash commands
+for cmd in "$REPO_ROOT/templates/commands/"*.md; do
+  cmd_name=$(basename "$cmd")
+  $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
+done
+
+# --- User files (never overwritten, even with --update) ---
+
 copy_if_missing "$REPO_ROOT/templates/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
 copy_if_missing "$REPO_ROOT/templates/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
 copy_if_missing "$REPO_ROOT/templates/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
@@ -114,24 +173,20 @@ if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" ]; then
   echo "create: .ddt/personal/scratch/.gitkeep"
 fi
 
-# Project manager skill
-copy_if_missing "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
-  "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
-  ".claude/skills/project-manager/SKILL.md"
-
-# Slash commands
-for cmd in "$REPO_ROOT/templates/commands/"*.md; do
-  cmd_name=$(basename "$cmd")
-  copy_if_missing "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
-done
-
 # Init git if not already a repo
 if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$TARGET_DIR" init
   echo "create: initialized git repository"
 fi
 
-cat <<'EOF'
+if [ "$UPDATE_MODE" = true ]; then
+  cat <<'EOF'
+
+Update complete. System files (CLAUDE.md, skill, commands) have been refreshed.
+User files (.ddt/config.md, profile.md, norms.md, projects/) were not touched.
+EOF
+else
+  cat <<'EOF'
 
 Setup complete. Next steps:
 - Fill in .ddt/profile.md with your role, team, and context
@@ -141,3 +196,4 @@ Setup complete. Next steps:
 - Try: "new project: <name>" or use /new-project to scaffold your first project
 - Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update
 EOF
+fi
