@@ -12,9 +12,11 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/profile.md (user profile template — role, team, context)
   - .ddt/norms.md (team working principles)
   - .ddt/projects/ (where project artifacts live)
+  - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
   - .ddt/personal/scratch/ (private scratch space, gitignored)
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
-  - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update)
+  - .claude/skills/muse/ (auto-triggering thinking partner skill)
+  - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
 
 Options:
   --update    Update system files (CLAUDE.md, skill, commands) in an existing workspace.
@@ -68,7 +70,8 @@ for file in \
   "$REPO_ROOT/templates/profile.md" \
   "$REPO_ROOT/templates/norms.md" \
   "$REPO_ROOT/templates/gitignore" \
-  "$REPO_ROOT/templates/skills/project-manager/SKILL.md"; do
+  "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
+  "$REPO_ROOT/templates/skills/muse/SKILL.md"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing template file: $file" >&2
     exit 1
@@ -84,7 +87,9 @@ fi
 mkdir -p "$TARGET_DIR/.ddt/projects"
 mkdir -p "$TARGET_DIR/.ddt/personal/scratch"
 mkdir -p "$TARGET_DIR/.claude/commands"
+mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
+mkdir -p "$TARGET_DIR/.claude/skills/muse"
 
 # Copy a file, skipping if it already exists
 copy_if_missing() {
@@ -132,10 +137,14 @@ fi
 # CLAUDE.md
 $copy_fn "$REPO_ROOT/templates/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
 
-# Project manager skill
+# Skills
 $copy_fn "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
   ".claude/skills/project-manager/SKILL.md"
+
+$copy_fn "$REPO_ROOT/templates/skills/muse/SKILL.md" \
+  "$TARGET_DIR/.claude/skills/muse/SKILL.md" \
+  ".claude/skills/muse/SKILL.md"
 
 # Slash commands
 for cmd in "$REPO_ROOT/templates/commands/"*.md; do
@@ -151,8 +160,12 @@ copy_if_missing "$REPO_ROOT/templates/norms.md" "$TARGET_DIR/.ddt/norms.md" ".dd
 
 # Gitignore (append if .gitignore exists, create if not)
 if [ -e "$TARGET_DIR/.gitignore" ]; then
-  if grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
+  if grep -q ".ddt/personal/notebook/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
     echo "skip: .gitignore already contains workspace entries"
+  elif grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
+    # Existing workspace from before notebook feature — add notebook entry
+    sed -i '' 's|.ddt/personal/scratch/|.ddt/personal/notebook/\n.ddt/personal/scratch/|' "$TARGET_DIR/.gitignore"
+    echo "update: added notebook to .gitignore"
   else
     echo "" >> "$TARGET_DIR/.gitignore"
     cat "$REPO_ROOT/templates/gitignore" >> "$TARGET_DIR/.gitignore"
@@ -168,6 +181,10 @@ if [ ! -e "$TARGET_DIR/.ddt/projects/.gitkeep" ]; then
   touch "$TARGET_DIR/.ddt/projects/.gitkeep"
   echo "create: .ddt/projects/.gitkeep"
 fi
+if [ ! -e "$TARGET_DIR/.ddt/personal/notebook/.gitkeep" ]; then
+  touch "$TARGET_DIR/.ddt/personal/notebook/.gitkeep"
+  echo "create: .ddt/personal/notebook/.gitkeep"
+fi
 if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" ]; then
   touch "$TARGET_DIR/.ddt/personal/scratch/.gitkeep"
   echo "create: .ddt/personal/scratch/.gitkeep"
@@ -182,8 +199,8 @@ fi
 if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
-Update complete. System files (CLAUDE.md, skill, commands) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, projects/) were not touched.
+Update complete. System files (CLAUDE.md, skills, commands) have been refreshed.
+User files (.ddt/config.md, profile.md, norms.md, projects/, notebook/) were not touched.
 EOF
 else
   cat <<'EOF'
@@ -194,6 +211,6 @@ Setup complete. Next steps:
 - Edit .ddt/config.md to set your name and autonomy mode
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update
+- Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /jot, /brainstorm, /notebook
 EOF
 fi

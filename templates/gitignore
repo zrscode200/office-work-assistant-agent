@@ -1,4 +1,5 @@
 # Office Work Assistant Agent - workspace entries
+.ddt/personal/notebook/
 .ddt/personal/scratch/
 .DS_Store
 *.swp
