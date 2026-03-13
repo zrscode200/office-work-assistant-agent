@@ -8,13 +8,15 @@ Help the user develop a project plan through conversation. You are a planning fa
 
 ### 1. Assess the situation
 
+Resolve the project location using the **project location resolution** rules in CLAUDE.md (check both `.ddt/projects/` and `<team_repo>/projects/` if configured).
+
 Read what exists:
-- `.ddt/projects/<project>/overview.md` for scope and context
-- `.ddt/projects/<project>/plan.md` if it exists
-- `.ddt/projects/<project>/meetings/` and `decisions/` for additional context
+- `<project-root>/overview.md` for scope and context
+- `<project-root>/plan.md` if it exists
+- `<project-root>/meetings/` and `decisions/` for additional context
 - `.ddt/profile.md` to calibrate the plan's altitude to the user's role
 
-If no project name was provided, list available projects and ask which one.
+If no project name was provided, list available projects from both locations (labeling [shared] vs [personal]) and ask which one.
 
 Then assess what the user has brought to the conversation:
 - Did they provide detailed thoughts, rough ideas, or just a project name?
@@ -50,10 +52,12 @@ Then assess what the user has brought to the conversation:
 ### 4. Write plan.md only when ready
 
 When the user confirms the plan looks right (or says something like "let's go with this"):
-- Write `.ddt/projects/<project>/plan.md` with the agreed content
+- If the project is shared, follow the **Shared Repo Write Flow** in CLAUDE.md (pull first).
+- Write `<project-root>/plan.md` with the agreed content
 - Structure: Objective, Approach, Tasks (by phase/workstream), Milestones, Risks & Unknowns, Open Questions
 - Each task: description, owner (if known), dependencies, status (not-started / in-progress / done)
 - If some sections are still TBD, mark them as such — a partial plan is fine
+- If the project is shared, complete the Shared Repo Write Flow (show changes, confirm, commit, push).
 
 ## What NOT to do
 

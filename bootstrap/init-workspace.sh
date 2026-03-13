@@ -211,6 +211,7 @@ Setup complete. Next steps:
 - Edit .ddt/config.md to set your name and autonomy mode
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /jot, /brainstorm, /notebook
+- Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /sync, /jot, /brainstorm, /notebook
+- For team collaboration: set team_repo in .ddt/config.md to the path of your shared team repo clone
 EOF
 fi

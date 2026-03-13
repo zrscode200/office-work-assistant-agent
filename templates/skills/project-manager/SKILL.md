@@ -20,6 +20,7 @@ Based on what the user needs, identify the action and follow the corresponding c
 | Needs to plan work, break down tasks, or think through approach | `/plan` |
 | Needs to communicate project status to others | `/update` |
 | Wants to see across all projects | `/dashboard` |
+| Wants to sync, pull, or push the shared team repo | `/sync` |
 
 Read the corresponding command file for detailed instructions on how to handle each case. The commands define the behavior — this skill handles routing to the right one.
 
@@ -31,3 +32,4 @@ Read the corresponding command file for detailed instructions on how to handle e
 - Follow naming conventions from CLAUDE.md.
 - Reference `.ddt/norms.md` for team standards.
 - When in doubt about which project something belongs to, ask.
+- Projects may live in two locations: `.ddt/projects/` (personal) and `<team_repo>/projects/` (shared). Commands handle routing — always check both when resolving a project.

@@ -6,12 +6,17 @@ Show a dashboard of all active projects.
 
 ## Instructions
 
-1. List all project directories in `.ddt/projects/`.
+1. List all project directories from both locations:
+   - `.ddt/projects/` (personal projects)
+   - `<team_repo>/projects/` (shared projects, if `team_repo` is configured in `.ddt/config.md`)
 2. For each project, read `status.md` and `overview.md`.
 3. Present a summary table:
 
-| Project | Health | Recent Progress | Top Blocker | Next Milestone |
-|---------|--------|-----------------|-------------|----------------|
+| Project | Type | Health | Recent Progress | Top Blocker | Next Milestone |
+|---------|------|--------|-----------------|-------------|----------------|
+
+   - Type is [shared] or [personal]
+   - If `team_repo` is not configured, omit the Type column (all projects are personal)
 
 4. Below the table, highlight:
    - Any projects that are **blocked** or **at-risk**

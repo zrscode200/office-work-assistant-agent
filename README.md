@@ -31,16 +31,35 @@ To update an existing workspace with latest templates (preserves your data):
 
 This stamps the target directory with:
 - `CLAUDE.md` — agent operating manual
-- `.ddt/config.md` — workspace settings and autonomy mode
+- `.ddt/config.md` — workspace settings, autonomy mode, and team repo config
 - `.ddt/profile.md` — your profile (role, team, context)
 - `.ddt/norms.md` — team working principles
-- `.ddt/projects/` — where project artifacts live
+- `.ddt/projects/` — where personal project artifacts live
 - `.ddt/personal/notebook/` — private notebook for ideas and brainstorms (gitignored)
 - `.ddt/personal/scratch/` — private scratch space (gitignored)
 - `.claude/skills/` — auto-triggering skills (project-manager, muse)
 - `.claude/commands/` — slash commands for common operations
 
 Then fill in `.ddt/profile.md` with your info and open Claude Code.
+
+## Team Collaboration
+
+Projects can be **personal** (local only) or **shared** (stored in a team git repo).
+
+To enable team collaboration:
+
+1. Clone your team's shared repo: `git clone <team-repo-url> /path/to/ddt-shared`
+2. Set `team_repo: /path/to/ddt-shared` in `.ddt/config.md`
+
+Once configured:
+- `/new-project` asks whether a project should be shared or personal
+- The agent reads from the shared repo for context (always live)
+- When writing to shared projects, the agent pulls first, writes, then asks you to confirm before committing and pushing
+- `/sync` gives you manual control over pull/push/commit
+- `/dashboard` shows projects from both locations
+- Personal artifacts (notebook, scratch) never go to the shared repo
+
+The shared repo is a plain git data repo — just a `projects/` folder, no agent config needed.
 
 ## Autonomy Modes
 
@@ -50,19 +69,22 @@ Set in `.ddt/config.md`:
 - **gated** (default) — works autonomously on artifact creation, pauses for cross-project changes or deletions
 - **autonomous** — runs freely, pauses only for ambiguity
 
+Note: writing to the shared team repo always requires user confirmation, regardless of autonomy mode.
+
 ## Slash Commands
 
 ### Project Management
 
 | Command | Description |
 |---------|-------------|
-| `/new-project` | Scaffold a new project with overview and status files |
+| `/new-project` | Scaffold a new project (shared or personal) |
 | `/status` | View or update a project's status |
 | `/meeting` | Capture a meeting summary |
 | `/decide` | Create a structured decision record |
 | `/plan` | Create or update a project plan (collaborative, not auto-generated) |
-| `/dashboard` | Overview of all active projects |
+| `/dashboard` | Overview of all active projects (shared and personal) |
 | `/update` | Draft a status update or report for stakeholders |
+| `/sync` | Sync the shared team repo — pull, commit, push |
 
 ### Notebook & Thinking
 
@@ -80,10 +102,10 @@ After bootstrapping, your workspace looks like:
 your-workspace/
   CLAUDE.md                              # agent operating manual
   .ddt/
-    config.md                            # workspace settings
+    config.md                            # workspace settings + team_repo path
     profile.md                           # your role, team, context
     norms.md                             # team working principles
-    projects/
+    projects/                            # personal projects (local only)
       <project-name>/
         overview.md                      # scope, goals, stakeholders
         status.md                        # health, blockers, risks
@@ -103,16 +125,16 @@ your-workspace/
       project-manager/SKILL.md           # PM skill (routes to project commands)
       muse/SKILL.md                      # thinking partner skill (routes to notebook commands)
     commands/
-      new-project.md                     # /new-project
-      status.md                          # /status
-      meeting.md                         # /meeting
-      decide.md                          # /decide
-      plan.md                            # /plan
-      dashboard.md                       # /dashboard
-      update.md                          # /update
-      jot.md                             # /jot
-      brainstorm.md                      # /brainstorm
-      notebook.md                        # /notebook
+      new-project.md, status.md, meeting.md, decide.md,
+      plan.md, dashboard.md, update.md, sync.md,
+      jot.md, brainstorm.md, notebook.md
+
+# If team_repo is configured:
+/path/to/ddt-shared/                     # separate git repo, cloned locally
+  projects/                              # shared projects (team-visible)
+    <project-name>/
+      overview.md, status.md, plan.md
+      decisions/, meetings/, updates/
 ```
 
 ## Repository Contents
@@ -134,16 +156,9 @@ office-work-assistant-agent/
       muse/
         SKILL.md                         # thinking partner skill
     commands/
-      new-project.md
-      status.md
-      meeting.md
-      decide.md
-      plan.md
-      dashboard.md
-      update.md
-      jot.md
-      brainstorm.md
-      notebook.md
+      new-project.md, status.md, meeting.md, decide.md,
+      plan.md, dashboard.md, update.md, sync.md,
+      jot.md, brainstorm.md, notebook.md
 ```
 
 ## Design Principles
@@ -152,6 +167,7 @@ office-work-assistant-agent/
 - **Artifact-driven** — meeting notes, decisions, and status are saved to files, not lost in chat
 - **Project-centric** — all project artifacts hang off projects, keeping context together
 - **Thinking-friendly** — ideas don't need to be structured to be captured; they can mature over time
+- **Team-aware** — shared projects live in a team repo; personal work stays local
 - **Audience-aware** — reads your profile to calibrate responses to your role
 - **Non-destructive** — status history is appended, decision records are never overwritten, notebook entries are preserved
 - **Convention over configuration** — sensible defaults, customize when needed
