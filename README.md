@@ -4,6 +4,8 @@ A portable toolkit that turns any directory into a work assistant workspace powe
 
 This is a bootstrap repository, not an application. It provides templates and a setup script that you copy into a target directory to make Claude Code behave like a work assistant — helping you document, track, plan, and think through work.
 
+Workspace artifacts live in a `.ddt/` directory (short for **d**ocument, **d**ecide, **t**rack).
+
 ## How It Works
 
 You bootstrap a target directory with a `CLAUDE.md` operating manual, `.ddt/` workspace structure, skills at `.claude/skills/`, and slash commands at `.claude/commands/`. When you open Claude Code in that directory, two skills auto-trigger based on what you're doing:
@@ -17,16 +19,38 @@ The assistant helps with:
 - **Plan** — task breakdowns, milestones, dependencies
 - **Think** — capture ideas, brainstorm interactively, develop thoughts over time
 
+## What You'll Need
+
+**Prerequisites:** git, a POSIX shell (sh/bash/zsh), and [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+
+**Repos involved:**
+
+| Repo | Purpose | Required? |
+|------|---------|-----------|
+| **This repo** (office-work-assistant-agent) | Source of templates. Clone it, run the bootstrap script, done. You only need it again to pull updates. | Yes |
+| **Your workspace** | The directory you bootstrap. This is where you open Claude Code and do your work. Git-initialized by the script if it isn't already. | Yes |
+| **Shared team repo** | A plain git repo with a `projects/` folder. Multiple people point their workspaces at it for shared project artifacts. | Only for team collaboration |
+
+After bootstrapping, your workspace has no dependency on this repo — all templates are copied into the target directory.
+
 ## Quick Setup
 
 ```sh
-./bootstrap/init-workspace.sh /path/to/your-workspace
+# 1. Clone this repo (one-time)
+git clone <this-repo-url> office-work-assistant-agent
+
+# 2. Bootstrap your workspace
+./office-work-assistant-agent/bootstrap/init-workspace.sh /path/to/your-workspace
+
+# 3. Open Claude Code in the workspace
+cd /path/to/your-workspace
+claude
 ```
 
 To update an existing workspace with latest templates (preserves your data):
 
 ```sh
-./bootstrap/init-workspace.sh --update /path/to/your-workspace
+./office-work-assistant-agent/bootstrap/init-workspace.sh --update /path/to/your-workspace
 ```
 
 This stamps the target directory with:
