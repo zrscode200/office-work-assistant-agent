@@ -7,7 +7,7 @@ Show a dashboard of all projects.
 ## Instructions
 
 1. Read `.ddt/registry.md` for all registered projects.
-2. Read `.ddt/config.md`. For each configured team repo, scan its `projects/` directory for projects not in the registry. Note any as unregistered, along with which team repo they're in.
+2. Read `.ddt/config.md`. For each configured team repo, run `git -C <repo-path> pull` to ensure data is current, then scan its `projects/` directory for projects not in the registry. Note any as unregistered, along with which team repo they're in.
 3. For each **active** project in the registry, read `status.md` and `overview.md`.
 4. Present the active projects as a summary table:
 

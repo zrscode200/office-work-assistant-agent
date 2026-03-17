@@ -149,10 +149,13 @@ When a command needs to find a project:
 3. If found, derive the path from location:
    - `personal` → `.ddt/projects/<name>/`
    - A team repo name → look up its path in `.ddt/config.md`, then `<path>/projects/<name>/`
-4. If not found, scan all configured team repo paths for unregistered projects:
+4. If the project is in a team repo, run `git -C <repo-path> pull` before reading artifacts.
+   - New commits → note them; mention to the user if relevant to the current project.
+   - Merge conflict → stop. List conflicted files, advise manual resolution.
+5. If not found in the registry, scan all configured team repo paths for unregistered projects (pull each repo first):
    - Found → auto-register in `.ddt/registry.md` (location: the team repo name, status: active, created: today). Return.
    - Not found → tell the user: "No project named '<name>'. Known projects: [list from registry]."
-5. If the user provides no project name, list active projects from the registry labeled with their location and ask which one.
+6. If the user provides no project name, list active projects from the registry labeled with their location and ask which one.
 
 ## Shared Write Protocol
 
@@ -181,6 +184,15 @@ When writing to a project whose location is a team repo name in the registry. Pe
 - "Create project: <project>"
 - "Update plan: <project>"
 - "Add status update: <project> (YYYY-MM-DD)"
+
+## Team Repo Freshness
+
+Team repo data is kept current at two levels:
+
+- **Session start:** A hook automatically pulls all configured team repos (`git pull --ff-only`) when Claude Code starts. This provides a fresh baseline. Sync status is reported — if a repo needs manual pull, advise the user.
+- **Per-command:** The Project Resolution Protocol pulls the relevant team repo before reading its artifacts. This catches changes pushed by teammates mid-session.
+
+If a team repo pull fails (diverged history, conflicts), do not proceed with reading or writing to that repo. Advise the user to resolve the issue manually.
 
 ## Project Lifecycle
 

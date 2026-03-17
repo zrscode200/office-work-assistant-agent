@@ -65,6 +65,8 @@ This stamps the target directory with:
 - `.ddt/personal/scratch/` — private scratch space (gitignored)
 - `.claude/skills/` — auto-triggering skills (project-manager, think-partner)
 - `.claude/commands/` — slash commands for common operations
+- `.claude/hooks/` — session-start hook that auto-syncs team repos
+- `.claude/settings.json` — hook configuration
 
 Then fill in `.ddt/profile.md` with your info and open Claude Code.
 
@@ -161,6 +163,9 @@ your-workspace/
       new-project.md, status.md, meeting.md, decide.md,
       plan.md, dashboard.md, update.md, sync.md,
       jot.md, brainstorm.md, notebook.md
+    hooks/
+      session-sync.sh                     # auto-syncs team repos on session start
+    settings.json                          # hook configuration
 
 # For each team repo configured in .ddt/config.md:
 /path/to/team-shared/                    # separate git repo, cloned locally
@@ -194,6 +199,9 @@ office-work-assistant-agent/
       new-project.md, status.md, meeting.md, decide.md,
       plan.md, dashboard.md, update.md, sync.md,
       jot.md, brainstorm.md, notebook.md
+    hooks/
+      session-sync.sh                     # auto-syncs team repos on session start
+    settings.json                          # Claude Code hook configuration
 ```
 
 ## Design Principles

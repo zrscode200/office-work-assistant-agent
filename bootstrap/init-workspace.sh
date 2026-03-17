@@ -18,6 +18,8 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
+  - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
+  - .claude/settings.json (hook configuration — never overwritten on update)
   - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
 
 Options:
@@ -76,7 +78,9 @@ for file in \
   "$REPO_ROOT/templates/registry.md" \
   "$REPO_ROOT/templates/gitignore" \
   "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
-  "$REPO_ROOT/templates/skills/think-partner/SKILL.md"; do
+  "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
+  "$REPO_ROOT/templates/hooks/session-sync.sh" \
+  "$REPO_ROOT/templates/settings.json"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing template file: $file" >&2
     exit 1
@@ -95,6 +99,7 @@ mkdir -p "$TARGET_DIR/.claude/commands"
 mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
 mkdir -p "$TARGET_DIR/.claude/skills/think-partner"
+mkdir -p "$TARGET_DIR/.claude/hooks"
 
 # Copy a file, skipping if it already exists
 copy_if_missing() {
@@ -154,6 +159,12 @@ $copy_fn "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
   "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
   ".claude/skills/think-partner/SKILL.md"
 
+# Session-sync hook
+$copy_fn "$REPO_ROOT/templates/hooks/session-sync.sh" \
+  "$TARGET_DIR/.claude/hooks/session-sync.sh" \
+  ".claude/hooks/session-sync.sh"
+chmod +x "$TARGET_DIR/.claude/hooks/session-sync.sh"
+
 # Slash commands
 for cmd in "$REPO_ROOT/templates/commands/"*.md; do
   cmd_name=$(basename "$cmd")
@@ -166,6 +177,7 @@ copy_if_missing "$REPO_ROOT/templates/config.md" "$TARGET_DIR/.ddt/config.md" ".
 copy_if_missing "$REPO_ROOT/templates/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
 copy_if_missing "$REPO_ROOT/templates/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
 copy_if_missing "$REPO_ROOT/templates/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
+copy_if_missing "$REPO_ROOT/templates/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
 
 # Gitignore (append if .gitignore exists, create if not)
 if [ -e "$TARGET_DIR/.gitignore" ]; then
@@ -223,7 +235,7 @@ if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
 Update complete. System files (CLAUDE.md, skills, commands) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, registry.md, projects/, scratch/.index.md) were not touched.
+User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/, scratch/.index.md) were not touched.
 EOF
 else
   cat <<'EOF'

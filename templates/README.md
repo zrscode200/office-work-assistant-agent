@@ -73,6 +73,9 @@ You don't need to invoke skills directly. Describe what you need and the assista
     new-project.md, status.md, meeting.md, decide.md,
     plan.md, dashboard.md, update.md, sync.md,
     jot.md, brainstorm.md, notebook.md
+  hooks/
+    session-sync.sh                    # auto-syncs team repos on session start
+  settings.json                        # hook configuration
 ```
 
 ### What's gitignored
