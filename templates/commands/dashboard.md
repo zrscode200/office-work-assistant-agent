@@ -2,24 +2,26 @@
 description: Overview of all active projects
 ---
 
-Show a dashboard of all active projects.
+Show a dashboard of all projects.
 
 ## Instructions
 
-1. List all project directories from both locations:
-   - `.ddt/projects/` (personal projects)
-   - `<team_repo>/projects/` (shared projects, if `team_repo` is configured in `.ddt/config.md`)
-2. For each project, read `status.md` and `overview.md`.
-3. Present a summary table:
+1. Read `.ddt/registry.md` for all registered projects.
+2. Read `.ddt/config.md`. If `team_repo` is configured, scan `<team_repo>/projects/` for directories not in the registry. Note any as "unregistered shared".
+3. For each **active** project in the registry, read `status.md` and `overview.md`.
+4. Present the active projects as a summary table:
 
-| Project | Type | Health | Recent Progress | Top Blocker | Next Milestone |
-|---------|------|--------|-----------------|-------------|----------------|
+| Project | Location | Health | Recent Progress | Top Blocker | Next Milestone |
+|---------|----------|--------|-----------------|-------------|----------------|
 
-   - Type is [shared] or [personal]
-   - If `team_repo` is not configured, omit the Type column (all projects are personal)
+   - Location is [shared] or [personal]
+   - If `team_repo` is not configured, omit the Location column
 
-4. Below the table, highlight:
+5. If there are **completed** projects, show them in a separate "Recently completed" section (name, location, completion date). Keep it brief.
+6. Omit **archived** projects unless the user asks for them.
+7. Below the table, highlight:
    - Any projects that are **blocked** or **at-risk**
-   - Action items that are overdue (check meeting notes for deadlines)
-   - Projects with no recent status updates (stale)
-5. Keep it scannable. This is a quick-glance view, not a deep dive.
+   - **Stale** projects (no artifact changes in 2+ weeks)
+   - Overdue action items (check meeting notes for deadlines)
+   - **Unregistered shared projects** (if any): "Found N shared projects not in your registry: [names]. Interact with them or run `/status <name>` to register."
+8. Keep it scannable. This is a quick-glance view, not a deep dive.

@@ -15,6 +15,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
   config.md                         # workspace settings (includes team_repo path)
   profile.md                        # who you're helping (role, team, context)
   norms.md                          # team working principles
+  registry.md                       # project registry (all known projects)
 
   projects/                         # PERSONAL projects (local only)
     <project-name>/
@@ -129,45 +130,48 @@ When the user has ideas that aren't fully formed:
 - Read existing project artifacts before responding to questions about a project.
 - When updating status.md, preserve history — add new entries, don't delete old ones.
 - Never overwrite a decision record. If a decision is revisited, create a new one referencing the old.
-- When looking up a project, check both `.ddt/projects/` and `<team_repo>/projects/` (if configured).
-- If a project name exists in both locations, ask the user which they mean.
+- Resolve projects using the Project Resolution Protocol. Never scan directories directly.
+- If the registry and filesystem disagree, trust the registry but flag the discrepancy to the user.
 - Never write shared project content to the personal workspace or vice versa.
+- After creating or completing a project, update `.ddt/registry.md`.
 
 ### Tone
 - Direct and concise. No filler.
 - Match the formality of the artifact type: meeting notes are informal, status reports are structured, decision records are precise.
 - Tailor language to the audience indicated in the user's request.
 
-## Shared Repo Write Flow
+## Project Resolution Protocol
 
-When writing to a project that lives in the shared team repo (configured via `team_repo` in `.ddt/config.md`), follow this protocol. Personal projects (in `.ddt/projects/`) skip this — just write the file directly.
+When a command needs to find a project:
 
-### Resolving project location
+1. Read `.ddt/registry.md`.
+2. Find the row matching the project name.
+3. If found, derive the path from location:
+   - `personal` → `.ddt/projects/<name>/`
+   - `shared` → `<team_repo>/projects/<name>/`
+4. If not found, scan `<team_repo>/projects/` (if configured) for unregistered shared projects:
+   - Found → auto-register in `.ddt/registry.md` (location: shared, status: active, created: today). Return.
+   - Not found → tell the user: "No project named '<name>'. Known projects: [list from registry]."
+5. If the user provides no project name, list active projects from the registry labeled [shared] / [personal] and ask which one.
 
-When looking up a project by name:
-1. Check `.ddt/projects/<name>/` (personal projects)
-2. Check `<team_repo>/projects/<name>/` (shared projects)
-3. If found in both, ask the user which one they mean
-4. If not found in either and creating a new project, ask shared or personal
+## Shared Write Protocol
 
-When listing all projects (for `/dashboard` or project selection):
-- Read from both `.ddt/projects/` and `<team_repo>/projects/`
-- Label shared projects as [shared] and personal projects as [personal]
+When writing to a project whose location is `shared` in the registry. Personal projects skip this — write files directly.
 
-### Before writing to the shared repo
+### Before writing
 
-1. Run `git -C <team_repo> pull` to get the latest changes
-2. If the pull brought new commits, tell the user: "Pulled new changes from the shared repo." Summarize what changed if relevant to the current project.
-3. If the pull results in a merge conflict, stop and tell the user. List the conflicted files and advise them to resolve manually in the shared repo directory.
+1. `git -C <team_repo> pull` to get latest changes.
+2. New commits pulled → tell the user, summarize if relevant to the current project.
+3. Merge conflict → stop. List conflicted files, advise manual resolution.
 
-### After writing to the shared repo
+### After writing
 
-1. Show the user what was written — the file path and a summary of the content
-2. Ask: "Ready to commit and push to the shared repo? Changes: [summary]"
-3. Wait for user confirmation. This is non-negotiable regardless of autonomy mode.
-4. On confirmation: `git -C <team_repo> add <files>`, `git -C <team_repo> commit -m "<message>"`, `git -C <team_repo> push`
-5. If push fails (remote has new changes), run `git -C <team_repo> pull --rebase` and retry once. If that also fails, notify the user.
-6. Confirm success: "Committed and pushed: [commit message]"
+1. Show the user what was written — file path and content summary.
+2. Ask: "Ready to commit and push? Changes: [summary]"
+3. Wait for user confirmation. Non-negotiable regardless of autonomy mode.
+4. `git -C <team_repo> add <files>`, `git -C <team_repo> commit -m "<message>"`, `git -C <team_repo> push`
+5. Push fails → `git -C <team_repo> pull --rebase`, retry once. Still fails → notify user.
+6. Confirm: "Committed and pushed: [commit message]"
 
 ### Commit message patterns
 
@@ -177,6 +181,16 @@ When listing all projects (for `/dashboard` or project selection):
 - "Create project: <project>"
 - "Update plan: <project>"
 - "Add status update: <project> (YYYY-MM-DD)"
+
+## Project Lifecycle
+
+Projects in `.ddt/registry.md` have a status: `active`, `completed`, or `archived`.
+
+- **active → completed**: When `/status` sets health to `completed`, also update the registry status to `completed`.
+- **completed → archived**: When the user asks to archive, or during `/dashboard` cleanup. Archived projects are hidden from default views.
+- **archived → active**: User explicitly reactivates via `/status`.
+
+`/dashboard` shows active projects by default, completed in a "Recently completed" section, archived only when the user requests it.
 
 ## Team Norms
 

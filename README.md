@@ -59,6 +59,7 @@ This stamps the target directory with:
 - `.ddt/config.md` — workspace settings, autonomy mode, and team repo config
 - `.ddt/profile.md` — your profile (role, team, context)
 - `.ddt/norms.md` — team working principles
+- `.ddt/registry.md` — project registry (tracks all known projects)
 - `.ddt/projects/` — where personal project artifacts live
 - `.ddt/personal/notebook/` — private notebook for ideas and brainstorms (gitignored)
 - `.ddt/personal/scratch/` — private scratch space (gitignored)
@@ -131,6 +132,7 @@ your-workspace/
     config.md                            # workspace settings + team_repo path
     profile.md                           # your role, team, context
     norms.md                             # team working principles
+    registry.md                          # project registry (tracks all projects)
     projects/                            # personal projects (local only)
       <project-name>/
         overview.md                      # scope, goals, stakeholders
@@ -178,6 +180,7 @@ office-work-assistant-agent/
     config.md                            # workspace config template
     profile.md                           # user profile template
     norms.md                             # team norms template
+    registry.md                          # project registry template
     gitignore                            # workspace .gitignore entries
     skills/
       project-manager/

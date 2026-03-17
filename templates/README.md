@@ -46,6 +46,7 @@ You don't need to invoke skills directly. Describe what you need and the assista
   config.md                            # workspace settings + team_repo path
   profile.md                           # your role, team, context
   norms.md                             # team working principles
+  registry.md                          # project registry (tracks all projects)
   projects/                            # personal projects (local only)
     <project-name>/
       overview.md                      # scope, goals, stakeholders
@@ -109,6 +110,7 @@ The shared repo is a plain git data repo — just a `projects/` folder, no agent
 
 ## Conventions
 
+- **Project registry:** `.ddt/registry.md` tracks all known projects (personal and shared)
 - **Project folders:** lowercase kebab-case (`cloud-migration`, `q2-budget`)
 - **Meeting files:** `YYYY-MM-DD-<topic>.md` (e.g., `2026-03-12-kickoff.md`)
 - **Decision files:** descriptive kebab-case (e.g., `vendor-selection.md`)

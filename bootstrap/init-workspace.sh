@@ -12,6 +12,7 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/config.md (workspace settings and autonomy mode)
   - .ddt/profile.md (user profile template — role, team, context)
   - .ddt/norms.md (team working principles)
+  - .ddt/registry.md (project registry — tracks all known projects)
   - .ddt/projects/ (where project artifacts live)
   - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
   - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
@@ -72,6 +73,7 @@ for file in \
   "$REPO_ROOT/templates/config.md" \
   "$REPO_ROOT/templates/profile.md" \
   "$REPO_ROOT/templates/norms.md" \
+  "$REPO_ROOT/templates/registry.md" \
   "$REPO_ROOT/templates/gitignore" \
   "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
   "$REPO_ROOT/templates/skills/think-partner/SKILL.md"; do
@@ -163,6 +165,7 @@ done
 copy_if_missing "$REPO_ROOT/templates/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
 copy_if_missing "$REPO_ROOT/templates/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
 copy_if_missing "$REPO_ROOT/templates/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
+copy_if_missing "$REPO_ROOT/templates/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
 
 # Gitignore (append if .gitignore exists, create if not)
 if [ -e "$TARGET_DIR/.gitignore" ]; then
@@ -170,7 +173,10 @@ if [ -e "$TARGET_DIR/.gitignore" ]; then
     echo "skip: .gitignore already contains workspace entries"
   elif grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
     # Existing workspace from before notebook feature — add notebook entry
-    sed -i '' 's|.ddt/personal/scratch/|.ddt/personal/notebook/\n.ddt/personal/scratch/|' "$TARGET_DIR/.gitignore"
+    tmp_gitignore="$TARGET_DIR/.gitignore.tmp.$$"
+    sed 's|.ddt/personal/scratch/|.ddt/personal/notebook/\
+.ddt/personal/scratch/|' "$TARGET_DIR/.gitignore" > "$tmp_gitignore"
+    mv "$tmp_gitignore" "$TARGET_DIR/.gitignore"
     echo "update: added notebook to .gitignore"
   else
     echo "" >> "$TARGET_DIR/.gitignore"
@@ -217,7 +223,7 @@ if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
 Update complete. System files (CLAUDE.md, skills, commands) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, projects/, scratch/.index.md) were not touched.
+User files (.ddt/config.md, profile.md, norms.md, registry.md, projects/, scratch/.index.md) were not touched.
 EOF
 else
   cat <<'EOF'
