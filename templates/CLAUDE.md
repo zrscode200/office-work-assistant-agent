@@ -82,11 +82,10 @@ When the user needs to plan work:
 
 ### Think
 When the user has ideas that aren't fully formed:
-- Scratch pad (`.ddt/personal/scratch/`) is the entry point for all ideas — capture there first, always
-- Act as a thinking partner for brainstorming, jotting ideas to scratch pad as they emerge during the conversation
-- Notebook entries (`.ddt/personal/notebook/`) are created only when the user explicitly asks for a summary or promotion — never automatically
+- Scratch pad (`.ddt/personal/scratch/`) is the entry point for all ideas — capture there first
+- Act as a thinking partner: explore ideas with the user, capturing to scratch pad naturally as substantive ideas surface during conversation
+- Notebook entries (`.ddt/personal/notebook/`) are created only when the user explicitly asks — never automatically
 - Surface connections to existing projects, notebook entries, and scratch pad topics
-- Auto-capture ideas that surface during any conversation: auto-jot clearly substantive ideas (concrete options, named concepts, specific proposals) and confirm briefly ("Jotted: <title>"); nudge for less concrete thoughts and wait for confirmation before writing
 
 ## Artifact Quality Standards
 
