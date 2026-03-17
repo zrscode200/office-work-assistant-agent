@@ -22,14 +22,14 @@ You don't need to invoke skills directly. Describe what you need and the assista
 
 | Command | Description |
 |---------|-------------|
-| `/new-project` | Scaffold a new project (shared or personal) |
+| `/new-project` | Scaffold a new project (personal or team) |
 | `/status` | View or update a project's status |
 | `/meeting` | Capture a meeting summary |
 | `/decide` | Create a structured decision record |
 | `/plan` | Create or update a project plan (collaborative, not auto-generated) |
-| `/dashboard` | Overview of all active projects (shared and personal) |
+| `/dashboard` | Overview of all active projects across all locations |
 | `/update` | Draft a status update or report for stakeholders |
-| `/sync` | Sync the shared team repo — pull, commit, push |
+| `/sync` | Sync team repos — pull, commit, push |
 
 ### Notebook & Thinking
 
@@ -84,7 +84,7 @@ Personal scratch pad and notebook entries are gitignored by default. They never 
 
 ## Autonomy Modes
 
-Set `autonomy` in `.ddt/config.md`:
+Set `mode` in `.ddt/config.md`:
 
 - **supervised** — pauses before creating/modifying artifacts, asks for confirmation
 - **gated** (default) — works autonomously on artifact creation, pauses for cross-project changes or deletions
@@ -132,4 +132,4 @@ To pull the latest templates from the toolkit repo (preserves your data and conf
 /path/to/office-work-assistant-agent/bootstrap/init-workspace.sh --update .
 ```
 
-This refreshes system files (CLAUDE.md, skills, commands, this README) without touching user files (config, profile, norms, projects, scratch pad).
+This refreshes system files (CLAUDE.md, skills, commands, hooks, this README) without touching user files (config, profile, norms, registry, settings.json, projects, scratch pad).

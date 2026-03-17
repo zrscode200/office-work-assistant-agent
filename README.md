@@ -29,7 +29,7 @@ The assistant helps with:
 |------|---------|-----------|
 | **This repo** (office-work-assistant-agent) | Source of templates. Clone it, run the bootstrap script, done. You only need it again to pull updates. | Yes |
 | **Your workspace** | The directory you bootstrap. This is where you open Claude Code and do your work. Git-initialized by the script if it isn't already. | Yes |
-| **Shared team repo** | A plain git repo with a `projects/` folder. Multiple people point their workspaces at it for shared project artifacts. | Only for team collaboration |
+| **Team repo(s)** | A plain git repo with a `projects/` folder. Multiple people point their workspaces at it for shared project artifacts. You can configure multiple — one per team. | Only for team collaboration |
 
 After bootstrapping, your workspace has no dependency on this repo — all templates are copied into the target directory.
 
@@ -108,7 +108,7 @@ Note: writing to a team repo always requires user confirmation, regardless of au
 
 | Command | Description |
 |---------|-------------|
-| `/new-project` | Scaffold a new project (shared or personal) |
+| `/new-project` | Scaffold a new project (personal or team) |
 | `/status` | View or update a project's status |
 | `/meeting` | Capture a meeting summary |
 | `/decide` | Create a structured decision record |

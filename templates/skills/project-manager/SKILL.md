@@ -20,7 +20,7 @@ Based on what the user needs, identify the action and follow the corresponding c
 | Needs to plan work, break down tasks, or think through approach | `/plan` |
 | Needs to communicate project status to others | `/update` |
 | Wants to see across all projects | `/dashboard` |
-| Wants to sync, pull, or push the shared team repo | `/sync` |
+| Wants to sync, pull, or push team repos | `/sync` |
 | Wants to archive or close a completed project | `/status` (lifecycle transition) |
 
 Read the corresponding command file for detailed instructions on how to handle each case. The commands define the behavior — this skill handles routing to the right one.

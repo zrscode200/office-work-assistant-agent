@@ -23,8 +23,8 @@ Stamps a target directory with the office work assistant agent:
   - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
 
 Options:
-  --update    Update system files (CLAUDE.md, skill, commands) in an existing workspace.
-              User files (.ddt/config.md, profile.md, norms.md, projects/) are never touched.
+  --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
+              User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/) are never touched.
 
 If no path is given, the current directory is used.
 Existing files are never overwritten unless --update is specified.
@@ -234,7 +234,7 @@ fi
 if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
-Update complete. System files (CLAUDE.md, skills, commands) have been refreshed.
+Update complete. System files (CLAUDE.md, skills, commands, hooks) have been refreshed.
 User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/, scratch/.index.md) were not touched.
 EOF
 else
