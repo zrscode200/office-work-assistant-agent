@@ -4,6 +4,13 @@ description: Set up a new work assistant workspace — guided step by step
 
 Guide the user through creating and configuring a new work assistant workspace. Be friendly and patient — the user may be new to Claude Code.
 
+## Important: How to ask questions
+
+- **For personal info (name, role, team, responsibilities, etc.):** Ask directly as a free-text question. Do NOT present assumed options — you don't know the user's name, role, or team. Just ask and let them type.
+- **For known choices (autonomy mode, yes/no):** Present the actual options.
+- **Always include "Skip for now" where the field is optional.** The user can fill in details later by editing the files directly.
+- **Never add a "let me type" / "type something different" / "I'll enter my own" option.** The option selection UI already has a built-in text input at the bottom ("Type something"). Adding an explicit option for this is redundant. Only present real, meaningful options.
+
 ## Step 1: Welcome and prerequisites
 
 Tell the user:
@@ -20,12 +27,7 @@ Check prerequisites by running:
 
 ## Step 2: Choose workspace location
 
-Ask: "Where would you like your workspace? Give me a path, or I can suggest one."
-
-Suggestions if they're unsure:
-- `~/work-assistant`
-- `~/workspace`
-- A subdirectory of wherever they keep projects
+Ask where they want their workspace. Present exactly one option: `~/work-assistant-agent`. No other path suggestions — if the user wants a different location, they can type it.
 
 Validate:
 - If the path exists and already has `.ddt/` or `CLAUDE.md`, tell them it looks like an existing workspace and suggest `/update-target` instead.
@@ -40,55 +42,46 @@ Show the output. If it fails, help diagnose (missing directory, permission issue
 
 ## Step 4: Configure profile
 
-Tell the user: "Let's fill in your profile so the assistant knows how to help you."
+Tell the user: "Let's fill in your profile so the assistant knows how to help you. This helps it tailor responses to your role."
 
-Walk through each field conversationally — don't dump all questions at once. Ask one or two at a time:
+Ask these as direct free-text questions — no option menus. Group naturally:
 
 1. "What's your name?"
-2. "What's your role? (e.g., engineering manager, product designer, project lead)"
-3. "What team are you on?"
-4. "What organization? (company or division — optional, skip if you prefer)"
-5. "Who's your manager? (optional)"
-6. "What are your main responsibilities? Give me a few bullet points."
-7. "What are you focused on right now? Any key projects or initiatives?"
-8. "Any key stakeholders I should know about? (people you work with regularly)"
-9. "Anything else about how you work — communication style, recurring meetings, team dynamics? (optional)"
+2. "What's your role and team?" (e.g., "engineering manager on the platform team")
+3. "Organization or company? (optional — skip if you prefer)"
+4. "What are your main responsibilities? A few bullet points is fine."
+
+That's it for profile. Don't ask about manager, current focus, or stakeholders — the user can add those later by editing `.ddt/profile.md`.
 
 After gathering answers, write them into `<workspace>/.ddt/profile.md`. Show the user the result.
 
 ## Step 5: Configure workspace settings
 
-Ask: "What's your preference for how autonomous the assistant should be?"
+Explain the three autonomy modes simply, then present them as options:
 
-Explain the three modes simply:
-- **Supervised** — "I'll ask before creating or changing anything. Good if you want full control."
-- **Gated** (default) — "I'll work freely on creating artifacts but pause before making cross-project changes or deletions. Good balance for most people."
-- **Autonomous** — "I'll work freely and only pause when something is genuinely ambiguous. Good if you trust the workflow and want speed."
+- **Supervised** — "Asks before creating or changing anything. Full control."
+- **Gated** (default) — "Works freely on artifacts, pauses for cross-project changes. Good balance."
+- **Autonomous** — "Works freely, only pauses when genuinely ambiguous. Fast."
 
-Update `<workspace>/.ddt/config.md` with their name (owner field) and chosen mode. Set created date to today.
+This is a real choice with known options — present as options.
+
+Update `<workspace>/.ddt/config.md` with their name (owner field), chosen mode, and today's date.
 
 ## Step 6: Team repos (optional)
 
-Ask: "Do you work with any teams that have shared git repos for project collaboration? (If not, skip this — you can always add team repos later.)"
+Ask: "Do you work with any teams that have shared git repos for project collaboration? You can always add these later."
+
+Present as options: "Yes, I have team repos to add" / "No, skip for now"
 
 If yes, for each team repo:
-1. Ask for the team name (e.g., "design-team", "platform")
-2. Ask if they've already cloned it locally. If not, ask for the clone URL and help them clone it:
-   - Suggest a path: `~/repos/<team-name>`
-   - Run: `git clone <url> <path>`
-3. Verify the repo has a `projects/` directory. If not, offer to create one:
-   - `mkdir -p <path>/projects`
-   - `git -C <path> add projects/.gitkeep && git -C <path> commit -m "Add projects directory" && git -C <path> push`
-4. Add the entry to `<workspace>/.ddt/config.md` under Team Repos: `<team-name>: <path>`
-5. Ask: "Any more team repos?"
+1. Ask for the team name (free text — e.g., "design-team", "platform")
+2. Ask if they've already cloned it locally, or need to clone it:
+   - If not cloned: ask for the clone URL, suggest a path like `~/repos/<team-name>`, clone it
+3. Verify the repo has a `projects/` directory. If not, offer to create one and push it.
+4. Add the entry to `<workspace>/.ddt/config.md` under Team Repos
+5. Ask: "Any more team repos to add?" — options: "Yes, add another" / "No, that's all"
 
-## Step 7: Review team norms (optional)
-
-Tell the user: "Your workspace has default team norms in `.ddt/norms.md` — principles like 'decisions are documented' and 'action items have owners.' Want to review or customize them now, or skip and do it later?"
-
-If they want to customize, read the current norms, discuss with the user, and update.
-
-## Step 8: Summary
+## Step 7: Summary
 
 Show a summary:
 
@@ -109,7 +102,9 @@ Show a summary:
 > - "new project: <something>" to create your first project
 > - "what can you help me with?" for an overview
 > - Any of these commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /sync, /jot, /brainstorm, /notebook
+>
+> You can always refine your profile, norms, and config later by editing the files in `.ddt/`.
 
 ## Tone
 
-Friendly, patient, and encouraging. Avoid jargon where possible. Explain "why" briefly when configuring things ("This helps the assistant tailor its responses to your role"). Don't rush — let the user drive the pace.
+Friendly, patient, and encouraging. Avoid jargon where possible. Explain "why" briefly when configuring things. Don't rush — let the user drive the pace.
