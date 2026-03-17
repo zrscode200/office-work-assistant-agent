@@ -48,14 +48,20 @@ Ask these as direct free-text questions — no option menus. Group naturally:
 
 1. "What's your name?"
 2. "What's your role and team?" (e.g., "engineering manager on the platform team")
-3. "Organization or company? (optional — skip if you prefer)"
-4. "What are your main responsibilities? A few bullet points is fine."
-
-That's it for profile. Don't ask about manager, current focus, or stakeholders — the user can add those later by editing `.ddt/profile.md`.
+3. "What are your main responsibilities? A few bullet points is fine."
+4. "Anything else that helps the assistant understand how you work — what you care about, your communication style, recurring meetings, team dynamics, or anything else relevant. No format required."
 
 After gathering answers, write them into `<workspace>/.ddt/profile.md`. Show the user the result.
 
-## Step 5: Configure workspace settings
+## Step 5: Team norms (optional)
+
+Tell the user: "You can set team norms — working principles the assistant will follow when creating artifacts. Things like preferred meeting note format, how decisions should be documented, communication style, or any team conventions."
+
+Ask: "Any team norms or working principles to add? You can always edit `.ddt/norms.md` later."
+
+If the user provides norms, write them into `<workspace>/.ddt/norms.md`. Show the user the result.
+
+## Step 6: Configure workspace settings
 
 Explain the three autonomy modes simply, then present them as options:
 
@@ -67,7 +73,7 @@ This is a real choice with known options — present as options.
 
 Update `<workspace>/.ddt/config.md` with their name (owner field), chosen mode, and today's date.
 
-## Step 6: Team repos (optional)
+## Step 7: Team repos (optional)
 
 Ask: "Do you work with any teams that have shared git repos for project collaboration? You can always add these later."
 
@@ -81,7 +87,7 @@ If yes, for each team repo:
 4. Add the entry to `<workspace>/.ddt/config.md` under Team Repos
 5. Ask: "Any more team repos to add?" — options: "Yes, add another" / "No, that's all"
 
-## Step 7: Summary
+## Step 8: Summary
 
 Show a summary:
 
