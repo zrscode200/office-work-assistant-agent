@@ -11,7 +11,7 @@ Workspace artifacts live in a `.ddt/` directory (short for **d**ocument, **d**ec
 You bootstrap a target directory with a `CLAUDE.md` operating manual, `.ddt/` workspace structure, skills at `.claude/skills/`, and slash commands at `.claude/commands/`. When you open Claude Code in that directory, two skills auto-trigger based on what you're doing:
 
 - **project-manager** — activates when you talk about projects, meetings, decisions, status, or planning
-- **muse** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
+- **think-partner** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
 
 The assistant helps with:
 - **Document** — meeting summaries, decision records, project context
@@ -62,7 +62,7 @@ This stamps the target directory with:
 - `.ddt/projects/` — where personal project artifacts live
 - `.ddt/personal/notebook/` — private notebook for ideas and brainstorms (gitignored)
 - `.ddt/personal/scratch/` — private scratch space (gitignored)
-- `.claude/skills/` — auto-triggering skills (project-manager, muse)
+- `.claude/skills/` — auto-triggering skills (project-manager, think-partner)
 - `.claude/commands/` — slash commands for common operations
 
 Then fill in `.ddt/profile.md` with your info and open Claude Code.
@@ -151,7 +151,7 @@ your-workspace/
   .claude/
     skills/
       project-manager/SKILL.md           # PM skill (routes to project commands)
-      muse/SKILL.md                      # thinking partner skill (routes to notebook commands)
+      think-partner/SKILL.md              # thinking partner skill
     commands/
       new-project.md, status.md, meeting.md, decide.md,
       plan.md, dashboard.md, update.md, sync.md,
@@ -182,7 +182,7 @@ office-work-assistant-agent/
     skills/
       project-manager/
         SKILL.md                         # project manager skill
-      muse/
+      think-partner/
         SKILL.md                         # thinking partner skill
     commands/
       new-project.md, status.md, meeting.md, decide.md,

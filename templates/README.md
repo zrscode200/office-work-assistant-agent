@@ -12,7 +12,7 @@ This directory is a Claude Code workspace for documenting, tracking, planning, a
 Two skills auto-trigger based on what you're doing:
 
 - **project-manager** — activates when you talk about projects, meetings, decisions, status, or planning
-- **muse** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
+- **think-partner** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
 
 You don't need to invoke skills directly. Describe what you need and the assistant routes to the right one.
 
@@ -67,7 +67,7 @@ You don't need to invoke skills directly. Describe what you need and the assista
 .claude/
   skills/                              # auto-triggering skills (managed by bootstrap)
     project-manager/SKILL.md
-    muse/SKILL.md
+    think-partner/SKILL.md
   commands/                            # slash commands (managed by bootstrap)
     new-project.md, status.md, meeting.md, decide.md,
     plan.md, dashboard.md, update.md, sync.md,

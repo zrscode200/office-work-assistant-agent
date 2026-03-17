@@ -16,7 +16,7 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
   - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
-  - .claude/skills/muse/ (auto-triggering thinking partner skill)
+  - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
   - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
 
 Options:
@@ -74,7 +74,7 @@ for file in \
   "$REPO_ROOT/templates/norms.md" \
   "$REPO_ROOT/templates/gitignore" \
   "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
-  "$REPO_ROOT/templates/skills/muse/SKILL.md"; do
+  "$REPO_ROOT/templates/skills/think-partner/SKILL.md"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing template file: $file" >&2
     exit 1
@@ -92,7 +92,7 @@ mkdir -p "$TARGET_DIR/.ddt/personal/scratch"
 mkdir -p "$TARGET_DIR/.claude/commands"
 mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
-mkdir -p "$TARGET_DIR/.claude/skills/muse"
+mkdir -p "$TARGET_DIR/.claude/skills/think-partner"
 
 # Copy a file, skipping if it already exists
 copy_if_missing() {
@@ -148,9 +148,9 @@ $copy_fn "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
   ".claude/skills/project-manager/SKILL.md"
 
-$copy_fn "$REPO_ROOT/templates/skills/muse/SKILL.md" \
-  "$TARGET_DIR/.claude/skills/muse/SKILL.md" \
-  ".claude/skills/muse/SKILL.md"
+$copy_fn "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
+  "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
+  ".claude/skills/think-partner/SKILL.md"
 
 # Slash commands
 for cmd in "$REPO_ROOT/templates/commands/"*.md; do

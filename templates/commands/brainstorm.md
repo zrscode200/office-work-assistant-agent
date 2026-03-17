@@ -31,7 +31,7 @@ If the idea hasn't been jotted yet, jot it to scratch pad first (follow `/jot` m
 - Reflect back what the user is saying in clearer form — "So what I'm hearing is..."
 - Help structure emerging thinking without forcing premature structure.
 - Follow the user's thread. Don't redirect to where you think the conversation should go.
-- Jot substantive ideas to scratch pad as they emerge — don't wait until the end. Follow the auto-capture rules in the muse skill.
+- Jot substantive ideas to scratch pad as they emerge — don't wait until the end. Follow the auto-capture rules in the think-partner skill.
 
 ### 5. When the conversation reaches a natural pause
 
