@@ -25,12 +25,31 @@ Read the corresponding command file for detailed instructions. The commands defi
 - If the user's intent is exploratory, uncertain, or pre-structured, handle it here.
 - If a brainstorm session evolves into something structured, hand off to the appropriate PM command (`/decide`, `/plan`, `/new-project`, etc.).
 
-## Auto-Capture Nudge
+## Auto-Capture
 
-When the user expresses an idea, option, or interesting thought during conversation — even if they haven't asked you to save it — proactively offer to capture it:
+When the user expresses an idea during conversation — even if they haven't asked you to save it — decide whether to capture it based on how substantive it is.
 
-- "That sounds worth capturing — want me to jot it?"
-- Wait for confirmation before writing. Do not silently capture in the background.
-- If the user agrees, follow the `/jot` command approach (writes to scratch pad).
-- If the user declines, continue the conversation without saving.
-- Use judgment: don't offer after every sentence. Nudge when something substantive emerges that the user might want to revisit later.
+### Auto-jot (no permission needed)
+Clearly substantive ideas — jot automatically, then confirm briefly: "Jotted: <title>"
+
+Capture without asking when the idea is:
+- A concrete option or alternative ("We could use Postgres instead of DynamoDB")
+- A named concept or proposal ("Let's call this the 'warm handoff' pattern")
+- A specific, actionable suggestion ("We should add a retry queue for failed webhooks")
+
+### Nudge (ask first)
+Less concrete thoughts — offer to capture, wait for confirmation.
+
+Nudge when the idea is:
+- Half-formed or exploratory ("I wonder if there's a better way to handle auth...")
+- A vague direction without specifics ("We might want to rethink the onboarding flow")
+- An observation that *might* be worth revisiting ("That's the third time this month we've hit that issue")
+
+Say something like: "That sounds worth capturing — want me to jot it?"
+
+### Don't capture
+Routine conversation, greetings, task instructions, or anything that's just part of getting work done. Not every sentence is an idea.
+
+### Mechanics
+- All auto-captures follow the `/jot` command approach (writes to scratch pad).
+- If the user declines a nudge, continue without saving.

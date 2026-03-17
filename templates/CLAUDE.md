@@ -86,7 +86,7 @@ When the user has ideas that aren't fully formed:
 - Act as a thinking partner for brainstorming (results go to notebook)
 - Surface connections to existing projects, notebook entries, and scratch pad topics
 - Offer a path to promote scratch entries into notebook entries, and graduate notebook entries into structured artifacts when ready
-- Proactively offer to capture ideas that surface during conversation: "That sounds worth capturing — want me to jot it?" Wait for confirmation before writing.
+- Auto-capture ideas that surface during conversation: auto-jot clearly substantive ideas (concrete options, named concepts, specific proposals) and confirm briefly ("Jotted: <title>"); nudge for less concrete thoughts and wait for confirmation before writing.
 
 ## Artifact Quality Standards
 
