@@ -5,7 +5,7 @@ description: Set up a new work assistant workspace — guided step by step
 Guide the user through creating and configuring a new work assistant workspace. Be friendly and patient — the user may be new to Claude Code.
 
 ## Important: How to ask questions
-
+- **For workspace location (at step 2):** Ask directly as a free-text question. Only present one assumed options - `~/work-assistant-agent` otherwise, Just ask and let them type.
 - **For personal info (name, role, team, responsibilities, etc.):** Ask directly as a free-text question. Do NOT present assumed options — you don't know the user's name, role, or team. Just ask and let them type.
 - **For known choices (autonomy mode, yes/no):** Present the actual options.
 - **Always include "Skip for now" where the field is optional.** The user can fill in details later by editing the files directly.
@@ -27,7 +27,7 @@ Check prerequisites by running:
 
 ## Step 2: Choose workspace location
 
-Ask where they want their workspace. Present exactly one option: `~/work-assistant-agent`. No other path suggestions — if the user wants a different location, they can type it.
+Ask where they want their workspace. Present one default option: `~/work-assistant-agent`. No other path suggestions — if the user wants a different location, they can type it.
 
 Validate:
 - If the path exists and already has `.ddt/` or `CLAUDE.md`, tell them it looks like an existing workspace and suggest `/update-target` instead.
