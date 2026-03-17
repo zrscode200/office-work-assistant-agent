@@ -38,6 +38,7 @@ Present a summary per repo:
 - Run `git -C <repo-path> pull`
 - Report what came in: number of commits, files changed
 - If conflicts arise, list the conflicted files and advise the user to resolve them manually in the repo directory
+- With `--all`: pull each repo in sequence, report results per repo. Stop and report if any repo has conflicts.
 
 ### 5. If the user says "push"
 
@@ -47,6 +48,7 @@ Present a summary per repo:
 - On confirmation: run `git -C <repo-path> push`
 - If push fails (remote has new changes), run `git -C <repo-path> pull --rebase` and retry once. If that fails, notify the user.
 - Report success or failure
+- With `--all`: confirm once for all repos, then push each in sequence. Report results per repo.
 
 ### 6. If the user says "commit"
 
@@ -55,6 +57,7 @@ Present a summary per repo:
 - Ask the user to confirm or edit the message
 - Run `git -C <repo-path> add <changed files>` and `git -C <repo-path> commit -m "<message>"`
 - Report what was committed
+- With `--all`: show pending changes per repo, suggest a message for each, confirm all at once.
 
 ## Tone
 

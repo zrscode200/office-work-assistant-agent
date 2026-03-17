@@ -14,7 +14,7 @@ Show a dashboard of all projects.
 | Project | Location | Health | Recent Progress | Top Blocker | Next Milestone |
 |---------|----------|--------|-----------------|-------------|----------------|
 
-   - Location is [shared] or [personal]
+   - Location is the team repo name (e.g., [design-team]) or [personal]
    - If no team repos are configured, omit the Location column
 
 5. If there are **completed** projects, show them in a separate "Recently completed" section (name, location, completion date). Keep it brief.
@@ -23,5 +23,5 @@ Show a dashboard of all projects.
    - Any projects that are **blocked** or **at-risk**
    - **Stale** projects (no artifact changes in 2+ weeks)
    - Overdue action items (check meeting notes for deadlines)
-   - **Unregistered shared projects** (if any): "Found N shared projects not in your registry: [names]. Interact with them or run `/status <name>` to register."
+   - **Unregistered team projects** (if any): "Found N projects not in your registry: [names] in [team-repo]. Interact with them or run `/status <name>` to register."
 8. Keep it scannable. This is a quick-glance view, not a deep dive.

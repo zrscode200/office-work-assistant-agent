@@ -20,7 +20,7 @@ Create a new project in the workspace.
 6. Determine the project root:
    - If personal: `.ddt/projects/<name>/`
    - If a team repo: look up the repo path in `.ddt/config.md`, then `<path>/projects/<name>/`
-7. If shared, follow the Shared Write Protocol (pull first).
+7. If in a team repo, follow the Shared Write Protocol (pull first).
 8. Create the following files at the project root:
 
 **`<project-root>/overview.md`** with:
@@ -37,5 +37,5 @@ Create a new project in the workspace.
 - Empty blockers and risks sections
 
 9. Register the project in `.ddt/registry.md`: add a row with the name, location (`personal` or the team repo name), status `active`, and today's date.
-10. If shared, complete the Shared Write Protocol (show changes, confirm, commit, push).
-11. Report what was created, note whether it's shared or personal, and suggest next steps (e.g., "fill in the overview", "run /plan to break this into tasks").
+10. If in a team repo, complete the Shared Write Protocol (show changes, confirm, commit, push).
+11. Report what was created, note the location (personal or team repo name), and suggest next steps (e.g., "review the overview", "run /plan to break this into tasks").

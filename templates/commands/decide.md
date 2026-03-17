@@ -12,7 +12,7 @@ Document a decision.
    - Context: what prompted this
    - Options considered
    - What was chosen (or help the user think through it)
-3. If the project is shared, follow the **Shared Write Protocol** in CLAUDE.md (pull first).
+3. If the project is in a team repo, follow the **Shared Write Protocol** in CLAUDE.md (pull first).
 4. Create `<project-root>/decisions/<decision-name>.md` with:
    - **Date:** YYYY-MM-DD
    - **Status:** decided / pending / revisited
@@ -25,5 +25,5 @@ Document a decision.
    - **Rationale:** why this option over others
    - **Participants:** who was involved in making this decision
    - **Revisit if:** conditions that would warrant reopening this decision
-5. If the project is shared, complete the Shared Write Protocol (show changes, confirm, commit, push).
+5. If the project is in a team repo, complete the Shared Write Protocol (show changes, confirm, commit, push).
 6. If the decision is still pending (user is thinking it through), set status to "pending" and help structure the options and tradeoffs.
