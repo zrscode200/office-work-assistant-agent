@@ -12,7 +12,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
 
 ```
 .ddt/
-  config.md                         # workspace settings (includes team_repo path)
+  config.md                         # workspace settings (autonomy mode, team repos)
   profile.md                        # who you're helping (role, team, context)
   norms.md                          # team working principles
   registry.md                       # project registry (all known projects)
@@ -36,20 +36,20 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
     notebook/
       YYYY-MM-DD-<slug>.md          # developed notebook entries (thoughts, ideas, brainstorms)
 
-# If team_repo is configured in .ddt/config.md:
-<team_repo>/
-  projects/                         # SHARED projects (team-visible, git-synced)
+# For each team repo configured in .ddt/config.md:
+<repo-path>/
+  projects/                         # team projects (visible to that team, git-synced)
     <project-name>/
       overview.md, status.md, plan.md
       decisions/, meetings/, updates/
 ```
 
-### Shared vs. Personal
+### Personal vs. Team Projects
 
 - **Personal projects** live in `.ddt/projects/`. Only you can see them.
-- **Shared projects** live in `<team_repo>/projects/`. Anyone with access to the shared repo can see them.
-- **Scratch pad entries, notebook entries, draft communications** are always personal. They never go to the shared repo.
-- If `team_repo` is not set in `.ddt/config.md`, everything is personal. The system works the same as without team collaboration.
+- **Team projects** live in a team repo's `projects/` folder. Anyone with access to that repo can see them. Multiple team repos can be configured — one per team.
+- **Scratch pad entries, notebook entries, draft communications** are always personal. They never go to a team repo.
+- If no team repos are configured in `.ddt/config.md`, everything is personal.
 
 ### Naming Conventions
 - Project folders: lowercase kebab-case (`cloud-migration`, `q2-budget`, `api-redesign`)
@@ -124,7 +124,7 @@ When the user has ideas that aren't fully formed:
 - If the project doesn't exist yet and the user is clearly describing one, scaffold it with `/new-project`.
 - If you're unsure which project something belongs to, ask.
 - If a request is ambiguous about scope or audience, ask.
-- When creating a new project, if `team_repo` is configured, ask whether the project should be shared or personal.
+- When creating a new project, if team repos are configured, ask where the project should live (personal or which team repo).
 
 ### Working with existing artifacts
 - Read existing project artifacts before responding to questions about a project.
@@ -132,7 +132,7 @@ When the user has ideas that aren't fully formed:
 - Never overwrite a decision record. If a decision is revisited, create a new one referencing the old.
 - Resolve projects using the Project Resolution Protocol. Never scan directories directly.
 - If the registry and filesystem disagree, trust the registry but flag the discrepancy to the user.
-- Never write shared project content to the personal workspace or vice versa.
+- Never write team project content to the personal workspace or vice versa. Never move artifacts between team repos.
 - After creating or completing a project, update `.ddt/registry.md`.
 
 ### Tone
@@ -148,19 +148,19 @@ When a command needs to find a project:
 2. Find the row matching the project name.
 3. If found, derive the path from location:
    - `personal` → `.ddt/projects/<name>/`
-   - `shared` → `<team_repo>/projects/<name>/`
-4. If not found, scan `<team_repo>/projects/` (if configured) for unregistered shared projects:
-   - Found → auto-register in `.ddt/registry.md` (location: shared, status: active, created: today). Return.
+   - A team repo name → look up its path in `.ddt/config.md`, then `<path>/projects/<name>/`
+4. If not found, scan all configured team repo paths for unregistered projects:
+   - Found → auto-register in `.ddt/registry.md` (location: the team repo name, status: active, created: today). Return.
    - Not found → tell the user: "No project named '<name>'. Known projects: [list from registry]."
-5. If the user provides no project name, list active projects from the registry labeled [shared] / [personal] and ask which one.
+5. If the user provides no project name, list active projects from the registry labeled with their location and ask which one.
 
 ## Shared Write Protocol
 
-When writing to a project whose location is `shared` in the registry. Personal projects skip this — write files directly.
+When writing to a project whose location is a team repo name in the registry. Personal projects skip this — write files directly. Derive the repo path from the team repos section in `.ddt/config.md`.
 
 ### Before writing
 
-1. `git -C <team_repo> pull` to get latest changes.
+1. `git -C <repo-path> pull` to get latest changes.
 2. New commits pulled → tell the user, summarize if relevant to the current project.
 3. Merge conflict → stop. List conflicted files, advise manual resolution.
 
@@ -169,8 +169,8 @@ When writing to a project whose location is `shared` in the registry. Personal p
 1. Show the user what was written — file path and content summary.
 2. Ask: "Ready to commit and push? Changes: [summary]"
 3. Wait for user confirmation. Non-negotiable regardless of autonomy mode.
-4. `git -C <team_repo> add <files>`, `git -C <team_repo> commit -m "<message>"`, `git -C <team_repo> push`
-5. Push fails → `git -C <team_repo> pull --rebase`, retry once. Still fails → notify user.
+4. `git -C <repo-path> add <files>`, `git -C <repo-path> commit -m "<message>"`, `git -C <repo-path> push`
+5. Push fails → `git -C <repo-path> pull --rebase`, retry once. Still fails → notify user.
 6. Confirm: "Committed and pushed: [commit message]"
 
 ### Commit message patterns

@@ -235,6 +235,6 @@ Setup complete. Next steps:
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
 - Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /sync, /jot, /brainstorm, /notebook
-- For team collaboration: set team_repo in .ddt/config.md to the path of your shared team repo clone
+- For team collaboration: add team repos to the Team Repos section in .ddt/config.md
 EOF
 fi

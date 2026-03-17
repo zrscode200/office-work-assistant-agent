@@ -43,7 +43,7 @@ You don't need to invoke skills directly. Describe what you need and the assista
 
 ```
 .ddt/
-  config.md                            # workspace settings + team_repo path
+  config.md                            # workspace settings (autonomy mode, team repos)
   profile.md                           # your role, team, context
   norms.md                             # team working principles
   registry.md                          # project registry (tracks all projects)
@@ -87,30 +87,33 @@ Set `autonomy` in `.ddt/config.md`:
 - **gated** (default) — works autonomously on artifact creation, pauses for cross-project changes or deletions
 - **autonomous** — runs freely, pauses only for ambiguity
 
-Writing to the shared team repo always requires confirmation, regardless of mode.
+Writing to a team repo always requires confirmation, regardless of mode.
 
 ## Team Collaboration
 
-Projects can be **personal** (local only) or **shared** (stored in a team git repo).
+Projects can be **personal** (local only) or **team** (stored in a team git repo). You can configure multiple team repos — one per team.
 
-To enable team collaboration:
+To add a team repo:
 
-1. Clone your team's shared repo: `git clone <team-repo-url> /path/to/ddt-shared`
-2. Set `team_repo: /path/to/ddt-shared` in `.ddt/config.md`
+1. Clone the team's shared repo: `git clone <team-repo-url> /path/to/team-shared`
+2. Add it to the Team Repos section in `.ddt/config.md`:
+   ```
+   team-name: /path/to/team-shared
+   ```
 
 Once configured:
-- `/new-project` asks whether a project should be shared or personal
-- The assistant reads from the shared repo for context (always live)
-- When writing to shared projects, the assistant pulls first, writes, then asks you to confirm before committing and pushing
-- `/sync` gives you manual control over pull/push/commit
-- `/dashboard` shows projects from both locations
-- Personal artifacts (notebook, scratch) never go to the shared repo
+- `/new-project` asks where a project should live (personal or which team)
+- The assistant reads from team repos for context (always live)
+- When writing to team projects, the assistant pulls first, writes, then asks you to confirm before committing and pushing
+- `/sync` gives you manual control over pull/push/commit for each repo
+- `/dashboard` shows projects from all locations
+- Personal artifacts (notebook, scratch) never go to a team repo
 
-The shared repo is a plain git data repo — just a `projects/` folder, no agent config needed.
+Each team repo is a plain git data repo — just a `projects/` folder, no agent config needed.
 
 ## Conventions
 
-- **Project registry:** `.ddt/registry.md` tracks all known projects (personal and shared)
+- **Project registry:** `.ddt/registry.md` tracks all known projects (personal and team)
 - **Project folders:** lowercase kebab-case (`cloud-migration`, `q2-budget`)
 - **Meeting files:** `YYYY-MM-DD-<topic>.md` (e.g., `2026-03-12-kickoff.md`)
 - **Decision files:** descriptive kebab-case (e.g., `vendor-selection.md`)

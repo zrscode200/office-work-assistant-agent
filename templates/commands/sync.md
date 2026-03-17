@@ -1,51 +1,59 @@
 ---
-description: Sync the shared team repo — pull changes, review pending work, push commits
+description: Sync team repos — pull changes, review pending work, push commits
 ---
 
-Manage synchronization with the shared team repo.
+Manage synchronization with team repos.
 
 ## Instructions
 
 ### 1. Check configuration
 
-Read `.ddt/config.md` and look for the `team_repo` field. If not set or blank, tell the user:
-"No shared team repo is configured. Set `team_repo: /path/to/clone` in `.ddt/config.md` to enable team collaboration."
+Read `.ddt/config.md` for configured team repos. If none are configured, tell the user:
+"No team repos configured. Add repos to the Team Repos section in `.ddt/config.md`."
 
-### 2. If no arguments — show sync status
+### 2. Determine which repo
 
-Run these checks on the team repo at `<team_repo>`:
+- If a team repo name was provided as an argument, use it.
+- If only one team repo is configured, use it.
+- If multiple are configured and no name given:
+  - For status (no sub-command): show a brief summary for each repo.
+  - For pull/push/commit: ask which repo, or accept `--all` to operate on all.
 
-- `git -C <team_repo> status` — are there uncommitted changes?
-- `git -C <team_repo> fetch` then compare local vs remote — are there unpushed commits? Are there remote changes to pull?
+### 3. If no sub-command — show sync status
 
-Present a summary:
-- **Repo path:** `<team_repo>`
+For each targeted repo, run these checks:
+
+- `git -C <repo-path> status` — are there uncommitted changes?
+- `git -C <repo-path> fetch` then compare local vs remote — are there unpushed commits? Are there remote changes to pull?
+
+Present a summary per repo:
+- **Repo:** `<team-name>` (`<repo-path>`)
 - **Branch:** current branch
 - **Uncommitted changes:** none / list of changed files
 - **Unpushed commits:** none / N commits (list summaries)
 - **Remote changes available:** none / N commits to pull
 
-### 3. If the user says "pull"
+### 4. If the user says "pull"
 
-- Run `git -C <team_repo> pull`
+- Run `git -C <repo-path> pull`
 - Report what came in: number of commits, files changed
-- If conflicts arise, list the conflicted files and advise the user to resolve them manually in the shared repo directory
+- If conflicts arise, list the conflicted files and advise the user to resolve them manually in the repo directory
 
-### 4. If the user says "push"
+### 5. If the user says "push"
 
 - First check for uncommitted changes — if any, ask whether to commit them first
 - Show unpushed commits
-- Ask for confirmation: "Ready to push N commits to the shared repo. Proceed?"
-- On confirmation: run `git -C <team_repo> push`
-- If push fails (remote has new changes), run `git -C <team_repo> pull --rebase` and retry once. If that fails, notify the user.
+- Ask for confirmation: "Ready to push N commits to <team-name>. Proceed?"
+- On confirmation: run `git -C <repo-path> push`
+- If push fails (remote has new changes), run `git -C <repo-path> pull --rebase` and retry once. If that fails, notify the user.
 - Report success or failure
 
-### 5. If the user says "commit"
+### 6. If the user says "commit"
 
-- Show `git -C <team_repo> diff` and `git -C <team_repo> status`
+- Show `git -C <repo-path> diff` and `git -C <repo-path> status`
 - Suggest a commit message based on the changed files (e.g., "Update status: project-x, Add meeting: project-y")
 - Ask the user to confirm or edit the message
-- Run `git -C <team_repo> add <changed files>` and `git -C <team_repo> commit -m "<message>"`
+- Run `git -C <repo-path> add <changed files>` and `git -C <repo-path> commit -m "<message>"`
 - Report what was committed
 
 ## Tone

@@ -7,7 +7,7 @@ Show a dashboard of all projects.
 ## Instructions
 
 1. Read `.ddt/registry.md` for all registered projects.
-2. Read `.ddt/config.md`. If `team_repo` is configured, scan `<team_repo>/projects/` for directories not in the registry. Note any as "unregistered shared".
+2. Read `.ddt/config.md`. For each configured team repo, scan its `projects/` directory for projects not in the registry. Note any as unregistered, along with which team repo they're in.
 3. For each **active** project in the registry, read `status.md` and `overview.md`.
 4. Present the active projects as a summary table:
 
@@ -15,7 +15,7 @@ Show a dashboard of all projects.
 |---------|----------|--------|-----------------|-------------|----------------|
 
    - Location is [shared] or [personal]
-   - If `team_repo` is not configured, omit the Location column
+   - If no team repos are configured, omit the Location column
 
 5. If there are **completed** projects, show them in a separate "Recently completed" section (name, location, completion date). Keep it brief.
 6. Omit **archived** projects unless the user asks for them.

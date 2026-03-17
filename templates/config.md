@@ -14,12 +14,12 @@ Options:
 owner: [your name]
 created: [date]
 
-## Team Collaboration
+## Team Repos
 
-team_repo:
-
-<!-- Set this to the absolute path of your local clone of the shared team repo.
-     Example: team_repo: /Users/yourname/repos/ddt-shared
-     When set, shared projects are read from and written to this repo.
-     When blank, all projects are personal (stored in .ddt/projects/).
-     The shared repo should be a plain git repo with a projects/ folder at the root. -->
+<!-- Add team repos below. Each line: name: /absolute/path/to/local/clone
+     Example:
+       design-team: /Users/yourname/repos/design-shared
+       platform: /Users/yourname/repos/platform-shared
+     Names should be lowercase kebab-case.
+     Each repo should be a plain git repo with a projects/ folder at the root.
+     When no repos are listed, all projects are personal. -->

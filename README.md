@@ -70,22 +70,25 @@ Then fill in `.ddt/profile.md` with your info and open Claude Code.
 
 ## Team Collaboration
 
-Projects can be **personal** (local only) or **shared** (stored in a team git repo).
+Projects can be **personal** (local only) or **team** (stored in a team git repo). You can configure multiple team repos — one per team.
 
-To enable team collaboration:
+To add a team repo:
 
-1. Clone your team's shared repo: `git clone <team-repo-url> /path/to/ddt-shared`
-2. Set `team_repo: /path/to/ddt-shared` in `.ddt/config.md`
+1. Clone the team's shared repo: `git clone <team-repo-url> /path/to/team-shared`
+2. Add it to the Team Repos section in `.ddt/config.md`:
+   ```
+   team-name: /path/to/team-shared
+   ```
 
 Once configured:
-- `/new-project` asks whether a project should be shared or personal
-- The agent reads from the shared repo for context (always live)
-- When writing to shared projects, the agent pulls first, writes, then asks you to confirm before committing and pushing
-- `/sync` gives you manual control over pull/push/commit
-- `/dashboard` shows projects from both locations
-- Personal artifacts (notebook, scratch) never go to the shared repo
+- `/new-project` asks where a project should live (personal or which team)
+- The agent reads from team repos for context (always live)
+- When writing to team projects, the agent pulls first, writes, then asks you to confirm before committing and pushing
+- `/sync` gives you manual control over pull/push/commit for each repo
+- `/dashboard` shows projects from all locations
+- Personal artifacts (notebook, scratch) never go to a team repo
 
-The shared repo is a plain git data repo — just a `projects/` folder, no agent config needed.
+Each team repo is a plain git data repo — just a `projects/` folder, no agent config needed.
 
 ## Autonomy Modes
 
@@ -95,7 +98,7 @@ Set in `.ddt/config.md`:
 - **gated** (default) — works autonomously on artifact creation, pauses for cross-project changes or deletions
 - **autonomous** — runs freely, pauses only for ambiguity
 
-Note: writing to the shared team repo always requires user confirmation, regardless of autonomy mode.
+Note: writing to a team repo always requires user confirmation, regardless of autonomy mode.
 
 ## Slash Commands
 
@@ -108,9 +111,9 @@ Note: writing to the shared team repo always requires user confirmation, regardl
 | `/meeting` | Capture a meeting summary |
 | `/decide` | Create a structured decision record |
 | `/plan` | Create or update a project plan (collaborative, not auto-generated) |
-| `/dashboard` | Overview of all active projects (shared and personal) |
+| `/dashboard` | Overview of all active projects across all locations |
 | `/update` | Draft a status update or report for stakeholders |
-| `/sync` | Sync the shared team repo — pull, commit, push |
+| `/sync` | Sync team repos — pull, commit, push |
 
 ### Notebook & Thinking
 
@@ -129,7 +132,7 @@ your-workspace/
   README.md                              # workspace guide (structure, commands, conventions)
   CLAUDE.md                              # agent operating manual
   .ddt/
-    config.md                            # workspace settings + team_repo path
+    config.md                            # workspace settings (autonomy mode, team repos)
     profile.md                           # your role, team, context
     norms.md                             # team working principles
     registry.md                          # project registry (tracks all projects)
@@ -159,9 +162,9 @@ your-workspace/
       plan.md, dashboard.md, update.md, sync.md,
       jot.md, brainstorm.md, notebook.md
 
-# If team_repo is configured:
-/path/to/ddt-shared/                     # separate git repo, cloned locally
-  projects/                              # shared projects (team-visible)
+# For each team repo configured in .ddt/config.md:
+/path/to/team-shared/                    # separate git repo, cloned locally
+  projects/                              # team projects (visible to that team)
     <project-name>/
       overview.md, status.md, plan.md
       decisions/, meetings/, updates/
