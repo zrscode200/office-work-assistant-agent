@@ -29,8 +29,9 @@ EOF
 }
 
 UPDATE_MODE=false
+TARGET_INPUT=""
 
-# Parse flags
+# Parse flags and positional args in any order
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
@@ -39,15 +40,15 @@ while [ $# -gt 0 ]; do
       ;;
     --update)
       UPDATE_MODE=true
-      shift
       ;;
     *)
-      break
+      TARGET_INPUT="$1"
       ;;
   esac
+  shift
 done
 
-TARGET_INPUT="${1:-.}"
+TARGET_INPUT="${TARGET_INPUT:-.}"
 
 if [ ! -d "$TARGET_INPUT" ]; then
   echo "Error: target directory does not exist: $TARGET_INPUT" >&2
