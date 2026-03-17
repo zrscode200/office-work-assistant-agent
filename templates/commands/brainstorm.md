@@ -17,6 +17,7 @@ Help the user explore and develop an idea through conversation. You are a thinki
 - Read `.ddt/profile.md` for the user's role and perspective.
 - If the topic references a project, read relevant project artifacts for context.
 - Check `.ddt/personal/notebook/` for related past entries — surface connections if you find them.
+- Check `.ddt/personal/scratch/.index.md` for active scratch entries related to the topic — surface connections if you find them.
 
 ### 3. Think with the user
 
