@@ -13,7 +13,7 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/norms.md (team working principles)
   - .ddt/projects/ (where project artifacts live)
   - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
-  - .ddt/personal/scratch/ (private scratch space, gitignored)
+  - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/skills/muse/ (auto-triggering thinking partner skill)
   - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
@@ -190,6 +190,17 @@ if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" ]; then
   echo "create: .ddt/personal/scratch/.gitkeep"
 fi
 
+# Scratch pad index
+if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.index.md" ]; then
+  cat > "$TARGET_DIR/.ddt/personal/scratch/.index.md" <<'INDEXEOF'
+# Scratch Pad Index
+
+| File | Topic | Status | Promoted To |
+|------|-------|--------|-------------|
+INDEXEOF
+  echo "create: .ddt/personal/scratch/.index.md"
+fi
+
 # Init git if not already a repo
 if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$TARGET_DIR" init
@@ -200,7 +211,7 @@ if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
 Update complete. System files (CLAUDE.md, skills, commands) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, projects/, notebook/) were not touched.
+User files (.ddt/config.md, profile.md, norms.md, projects/, scratch/.index.md) were not touched.
 EOF
 else
   cat <<'EOF'
