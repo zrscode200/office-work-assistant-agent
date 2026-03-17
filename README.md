@@ -17,7 +17,7 @@ The assistant helps with:
 - **Document** — meeting summaries, decision records, project context
 - **Track** — project status, blockers, risks, action items
 - **Plan** — task breakdowns, milestones, dependencies
-- **Think** — capture ideas, brainstorm interactively, develop thoughts over time
+- **Think** — capture ideas to a scratch pad, brainstorm interactively, develop thoughts into notebook entries over time
 
 ## What You'll Need
 
@@ -114,9 +114,9 @@ Note: writing to the shared team repo always requires user confirmation, regardl
 
 | Command | Description |
 |---------|-------------|
-| `/jot` | Quick-capture a thought to the notebook |
+| `/jot` | Quick-capture a thought to the scratch pad |
 | `/brainstorm` | Think through an idea interactively |
-| `/notebook` | Browse, revisit, and manage notebook entries |
+| `/notebook` | Browse scratch pad and notebook, promote entries, manage thinking |
 
 ## Workspace Structure
 
@@ -141,9 +141,11 @@ your-workspace/
         updates/
           YYYY-MM-DD.md                  # status updates / reports
     personal/
-      notebook/                          # ideas and brainstorms (gitignored)
+      scratch/                           # quick-capture scratch pad (gitignored)
+        .index.md                        # manifest tracking entries and promotion status
+        YYYY-MM-DD-HHMM-<slug>.md       # sticky notes
+      notebook/                          # developed ideas and brainstorms (gitignored)
         YYYY-MM-DD-<slug>.md             # notebook entries
-      scratch/                           # unstructured scratch space (gitignored)
   .claude/
     skills/
       project-manager/SKILL.md           # PM skill (routes to project commands)
