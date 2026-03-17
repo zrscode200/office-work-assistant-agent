@@ -5,11 +5,12 @@ description: Set up a new work assistant workspace — guided step by step
 Guide the user through creating and configuring a new work assistant workspace. Be friendly and patient — the user may be new to Claude Code.
 
 ## Important: How to ask questions
-- **For workspace location (at step 2):** Ask directly as a free-text question. Only present one assumed options - `~/work-assistant-agent` otherwise, Just ask and let them type.
-- **For personal info (name, role, team, responsibilities, etc.):** Ask directly as a free-text question. Do NOT present assumed options — you don't know the user's name, role, or team. Just ask and let them type.
-- **For known choices (autonomy mode, yes/no):** Present the actual options.
-- **Always include "Skip for now" where the field is optional.** The user can fill in details later by editing the files directly.
-- **Never add a "let me type" / "type something different" / "I'll enter my own" option.** The option selection UI already has a built-in text input at the bottom ("Type something"). Adding an explicit option for this is redundant. Only present real, meaningful options.
+
+Every question MUST use `AskUserQuestion` to present an option menu. No exceptions.
+
+- **Workspace location (Step 2):** The only question without "Skip for now" — it's required to continue. Present `~/work-assistant-agent` as the default option; the user can type a different path.
+- **All other questions:** Always include "Skip for now" as an option. For free-text questions (name, role, etc.), "Skip for now" is the only option — the user types their answer or clicks skip. For known choices (autonomy mode, yes/no), present the real options plus "Skip for now".
+- **Never add a "let me type" / "type something different" / "I'll enter my own" option.** The UI already has a built-in text input. Only present real, meaningful options.
 
 ## Step 1: Welcome and prerequisites
 
@@ -27,7 +28,7 @@ Check prerequisites by running:
 
 ## Step 2: Choose workspace location
 
-Ask where they want their workspace. Present one default option: `~/work-assistant-agent`. No other path suggestions — if the user wants a different location, they can type it.
+Use AskUserQuestion with one option: `~/work-assistant-agent`. The user can pick it or type a different path. No "Skip for now" — this is required to continue.
 
 Validate:
 - If the path exists and already has `.ddt/` or `CLAUDE.md`, tell them it looks like an existing workspace and suggest `/update-target` instead.
@@ -44,7 +45,7 @@ Show the output. If it fails, help diagnose (missing directory, permission issue
 
 Tell the user: "Let's fill in your profile so the assistant knows how to help you. This helps it tailor responses to your role."
 
-Ask these as direct free-text questions — no option menus. Group naturally:
+Ask each question one at a time using AskUserQuestion with "Skip for now" as the only option:
 
 1. "What's your name?"
 2. "What's your role and team?" (e.g., "engineering manager on the platform team")
@@ -57,27 +58,26 @@ After gathering answers, write them into `<workspace>/.ddt/profile.md`. Show the
 
 Tell the user: "You can set team norms — working principles the assistant will follow when creating artifacts. Things like preferred meeting note format, how decisions should be documented, communication style, or any team conventions."
 
-Ask: "Any team norms or working principles to add? You can always edit `.ddt/norms.md` later."
+Use AskUserQuestion with "Skip for now" as the only option: "Any team norms or working principles to add? You can always edit `.ddt/norms.md` later."
 
 If the user provides norms, write them into `<workspace>/.ddt/norms.md`. Show the user the result.
 
 ## Step 6: Configure workspace settings
 
-Explain the three autonomy modes simply, then present them as options:
+Explain the three autonomy modes simply, then use AskUserQuestion with these options:
 
 - **Supervised** — "Asks before creating or changing anything. Full control."
 - **Gated** (default) — "Works freely on artifacts, pauses for cross-project changes. Good balance."
 - **Autonomous** — "Works freely, only pauses when genuinely ambiguous. Fast."
-
-This is a real choice with known options — present as options.
+- **Skip for now** (defaults to gated)
 
 Update `<workspace>/.ddt/config.md` with their name (owner field), chosen mode, and today's date.
 
 ## Step 7: Team repos (optional)
 
-Ask: "Do you work with any teams that have shared git repos for project collaboration? You can always add these later."
+Use AskUserQuestion: "Do you work with any teams that have shared git repos for project collaboration? You can always add these later."
 
-Present as options: "Yes, I have team repos to add" / "No, skip for now"
+Options: "Yes, I have team repos to add" / "Skip for now"
 
 If yes, for each team repo:
 1. Ask for the team name (free text — e.g., "design-team", "platform")
@@ -105,9 +105,7 @@ Show a summary:
 > ```
 >
 > **Try saying:**
-> - "new project: <something>" to create your first project
-> - "what can you help me with?" for an overview
-> - Any of these commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /sync, /jot, /brainstorm, /notebook
+> - once open claude in `<path>`, there is a tutorial program by using "/self-tour" command
 >
 > You can always refine your profile, norms, and config later by editing the files in `.ddt/`.
 
