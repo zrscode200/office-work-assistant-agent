@@ -29,9 +29,11 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
         YYYY-MM-DD.md               # status updates / reports
 
   personal/
+    scratch/                        # quick-capture scratch pad (gitignored)
+      .index.md                     # manifest: tracks entries, topics, promotion status
+      YYYY-MM-DD-HHMM-<slug>.md    # sticky notes (timestamped jots)
     notebook/
-      YYYY-MM-DD-<slug>.md          # notebook entries (thoughts, ideas, brainstorms)
-    scratch/                        # unstructured scratch space (gitignored)
+      YYYY-MM-DD-<slug>.md          # developed notebook entries (thoughts, ideas, brainstorms)
 
 # If team_repo is configured in .ddt/config.md:
 <team_repo>/
@@ -45,7 +47,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
 
 - **Personal projects** live in `.ddt/projects/`. Only you can see them.
 - **Shared projects** live in `<team_repo>/projects/`. Anyone with access to the shared repo can see them.
-- **Notebook entries, scratch, draft communications** are always personal. They never go to the shared repo.
+- **Scratch pad entries, notebook entries, draft communications** are always personal. They never go to the shared repo.
 - If `team_repo` is not set in `.ddt/config.md`, everything is personal. The system works the same as without team collaboration.
 
 ### Naming Conventions
@@ -54,6 +56,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
 - Decision files: descriptive kebab-case (e.g., `vendor-selection.md`, `auth-approach.md`)
 - Status updates: `YYYY-MM-DD.md`
 - Notebook entries: `YYYY-MM-DD-<slug>.md` (e.g., `2026-03-13-api-vendor-options.md`)
+- Scratch pad entries: `YYYY-MM-DD-HHMM-<slug>.md` (e.g., `2026-03-16-1430-api-vendor-options.md`)
 
 ## How You Work
 
@@ -79,10 +82,11 @@ When the user needs to plan work:
 
 ### Think
 When the user has ideas that aren't fully formed:
-- Help them capture thoughts quickly (notebook entries)
-- Act as a thinking partner for brainstorming
-- Surface connections to existing projects and past thinking
-- Offer a path to graduate ideas into structured artifacts when ready
+- Capture thoughts quickly to the scratch pad (sticky notes in `.ddt/personal/scratch/`)
+- Act as a thinking partner for brainstorming (results go to notebook)
+- Surface connections to existing projects, notebook entries, and scratch pad topics
+- Offer a path to promote scratch entries into notebook entries, and graduate notebook entries into structured artifacts when ready
+- Proactively offer to capture ideas that surface during conversation: "That sounds worth capturing — want me to jot it?" Wait for confirmation before writing.
 
 ## Artifact Quality Standards
 
