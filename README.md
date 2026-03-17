@@ -54,6 +54,7 @@ To update an existing workspace with latest templates (preserves your data):
 ```
 
 This stamps the target directory with:
+- `README.md` — workspace guide (structure, commands, conventions)
 - `CLAUDE.md` — agent operating manual
 - `.ddt/config.md` — workspace settings, autonomy mode, and team repo config
 - `.ddt/profile.md` — your profile (role, team, context)
@@ -124,6 +125,7 @@ After bootstrapping, your workspace looks like:
 
 ```
 your-workspace/
+  README.md                              # workspace guide (structure, commands, conventions)
   CLAUDE.md                              # agent operating manual
   .ddt/
     config.md                            # workspace settings + team_repo path
@@ -171,6 +173,7 @@ office-work-assistant-agent/
   bootstrap/
     init-workspace.sh                    # one-command setup script (supports --update)
   templates/
+    README.md                            # workspace guide template
     CLAUDE.md                            # agent operating manual template
     config.md                            # workspace config template
     profile.md                           # user profile template

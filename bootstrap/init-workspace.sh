@@ -7,6 +7,7 @@ Usage:
   bootstrap/init-workspace.sh [--update] /path/to/target-dir
 
 Stamps a target directory with the office work assistant agent:
+  - README.md (workspace guide — structure, commands, conventions)
   - CLAUDE.md (agent operating manual — project management assistant)
   - .ddt/config.md (workspace settings and autonomy mode)
   - .ddt/profile.md (user profile template — role, team, context)
@@ -65,6 +66,7 @@ fi
 
 # Validate required template files
 for file in \
+  "$REPO_ROOT/templates/README.md" \
   "$REPO_ROOT/templates/CLAUDE.md" \
   "$REPO_ROOT/templates/config.md" \
   "$REPO_ROOT/templates/profile.md" \
@@ -133,6 +135,9 @@ if [ "$UPDATE_MODE" = true ]; then
 else
   copy_fn="copy_if_missing"
 fi
+
+# README.md
+$copy_fn "$REPO_ROOT/templates/README.md" "$TARGET_DIR/README.md" "README.md"
 
 # CLAUDE.md
 $copy_fn "$REPO_ROOT/templates/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
