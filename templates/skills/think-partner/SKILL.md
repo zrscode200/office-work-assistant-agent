@@ -50,7 +50,15 @@ When the user wants to think something through:
 - Don't solve for the user — help them think.
 
 ### Capture along the way
-As substantive ideas surface during the conversation, capture them to scratch pad using `/jot` mechanics. This is a natural part of the conversation, not a separate step. Confirm briefly ("Jotted: <title>") and keep going.
+During exploration, actively jot to the scratch pad when any of these occur — without waiting for the user to ask:
+- The user articulates a clear insight, conclusion, or realization ("so the real issue is...", "I think what I want is...")
+- A concrete idea, option, or approach is named ("we could do X", "what if we tried Y")
+- A constraint, risk, or assumption becomes explicit ("the problem with that is...", "we'd need to...")
+- The user makes a decision or rules something out
+
+To jot: read `.ddt/personal/scratch/.index.md`, append to a matching active entry if one exists (same-day preferred), otherwise create a new file `YYYY-MM-DD-HHMM-<slug>.md`. Update the index if a new file was created. Confirm inline with "Jotted: <title>" and continue the conversation without breaking stride.
+
+Don't jot every exchange — only when something substantive and worth keeping has been stated. If it's unclear whether something has crystallized enough to jot, ask briefly: "Want me to capture that?"
 
 ### At a natural pause
 If the thinking has matured, suggest next steps without pushing:
