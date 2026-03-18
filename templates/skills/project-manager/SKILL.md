@@ -13,7 +13,7 @@ Based on what the user needs, identify the action and follow the corresponding c
 
 | User intent | Command to follow |
 |---|---|
-| Describes new work that should be tracked | `/new-project` |
+| Wants to create a new project, or explore and define a new project idea | `/new-project` |
 | Describes a meeting or shares notes | `/meeting` |
 | Describes a decision or asks to document one | `/decide` |
 | Discusses progress, blockers, or asks about status | `/status` |
