@@ -61,13 +61,21 @@ To jot: read `.ddt/personal/scratch/.index.md`, append to a matching active entr
 Don't jot every exchange — only when something substantive and worth keeping has been stated. If it's unclear whether something has crystallized enough to jot, ask briefly: "Want me to capture that?"
 
 ### At a natural pause
-If the thinking has matured, suggest next steps without pushing:
-- "Want me to write this up as a notebook entry?" → `/notebook` promotion
-- "This sounds like a decision — want to document it?" → `/decide`
-- "This could feed into the plan for X" → `/plan`
-- "This might be worth tracking as a project" → `/new-project`
+A natural pause is when: the user reaches a conclusion, the conversation winds
+down, or they signal closure ("okay I think I know what to do", "that helps",
+"good enough for now").
 
-If inconclusive or unfinished, everything stays as scratch pad entries. That's fine — not every conversation needs to produce an artifact.
+At that point, look at what was captured and suggest promotion only if the
+signal is clear — one suggestion, not a menu:
+
+- **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting
+- **Decision record** → a choice was made or needs to be locked in with rationale
+- **Plan** → a concrete sequence of actions or milestones became clear
+- **New project** → a scope, goal, and rough outcome are all identifiable
+
+If none of these fit clearly, don't suggest anything. Scratch pad is the right
+home for thinking that's still forming — not every conversation needs to
+produce a structured artifact.
 
 ## Notebook
 

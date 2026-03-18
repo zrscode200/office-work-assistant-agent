@@ -1,0 +1,36 @@
+{
+	"folders": [
+		{
+			"name": "Claude-ppt-agent-",
+			"path": "../../../Claude-ppt-agent-"
+		},
+		{
+			"name": "test_ppt_agent",
+			"path": "../../../../internal_AI/Ray_work/testings/test_ppt_agent"
+		},
+		{
+			"name": "office-work-assistant-agent",
+			"path": "../.."
+		},
+		{
+			"name": "office_agent_test_1",
+			"path": "../../../../internal_AI/Ray_work/testings/office_agent_test_1"
+		},
+		{
+			"name": "office_agent_test_2",
+			"path": "../../../../internal_AI/Ray_work/testings/office_agent_test_2"
+		},
+		{
+			"name": "claude-viz-agent",
+			"path": "../../../claude-viz-agent"
+		},
+		{
+			"name": "agentic-sdd-system",
+			"path": "../../../agentic-sdd-system"
+		},
+		{
+			"path": "../../../../internal_AI/Ray_work/testings/test-DDT-Projects-agent-system"
+		}
+	],
+	"settings": {}
+}

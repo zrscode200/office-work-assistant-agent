@@ -104,8 +104,8 @@ Show a summary:
 > claude
 > ```
 >
-> **Try saying:**
-> - once open claude in `<path>`, there is a tutorial program by using "/self-tour" command
+> **In the actual assistant agent workspace DIR:**
+> - open claude in `<path>`, there is a tutorial program by using "/self-tour" command
 >
 > You can always refine your profile, norms, and config later by editing the files in `.ddt/`.
 

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Claude-ppt-agent-"
+		},
+		{
+			"path": "../claude-viz-agent"
+		}
+	]
+}
