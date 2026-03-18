@@ -68,10 +68,10 @@ down, or they signal closure ("okay I think I know what to do", "that helps",
 At that point, look at what was captured and suggest promotion only if the
 signal is clear — one suggestion, not a menu:
 
-- **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting
-- **Decision record** → a choice was made or needs to be locked in with rationale
-- **Plan** → a concrete sequence of actions or milestones became clear
-- **New project** → a scope, goal, and rough outcome are all identifiable
+- **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting → `/notebook`
+- **Decision record** → a choice was made or needs to be locked in with rationale → `/decide`
+- **Plan** → a concrete sequence of actions or milestones became clear → `/plan`
+- **New project** → a scope, goal, and rough outcome are all identifiable → `/new-project`
 
 If none of these fit clearly, don't suggest anything. Scratch pad is the right
 home for thinking that's still forming — not every conversation needs to
