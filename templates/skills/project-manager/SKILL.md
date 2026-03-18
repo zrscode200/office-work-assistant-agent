@@ -16,12 +16,12 @@ Based on what the user needs, identify the action and follow the corresponding c
 | Wants to create a new project, or explore and define a new project idea | `/new-project` |
 | Describes a meeting or shares notes | `/meeting` |
 | Describes a decision or asks to document one | `/decide` |
-| Discusses progress, blockers, or asks about status | `/status` |
-| Needs to plan work, break down tasks, or think through approach | `/plan` |
-| Needs to communicate project status to others | `/update` |
+| Discusses progress, blockers, or asks about status | `/project-status` |
+| Needs to plan work, break down tasks, or think through approach | `/project-scoping` |
+| Needs to communicate project status to others | `/create-project-update` |
 | Wants to see across all projects | `/dashboard` |
 | Wants to sync, pull, or push team repos | `/sync` |
-| Wants to archive or close a completed project | `/status` (lifecycle transition) |
+| Wants to archive or close a completed project | `/project-status` (lifecycle transition) |
 
 Read the corresponding command file for detailed instructions on how to handle each case. The commands define the behavior — this skill handles routing to the right one.
 

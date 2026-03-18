@@ -23,5 +23,5 @@ Show a dashboard of all projects.
    - Any projects that are **blocked** or **at-risk**
    - **Stale** projects (no artifact changes in 2+ weeks)
    - Overdue action items (check meeting notes for deadlines)
-   - **Unregistered team projects** (if any): "Found N projects not in your registry: [names] in [team-repo]. Interact with them or run `/status <name>` to register."
+   - **Unregistered team projects** (if any): "Found N projects not in your registry: [names] in [team-repo]. Interact with them or run `/project-status <name>` to register."
 8. Keep it scannable. This is a quick-glance view, not a deep dive.

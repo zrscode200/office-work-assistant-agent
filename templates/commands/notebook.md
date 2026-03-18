@@ -73,7 +73,7 @@ Support filtering by:
 
 When the user wants to turn a notebook entry into a structured artifact:
 1. Ask what it should become: decision record, plan input, meeting prep, project overview, etc.
-2. Suggest the appropriate command: `/decide`, `/plan`, `/new-project`, etc.
+2. Suggest the appropriate command: `/decide`, `/project-scoping`, `/new-project`, etc.
 3. After the artifact is created, update the notebook entry:
    - Set status to `graduated`
    - Set `graduated_to:` to the path of the new artifact

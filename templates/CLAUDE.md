@@ -198,9 +198,9 @@ If a team repo pull fails (diverged history, conflicts), do not proceed with rea
 
 Projects in `.ddt/registry.md` have a status: `active`, `completed`, or `archived`.
 
-- **active → completed**: When `/status` sets health to `completed`, also update the registry status to `completed`.
+- **active → completed**: When `/project-status` sets health to `completed`, also update the registry status to `completed`.
 - **completed → archived**: When the user asks to archive, or during `/dashboard` cleanup. Archived projects are hidden from default views.
-- **archived → active**: User explicitly reactivates via `/status`.
+- **archived → active**: User explicitly reactivates via `/project-status`.
 
 `/dashboard` shows active projects by default, completed in a "Recently completed" section, archived only when the user requests it.
 

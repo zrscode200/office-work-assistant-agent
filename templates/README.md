@@ -23,12 +23,12 @@ You don't need to invoke skills directly. Describe what you need and the assista
 | Command | Description |
 |---------|-------------|
 | `/new-project` | Scaffold a new project (personal or team) |
-| `/status` | View or update a project's status |
+| `/project-status` | View or update a project's status |
 | `/meeting` | Capture a meeting summary |
 | `/decide` | Create a structured decision record |
-| `/plan` | Create or update a project plan (collaborative, not auto-generated) |
+| `/project-scoping` | Create or update a project plan (collaborative, not auto-generated) |
 | `/dashboard` | Overview of all active projects across all locations |
-| `/update` | Draft a status update or report for stakeholders |
+| `/create-project-update` | Draft a status update or report for stakeholders |
 | `/sync` | Sync team repos — pull, commit, push |
 
 ### Notebook & Thinking
@@ -70,8 +70,8 @@ You don't need to invoke skills directly. Describe what you need and the assista
     project-manager/SKILL.md
     think-partner/SKILL.md
   commands/                            # slash commands (managed by bootstrap)
-    new-project.md, status.md, meeting.md, decide.md,
-    plan.md, dashboard.md, update.md, sync.md,
+    new-project.md, project-status.md, meeting.md, decide.md,
+    project-scoping.md, dashboard.md, create-project-update.md, sync.md,
     jot.md, brainstorm.md, notebook.md
   hooks/
     session-sync.sh                    # auto-syncs team repos on session start

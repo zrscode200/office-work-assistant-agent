@@ -43,7 +43,7 @@ When a topic comes up that matches something from the background scan, surface i
 
 If yes: read the full entry and weave relevant content into the conversation. If no: continue without it.
 
-**Name check:** when a project name becomes clear during the conversation, check `.ddt/registry.md` immediately. If it already exists, tell the user: "Project '<name>' already exists [location, status]. Did you mean /status?" and stop.
+**Name check:** when a project name becomes clear during the conversation, check `.ddt/registry.md` immediately. If it already exists, tell the user: "Project '<name>' already exists [location, status]. Did you mean /project-status?" and stop.
 
 ### 3. Transition to synthesis
 
@@ -124,7 +124,7 @@ Add a row to `.ddt/registry.md`: name, location (`personal` or team repo name), 
 
 ### 6. Report
 
-What was created, where it lives, and suggested next steps — e.g., "run /plan to break this into tasks", "fill in stakeholders when you know them".
+What was created, where it lives, and suggested next steps — e.g., "run /project-scoping to break this into tasks", "fill in stakeholders when you know them".
 
 ---
 

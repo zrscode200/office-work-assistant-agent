@@ -20,7 +20,7 @@ Stamps a target directory with the office work assistant agent:
   - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
   - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
   - .claude/settings.json (hook configuration — never overwritten on update)
-  - .claude/commands/ (slash commands: new-project, status, meeting, decide, plan, dashboard, update, jot, brainstorm, notebook)
+  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, dashboard, create-project-update, jot, brainstorm, notebook)
 
 Options:
   --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
@@ -246,7 +246,7 @@ Setup complete. Next steps:
 - Edit .ddt/config.md to set your name and autonomy mode
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /status, /meeting, /decide, /plan, /dashboard, /update, /sync, /jot, /brainstorm, /notebook
+- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook
 - For team collaboration: add team repos to the Team Repos section in .ddt/config.md
 EOF
 fi

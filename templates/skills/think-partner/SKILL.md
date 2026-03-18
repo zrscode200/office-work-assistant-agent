@@ -70,7 +70,7 @@ signal is clear — one suggestion, not a menu:
 
 - **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting → `/notebook`
 - **Decision record** → a choice was made or needs to be locked in with rationale → `/decide`
-- **Plan** → a concrete sequence of actions or milestones became clear → `/plan`
+- **Plan** → a concrete sequence of actions or milestones became clear → `/project-scoping`
 - **New project** → a scope, goal, and rough outcome are all identifiable → `/new-project`
 
 If none of these fit clearly, don't suggest anything. Scratch pad is the right
