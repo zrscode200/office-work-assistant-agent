@@ -19,6 +19,7 @@ Stamps a target directory with the office work assistant agent:
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
   - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
+  - .claude/dashboard/template.html (HTML template for visual project dashboard)
   - .claude/settings.json (hook configuration — never overwritten on update)
   - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, dashboard, create-project-update, jot, brainstorm, notebook)
 
@@ -80,6 +81,7 @@ for file in \
   "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
   "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
   "$REPO_ROOT/templates/hooks/session-sync.sh" \
+  "$REPO_ROOT/templates/dashboard/template.html" \
   "$REPO_ROOT/templates/settings.json"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing template file: $file" >&2
@@ -96,6 +98,7 @@ fi
 mkdir -p "$TARGET_DIR/.ddt/projects"
 mkdir -p "$TARGET_DIR/.ddt/personal/scratch"
 mkdir -p "$TARGET_DIR/.claude/commands"
+mkdir -p "$TARGET_DIR/.claude/dashboard"
 mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
 mkdir -p "$TARGET_DIR/.claude/skills/think-partner"
@@ -170,6 +173,11 @@ for cmd in "$REPO_ROOT/templates/commands/"*.md; do
   cmd_name=$(basename "$cmd")
   $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
 done
+
+# Dashboard template
+$copy_fn "$REPO_ROOT/templates/dashboard/template.html" \
+  "$TARGET_DIR/.claude/dashboard/template.html" \
+  ".claude/dashboard/template.html"
 
 # --- User files (never overwritten, even with --update) ---
 
