@@ -18,49 +18,72 @@
     .header {
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: #fff;
-      padding: 28px 32px;
+      padding: 24px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
     .header .meta { font-size: 13px; opacity: 0.65; margin-top: 4px; }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { opacity: 0.7; }
+    .btn-refresh { background: rgba(255,255,255,0.15); color: #fff; }
+    .btn-refresh.loading { opacity: 0.5; pointer-events: none; }
+    .btn-refresh .spin { display: inline-block; }
+    .btn-refresh.loading .spin { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Layout ── */
-    .container { max-width: 1140px; margin: 0 auto; padding: 28px 24px; }
+    .container { max-width: 1140px; margin: 0 auto; padding: 24px; }
 
     /* ── Alerts ── */
-    .alerts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .alerts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
     .alert {
       padding: 10px 16px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
-    .alert-blocked   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
-    .alert-at-risk   { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
-    .alert-stale     { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+    .alert-blocked      { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert-at-risk      { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .alert-stale        { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
     .alert-unregistered { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
 
     /* ── Stats ── */
     .stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 14px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
     }
     .stat-card {
       background: #fff;
       border-radius: 12px;
-      padding: 20px;
+      padding: 18px;
       text-align: center;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: box-shadow 0.15s, transform 0.15s;
+      border: 2px solid transparent;
     }
-    .stat-card .number { font-size: 36px; font-weight: 700; line-height: 1.1; }
-    .stat-card .label  { font-size: 12px; color: #6b7280; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1); transform: translateY(-1px); }
+    .stat-card.selected { border-color: #1a1a2e; }
+    .stat-card .number { font-size: 32px; font-weight: 700; line-height: 1.1; }
+    .stat-card .label  { font-size: 11px; color: #6b7280; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
     .c-total   .number { color: #1a1a2e; }
     .c-track   .number { color: #059669; }
     .c-risk    .number { color: #d97706; }
@@ -68,7 +91,7 @@
 
     /* ── Section titles ── */
     .section-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       margin-bottom: 14px;
       color: #374151;
@@ -80,8 +103,8 @@
     .projects-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 14px;
-      margin-bottom: 36px;
+      gap: 12px;
+      margin-bottom: 32px;
     }
     .project-card {
       background: #fff;
@@ -89,7 +112,7 @@
       padding: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
       border-left: 4px solid #e5e7eb;
-      transition: box-shadow 0.15s ease;
+      transition: box-shadow 0.15s;
     }
     .project-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
     .project-card.h-on-track { border-left-color: #059669; }
@@ -100,7 +123,7 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .project-name { font-size: 15px; font-weight: 600; color: #111827; }
 
@@ -118,19 +141,11 @@
     .b-at-risk  { background: #ffedd5; color: #9a3412; }
     .b-blocked  { background: #fee2e2; color: #991b1b; }
     .b-location {
-      background: #f3f4f6;
-      color: #6b7280;
-      font-size: 10px;
-      margin-left: 6px;
-      vertical-align: middle;
+      background: #f3f4f6; color: #6b7280;
+      font-size: 10px; margin-left: 6px; vertical-align: middle;
     }
 
-    .detail {
-      font-size: 13px;
-      color: #4b5563;
-      margin-bottom: 6px;
-      line-height: 1.45;
-    }
+    .detail { font-size: 13px; color: #4b5563; margin-bottom: 5px; line-height: 1.45; }
     .detail strong { color: #374151; font-weight: 600; }
     .detail.blocker { color: #b91c1c; }
     .detail.updated { color: #9ca3af; font-size: 12px; margin-top: 8px; margin-bottom: 0; }
@@ -141,7 +156,7 @@
       border-radius: 12px;
       padding: 12px 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
     .completed-item {
       display: flex;
@@ -155,17 +170,16 @@
     .completed-item .name { font-weight: 500; color: #374151; }
     .completed-item .date { color: #9ca3af; font-size: 12px; }
 
-    /* ── Empty state ── */
-    .empty-state {
+    /* ── Empty / loading ── */
+    .empty-state, .loading-state {
       text-align: center;
       padding: 56px 24px;
       color: #9ca3af;
       font-size: 14px;
       background: #fff;
       border-radius: 12px;
-      margin-bottom: 36px;
+      margin-bottom: 32px;
     }
-    .empty-state .icon { font-size: 32px; margin-bottom: 12px; }
 
     /* ── Footer ── */
     .footer {
@@ -178,12 +192,15 @@
 </head>
 <body>
 
-<script id="dashboard-data" type="application/json">__DASHBOARD_DATA__</script>
-
 <div class="header">
   <div>
     <h1>Project Dashboard</h1>
-    <div class="meta" id="header-meta"></div>
+    <div class="meta" id="header-meta">Loading...</div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-refresh" id="btn-refresh" onclick="refresh()">
+      <span class="spin">&#x21bb;</span> Refresh
+    </button>
   </div>
 </div>
 
@@ -193,7 +210,9 @@
 
   <div id="active-section">
     <div class="section-title">Active Projects</div>
-    <div class="projects-grid" id="active-projects"></div>
+    <div class="projects-grid" id="active-projects">
+      <div class="loading-state">Loading dashboard data...</div>
+    </div>
   </div>
 
   <div id="completed-section" style="display:none">
@@ -208,75 +227,132 @@
 
 <script>
 (function () {
-  var raw = document.getElementById('dashboard-data').textContent;
-  var data = JSON.parse(raw);
+  var currentFilter = 'all';
+  var currentData = null;
 
-  /* Header */
-  var ts = new Date(data.generated).toLocaleString();
-  document.getElementById('header-meta').textContent = data.owner + ' \u2022 ' + ts;
-  document.getElementById('footer-time').textContent = ts;
+  // ── Fetch & render ───────────────────────────────────────
 
-  var active    = (data.projects && data.projects.active) || [];
-  var completed = (data.projects && data.projects.completed) || [];
-  var alerts    = data.alerts || {};
+  window.refresh = function () {
+    var btn = document.getElementById('btn-refresh');
+    btn.classList.add('loading');
+    fetch('/api/data')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        currentData = data;
+        render(data);
+      })
+      .catch(function (err) {
+        document.getElementById('active-projects').innerHTML =
+          '<div class="empty-state">Failed to load data.<br>' + esc(err.message) + '</div>';
+      })
+      .finally(function () { btn.classList.remove('loading'); });
+  };
 
-  /* Stats */
-  var onTrack = active.filter(function (p) { return p.health === 'on-track'; }).length;
-  var atRisk  = active.filter(function (p) { return p.health === 'at-risk'; }).length;
-  var blocked = active.filter(function (p) { return p.health === 'blocked'; }).length;
+  function render(data) {
+    // Header
+    var ts = new Date(data.generated).toLocaleString();
+    document.getElementById('header-meta').textContent = data.owner + ' \u2022 ' + ts;
+    document.getElementById('footer-time').textContent = ts;
 
-  document.getElementById('stats').innerHTML =
-    '<div class="stat-card c-total"><div class="number">' + active.length + '</div><div class="label">Active</div></div>' +
-    '<div class="stat-card c-track"><div class="number">' + onTrack + '</div><div class="label">On Track</div></div>' +
-    '<div class="stat-card c-risk"><div class="number">' + atRisk + '</div><div class="label">At Risk</div></div>' +
-    '<div class="stat-card c-blocked"><div class="number">' + blocked + '</div><div class="label">Blocked</div></div>';
+    var active    = (data.projects && data.projects.active) || [];
+    var completed = (data.projects && data.projects.completed) || [];
+    var alerts    = data.alerts || {};
 
-  /* Alerts */
-  var ah = '';
-  if (alerts.blocked && alerts.blocked.length)
-    ah += '<div class="alert alert-blocked">Blocked: ' + alerts.blocked.join(', ') + '</div>';
-  if (alerts.atRisk && alerts.atRisk.length)
-    ah += '<div class="alert alert-at-risk">At Risk: ' + alerts.atRisk.join(', ') + '</div>';
-  if (alerts.stale && alerts.stale.length)
-    ah += '<div class="alert alert-stale">Stale (2+ weeks): ' + alerts.stale.join(', ') + '</div>';
-  if (alerts.unregistered && alerts.unregistered.length)
-    ah += '<div class="alert alert-unregistered">Unregistered: ' +
-      alerts.unregistered.map(function (u) { return u.name + ' (' + u.repo + ')'; }).join(', ') + '</div>';
-  document.getElementById('alerts').innerHTML = ah;
+    // Stats (clickable filters)
+    var onTrack = active.filter(function (p) { return p.health === 'on-track'; }).length;
+    var atRisk  = active.filter(function (p) { return p.health === 'at-risk'; }).length;
+    var blocked = active.filter(function (p) { return p.health === 'blocked'; }).length;
 
-  /* Active projects */
-  var grid = document.getElementById('active-projects');
-  if (active.length === 0) {
-    grid.innerHTML = '<div class="empty-state"><div class="icon">&#x1f4cb;</div>No active projects.<br>Use <strong>/new-project</strong> to get started.</div>';
-  } else {
-    grid.innerHTML = active.map(function (p) {
+    document.getElementById('stats').innerHTML =
+      statCard('c-total', active.length, 'All Active', 'all') +
+      statCard('c-track', onTrack, 'On Track', 'on-track') +
+      statCard('c-risk', atRisk, 'At Risk', 'at-risk') +
+      statCard('c-blocked', blocked, 'Blocked', 'blocked');
+
+    // Bind filter clicks
+    document.querySelectorAll('.stat-card').forEach(function (el) {
+      el.addEventListener('click', function () {
+        currentFilter = el.dataset.filter;
+        renderProjects(active);
+        highlightFilter();
+      });
+    });
+    highlightFilter();
+
+    // Alerts
+    var ah = '';
+    if (alerts.blocked && alerts.blocked.length)
+      ah += '<div class="alert alert-blocked">Blocked: ' + alerts.blocked.join(', ') + '</div>';
+    if (alerts.atRisk && alerts.atRisk.length)
+      ah += '<div class="alert alert-at-risk">At Risk: ' + alerts.atRisk.join(', ') + '</div>';
+    if (alerts.stale && alerts.stale.length)
+      ah += '<div class="alert alert-stale">Stale (2+ weeks): ' + alerts.stale.join(', ') + '</div>';
+    if (alerts.unregistered && alerts.unregistered.length)
+      ah += '<div class="alert alert-unregistered">Unregistered: ' +
+        alerts.unregistered.map(function (u) { return u.name + ' (' + u.repo + ')'; }).join(', ') + '</div>';
+    document.getElementById('alerts').innerHTML = ah;
+
+    // Projects
+    renderProjects(active);
+
+    // Completed
+    if (completed.length > 0) {
+      document.getElementById('completed-section').style.display = 'block';
+      document.getElementById('completed-projects').innerHTML = completed.map(function (p) {
+        return '<div class="completed-item">' +
+          '<span class="name">' + esc(p.name) +
+          ' <span class="badge b-location">' + esc(p.location) + '</span></span>' +
+          '<span class="date">' + esc(p.completedDate || '') + '</span></div>';
+      }).join('');
+    } else {
+      document.getElementById('completed-section').style.display = 'none';
+    }
+  }
+
+  function renderProjects(active) {
+    var filtered = currentFilter === 'all'
+      ? active
+      : active.filter(function (p) { return p.health === currentFilter; });
+
+    var grid = document.getElementById('active-projects');
+    if (filtered.length === 0) {
+      var msg = active.length === 0
+        ? 'No active projects. Use <strong>/new-project</strong> to get started.'
+        : 'No <strong>' + esc(currentFilter) + '</strong> projects.';
+      grid.innerHTML = '<div class="empty-state">' + msg + '</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(function (p) {
       var cls = 'h-' + p.health;
       var bc  = 'b-' + p.health;
-      var html = '<div class="project-card ' + cls + '">';
-      html += '<div class="project-header"><div>';
-      html += '<span class="project-name">' + esc(p.name) + '</span>';
-      html += '<span class="badge b-location">' + esc(p.location) + '</span>';
-      html += '</div>';
-      html += '<span class="badge ' + bc + '">' + esc(p.health) + '</span>';
-      html += '</div>';
-      if (p.summary)       html += '<div class="detail"><strong>Progress:</strong> ' + esc(p.summary) + '</div>';
-      if (p.blocker)       html += '<div class="detail blocker"><strong>Blocker:</strong> ' + esc(p.blocker) + '</div>';
-      if (p.nextMilestone) html += '<div class="detail"><strong>Next:</strong> ' + esc(p.nextMilestone) + '</div>';
-      if (p.lastUpdated)   html += '<div class="detail updated">Updated ' + esc(p.lastUpdated) + '</div>';
-      html += '</div>';
-      return html;
+      var h = '<div class="project-card ' + cls + '">';
+      h += '<div class="project-header"><div>';
+      h += '<span class="project-name">' + esc(p.name) + '</span>';
+      h += '<span class="badge b-location">' + esc(p.location) + '</span>';
+      h += '</div>';
+      h += '<span class="badge ' + bc + '">' + esc(p.health) + '</span></div>';
+      if (p.summary)       h += '<div class="detail"><strong>Progress:</strong> ' + esc(p.summary) + '</div>';
+      if (p.blocker)       h += '<div class="detail blocker"><strong>Blocker:</strong> ' + esc(p.blocker) + '</div>';
+      if (p.nextMilestone) h += '<div class="detail"><strong>Next:</strong> ' + esc(p.nextMilestone) + '</div>';
+      if (p.lastUpdated)   h += '<div class="detail updated">Updated ' + esc(p.lastUpdated) + '</div>';
+      h += '</div>';
+      return h;
     }).join('');
   }
 
-  /* Completed */
-  if (completed.length > 0) {
-    document.getElementById('completed-section').style.display = 'block';
-    document.getElementById('completed-projects').innerHTML = completed.map(function (p) {
-      return '<div class="completed-item">' +
-        '<span class="name">' + esc(p.name) + ' <span class="badge b-location">' + esc(p.location) + '</span></span>' +
-        '<span class="date">' + esc(p.completedDate || '') + '</span>' +
-        '</div>';
-    }).join('');
+  // ── Helpers ──────────────────────────────────────────────
+
+  function statCard(cls, num, label, filter) {
+    return '<div class="stat-card ' + cls + '" data-filter="' + filter + '">' +
+      '<div class="number">' + num + '</div>' +
+      '<div class="label">' + label + '</div></div>';
+  }
+
+  function highlightFilter() {
+    document.querySelectorAll('.stat-card').forEach(function (el) {
+      el.classList.toggle('selected', el.dataset.filter === currentFilter);
+    });
   }
 
   function esc(s) {
@@ -285,6 +361,10 @@
     d.appendChild(document.createTextNode(s));
     return d.innerHTML;
   }
+
+  // ── Init ─────────────────────────────────────────────────
+
+  window.refresh();
 })();
 </script>
 

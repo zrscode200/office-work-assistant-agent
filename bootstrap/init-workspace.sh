@@ -19,7 +19,7 @@ Stamps a target directory with the office work assistant agent:
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
   - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
-  - .claude/dashboard/template.html (HTML template for visual project dashboard)
+  - .claude/dashboard/ (visual project dashboard — Node.js server + HTML)
   - .claude/settings.json (hook configuration — never overwritten on update)
   - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, dashboard, create-project-update, jot, brainstorm, notebook)
 
@@ -82,6 +82,7 @@ for file in \
   "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
   "$REPO_ROOT/templates/hooks/session-sync.sh" \
   "$REPO_ROOT/templates/dashboard/template.html" \
+  "$REPO_ROOT/templates/dashboard/server.js" \
   "$REPO_ROOT/templates/settings.json"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing template file: $file" >&2
@@ -174,10 +175,14 @@ for cmd in "$REPO_ROOT/templates/commands/"*.md; do
   $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
 done
 
-# Dashboard template
+# Dashboard
 $copy_fn "$REPO_ROOT/templates/dashboard/template.html" \
   "$TARGET_DIR/.claude/dashboard/template.html" \
   ".claude/dashboard/template.html"
+
+$copy_fn "$REPO_ROOT/templates/dashboard/server.js" \
+  "$TARGET_DIR/.claude/dashboard/server.js" \
+  ".claude/dashboard/server.js"
 
 # --- User files (never overwritten, even with --update) ---
 
