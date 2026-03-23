@@ -53,7 +53,13 @@ Then assess what the user has brought to the conversation:
 
 When the user confirms the plan looks right (or says something like "let's go with this"):
 - If the project is in a team repo, follow the **Shared Write Protocol** in CLAUDE.md (pull first).
-- Write `<project-root>/plan.md` with the agreed content
+- Write `<project-root>/plan.md` with YAML frontmatter and the agreed content:
+  ```
+  ---
+  updated: YYYY-MM-DD
+  status: draft | active | completed
+  ---
+  ```
 - Structure: Objective, Approach, Tasks (by phase/workstream), Milestones, Risks & Unknowns, Open Questions
 - Each task: description, owner (if known), dependencies, status (not-started / in-progress / done)
 - If some sections are still TBD, mark them as such — a partial plan is fine

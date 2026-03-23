@@ -27,6 +27,43 @@ function read(filePath) {
   catch { return null; }
 }
 
+function parseFrontmatter(content) {
+  if (!content || !content.startsWith('---')) return { meta: {}, body: content || '' };
+  const end = content.indexOf('\n---', 3);
+  if (end === -1) return { meta: {}, body: content };
+  const yamlBlock = content.slice(4, end);
+  const body = content.slice(end + 4).replace(/^\n/, '');
+  const meta = {};
+  let currentKey = null;
+
+  for (const line of yamlBlock.split('\n')) {
+    const trimmed = line.trimEnd();
+    // Block list item: "  - value"
+    if (/^\s+-\s/.test(trimmed) && currentKey) {
+      const val = trimmed.replace(/^\s+-\s*/, '');
+      if (!Array.isArray(meta[currentKey])) meta[currentKey] = [];
+      meta[currentKey].push(val);
+      continue;
+    }
+    // Top-level key: value
+    const kv = trimmed.match(/^([a-z_][a-z0-9_]*)\s*:\s*(.*)$/);
+    if (kv) {
+      currentKey = kv[1];
+      const val = kv[2].trim();
+      if (val === '' || val === '~') {
+        meta[currentKey] = '';
+      } else if (val === '[]') {
+        meta[currentKey] = [];
+      } else if (val.startsWith('[') && val.endsWith(']')) {
+        meta[currentKey] = val.slice(1, -1).split(',').map(s => s.trim()).filter(Boolean);
+      } else {
+        meta[currentKey] = val;
+      }
+    }
+  }
+  return { meta, body };
+}
+
 function parseRegistry() {
   const content = read(path.join(WORKSPACE, '.ddt', 'registry.md'));
   if (!content) return [];
@@ -119,11 +156,23 @@ function parseStatus(filePath) {
   const content = read(filePath);
   if (!content) return null;
 
+  // Frontmatter path: structured data available
+  const { meta, body } = parseFrontmatter(content);
+  if (meta.health) {
+    return {
+      lastUpdated: meta.last_updated || null,
+      health: meta.health.toLowerCase(),
+      progress: meta.summary ? [meta.summary] : (Array.isArray(meta.progress) ? meta.progress : []),
+      blockers: Array.isArray(meta.blockers) ? meta.blockers : [],
+      next: Array.isArray(meta.next) ? meta.next : []
+    };
+  }
+
+  // Legacy fallback: parse from markdown
   const topHealth = parseTopLevelHealth(content);
   const dated = splitStatusSections(content);
 
   if (!dated.length) {
-    // No dated sections — try top-level blocks
     return {
       lastUpdated: null,
       health: topHealth,
@@ -148,10 +197,15 @@ function parseFullStatus(filePath) {
   const content = read(filePath);
   if (!content) return [];
 
-  const topHealth = parseTopLevelHealth(content);
-  const topBlockers = parseTopLevelBlock(content, 'Blockers?');
-  const topNext = parseTopLevelBlock(content, 'Upcoming|Next');
-  const dated = splitStatusSections(content);
+  // Use frontmatter health as top-level if available, else regex
+  const { meta, body } = parseFrontmatter(content);
+  const parseContent = body || content;
+  const topHealth = meta.health ? meta.health.toLowerCase() : parseTopLevelHealth(content);
+  const topBlockers = Array.isArray(meta.blockers) && meta.blockers.length
+    ? meta.blockers : parseTopLevelBlock(parseContent, 'Blockers?');
+  const topNext = Array.isArray(meta.next) && meta.next.length
+    ? meta.next : parseTopLevelBlock(parseContent, 'Upcoming|Next');
+  const dated = splitStatusSections(parseContent);
 
   const entries = dated.map(s => {
     const entry = parseStatusSection(s);
@@ -180,6 +234,16 @@ function parseFullStatus(filePath) {
 function parseOverview(filePath) {
   const content = read(filePath);
   if (!content) return null;
+
+  // Frontmatter path
+  const { meta } = parseFrontmatter(content);
+  if (meta.objective) {
+    let objective = meta.objective;
+    if (objective.length > 150) objective = objective.slice(0, 147) + '...';
+    return { objective, fullContent: content };
+  }
+
+  // Legacy fallback: regex on ## Objective section
   const objMatch = content.match(/## Objective\n+([\s\S]*?)(?=\n##|$)/);
   let objective = null;
   if (objMatch) {
@@ -203,12 +267,16 @@ function listMeetings(projectDir) {
     const dir = path.join(projectDir, 'meetings');
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.md')).sort().reverse();
     return files.map(f => {
-      const m = f.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
+      const raw = read(path.join(dir, f));
+      const { meta, body } = parseFrontmatter(raw);
+      const fnMatch = f.match(/^(\d{4}-\d{2}-\d{2})-(.+)\.md$/);
       return {
         filename: f,
-        date: m ? m[1] : null,
-        topic: m ? m[2].replace(/-/g, ' ') : f.replace('.md', ''),
-        content: read(path.join(dir, f))
+        date: meta.date || (fnMatch ? fnMatch[1] : null),
+        topic: fnMatch ? fnMatch[2].replace(/-/g, ' ') : f.replace('.md', ''),
+        attendees: Array.isArray(meta.attendees) ? meta.attendees : [],
+        purpose: meta.purpose || null,
+        content: raw
       };
     });
   } catch { return []; }
@@ -218,11 +286,18 @@ function listDecisions(projectDir) {
   try {
     const dir = path.join(projectDir, 'decisions');
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.md')).sort();
-    return files.map(f => ({
-      filename: f,
-      name: f.replace('.md', '').replace(/-/g, ' '),
-      content: read(path.join(dir, f))
-    }));
+    return files.map(f => {
+      const raw = read(path.join(dir, f));
+      const { meta } = parseFrontmatter(raw);
+      return {
+        filename: f,
+        name: f.replace('.md', '').replace(/-/g, ' '),
+        date: meta.date || null,
+        status: meta.status || null,
+        participants: Array.isArray(meta.participants) ? meta.participants : [],
+        content: raw
+      };
+    });
   } catch { return []; }
 }
 

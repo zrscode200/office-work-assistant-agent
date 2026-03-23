@@ -91,6 +91,7 @@ When the user has ideas that aren't fully formed:
 ## Artifact Quality Standards
 
 ### Every project overview.md should have:
+- **Frontmatter:** `title`, `objective`, `stakeholders` (list), `created`, `updated`
 - One-sentence objective
 - Why this matters (business context)
 - Key stakeholders
@@ -98,13 +99,15 @@ When the user has ideas that aren't fully formed:
 - Scope boundaries (what's in, what's explicitly out)
 
 ### Every status.md should have:
-- Health indicator (on-track / at-risk / blocked / completed)
+- **Frontmatter:** `health`, `last_updated`, `summary`, `blockers` (list), `risks` (list), `next` (list)
+- Health indicator (on-track / at-risk / blocked / not-started / completed)
 - Summary of recent progress
 - Open blockers with owners
 - Upcoming milestones
 - Risks and mitigations
 
 ### Every decision record should have:
+- **Frontmatter:** `date`, `status` (decided/pending/revisited), `participants` (list)
 - Context: what prompted this decision
 - Options considered (at least 2) with tradeoffs
 - Decision: what was chosen
@@ -112,10 +115,32 @@ When the user has ideas that aren't fully formed:
 - Participants: who was involved
 
 ### Every meeting summary should have:
-- Date, attendees, purpose
+- **Frontmatter:** `date`, `attendees` (list), `purpose`
 - Key discussion points (concise)
 - Decisions made (if any, link to decision records)
 - Action items with owners and deadlines
+
+## Artifact Frontmatter
+
+Project artifacts use YAML frontmatter (between `---` delimiters at the top of the file) as a structured data contract. The frontmatter holds machine-parseable fields; the markdown body holds human-readable narrative. The dashboard and other tools read frontmatter for reliable data extraction.
+
+### Rules
+- **Always include frontmatter** when creating a new artifact. The command templates show the exact schema for each type.
+- **Keep frontmatter in sync** with the body. When you update the body, update the corresponding frontmatter fields.
+- **status.md uses dual-write:** Update the frontmatter to reflect the current state, AND prepend a new dated section to the body. The frontmatter is the current snapshot; the body is the append-only history.
+- **Migration:** If you encounter an existing file without frontmatter, add it when you next update that file. Use the body content to populate the frontmatter fields.
+
+### Schemas (compact reference — see commands for full templates)
+
+| Artifact | Frontmatter fields |
+|----------|--------------------|
+| `overview.md` | `title`, `objective`, `stakeholders: []`, `created`, `updated` |
+| `status.md` | `health`, `last_updated`, `summary`, `blockers: []`, `risks: []`, `next: []` |
+| `decisions/*.md` | `date`, `status`, `participants: []` |
+| `meetings/*.md` | `date`, `attendees: []`, `purpose` |
+| `updates/*.md` | `date`, `to`, `summary` |
+| `plan.md` | `updated`, `status` |
+| `notebook/*.md` | `date`, `projects: []`, `status`, `graduated_to` |
 
 ## Operating Rules
 

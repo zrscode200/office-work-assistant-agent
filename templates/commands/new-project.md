@@ -111,10 +111,22 @@ Convert the project name to lowercase kebab-case for the folder name.
 
 **`<project-root>/overview.md`** — the approved draft
 
-**`<project-root>/status.md`** with:
-- Health: not-started
-- Created: today's date
-- Empty blockers and risks sections
+**`<project-root>/status.md`** with frontmatter and an initial body entry:
+
+```markdown
+---
+health: not-started
+last_updated: YYYY-MM-DD
+summary:
+blockers: []
+risks: []
+next: []
+---
+
+## YYYY-MM-DD
+
+Project created.
+```
 
 ### 4. Register
 
@@ -130,9 +142,17 @@ What was created, where it lives, and suggested next steps — e.g., "run /proje
 
 ## Overview Template
 
-Use this structure for `overview.md`. Populate known fields with real content. For fields that are not yet known, leave the blank header with the comment placeholder — do not invent content.
+Use this structure for `overview.md`. The YAML frontmatter holds structured data for machine parsing. The body is the human-readable narrative. Populate known fields with real content. For fields that are not yet known, use empty values in frontmatter and comment placeholders in the body — do not invent content.
 
 ```markdown
+---
+title: <Project Name>
+objective: <one-sentence objective, or empty if not yet defined>
+stakeholders: [<names, or empty list>]
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+---
+
 # <Project Name>
 
 ## Objective

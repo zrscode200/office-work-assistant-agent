@@ -13,17 +13,36 @@ Document a decision.
    - Options considered
    - What was chosen (or help the user think through it)
 3. If the project is in a team repo, follow the **Shared Write Protocol** in CLAUDE.md (pull first).
-4. Create `<project-root>/decisions/<decision-name>.md` with:
-   - **Date:** YYYY-MM-DD
-   - **Status:** decided / pending / revisited
-   - **Context:** what prompted this decision
-   - **Options Considered:**
-     - Option A: description, pros, cons
-     - Option B: description, pros, cons
-     - (more as needed)
-   - **Decision:** what was chosen
-   - **Rationale:** why this option over others
-   - **Participants:** who was involved in making this decision
-   - **Revisit if:** conditions that would warrant reopening this decision
+4. Create `<project-root>/decisions/<decision-name>.md` with YAML frontmatter and a markdown body:
+
+   ```markdown
+   ---
+   date: YYYY-MM-DD
+   status: decided | pending | revisited
+   participants: [<names>]
+   ---
+
+   # <Decision Name>
+
+   ## Context
+   What prompted this decision.
+
+   ## Options Considered
+
+   ### Option A
+   Description, pros, cons.
+
+   ### Option B
+   Description, pros, cons.
+
+   ## Decision
+   What was chosen.
+
+   ## Rationale
+   Why this option over others.
+
+   ## Revisit if
+   Conditions that would warrant reopening this decision.
+   ```
 5. If the project is in a team repo, complete the Shared Write Protocol (show changes, confirm, commit, push).
 6. If the decision is still pending (user is thinking it through), set status to "pending" and help structure the options and tradeoffs.

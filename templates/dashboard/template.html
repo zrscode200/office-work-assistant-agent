@@ -561,7 +561,10 @@
       d.meetings.forEach(function (m) {
         html += '<div class="expandable">';
         html += '<div class="expandable-header">';
-        html += '<span>' + esc(m.date || '') + ' &mdash; ' + esc(m.topic) + '</span>';
+        var mDetail = esc(m.date || '') + ' &mdash; ' + esc(m.topic);
+        if (m.purpose) mDetail += ' <span style="color:var(--text-muted);font-weight:400">— ' + esc(m.purpose) + '</span>';
+        if (m.attendees && m.attendees.length) mDetail += ' <span class="badge b-location">' + m.attendees.length + ' attendees</span>';
+        html += '<span>' + mDetail + '</span>';
         html += '<span class="chevron">&#x25BC;</span>';
         html += '</div>';
         html += '<div class="expandable-body"><div class="expandable-content">';
@@ -578,7 +581,10 @@
       d.decisions.forEach(function (dec) {
         html += '<div class="expandable">';
         html += '<div class="expandable-header">';
-        html += '<span>' + esc(dec.name) + '</span>';
+        var decDetail = esc(dec.name);
+        if (dec.date) decDetail = esc(dec.date) + ' &mdash; ' + decDetail;
+        if (dec.status) decDetail += ' ' + healthBadge(dec.status);
+        html += '<span>' + decDetail + '</span>';
         html += '<span class="chevron">&#x25BC;</span>';
         html += '</div>';
         html += '<div class="expandable-body"><div class="expandable-content">';
