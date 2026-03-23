@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept B: Visual Status Board</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --bg-card: #ffffff;
+      --text: #1d1d1f;
+      --text-sec: #515154;
+      --text-muted: #86868b;
+      --border: #e5e5e7;
+      --accent: #0071e3;
+      --green: #34c759;
+      --green-bg: #e8f9ee;
+      --green-dark: #248a3d;
+      --amber: #ff9f0a;
+      --amber-bg: #fff4e0;
+      --amber-dark: #c76e00;
+      --red: #ff3b30;
+      --red-bg: #ffe5e3;
+      --red-dark: #c1271d;
+      --purple: #af52de;
+      --radius: 16px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* Header */
+    .header {
+      background: var(--bg-card);
+      padding: 20px 32px;
+      border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+    .header-info { display: flex; align-items: center; gap: 16px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 14px;
+    }
+    .refresh-btn {
+      padding: 8px 16px; border-radius: 20px; border: none;
+      background: var(--accent); color: white; font-size: 13px;
+      font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+    }
+    .refresh-btn:hover { opacity: 0.85; }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 24px 32px; }
+
+    /* Portfolio health card */
+    .portfolio-health {
+      background: var(--bg-card); border-radius: var(--radius); padding: 24px;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+      display: grid; grid-template-columns: 1fr 3fr; gap: 32px; align-items: center;
+    }
+    .portfolio-score {
+      text-align: center;
+    }
+    .score-ring {
+      width: 100px; height: 100px; position: relative; margin: 0 auto 8px;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring circle { fill: none; stroke-width: 8; }
+    .score-ring .bg { stroke: #e8e8ed; }
+    .score-ring .fill { stroke: var(--green); stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+    .score-ring .fill.amber { stroke: var(--amber); }
+    .score-ring .fill.red { stroke: var(--red); }
+    .score-value {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 28px; font-weight: 700;
+    }
+    .score-label { font-size: 12px; color: var(--text-muted); }
+
+    .health-details { display: flex; gap: 24px; }
+    .health-column { flex: 1; }
+    .health-column h3 { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px; }
+    .health-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; font-size: 13px;
+    }
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .health-dot.green { background: var(--green); }
+    .health-dot.amber { background: var(--amber); }
+    .health-dot.red { background: var(--red); }
+    .health-item .name { font-weight: 500; }
+    .health-item .meta { color: var(--text-muted); font-size: 12px; margin-left: auto; }
+
+    /* Section */
+    .section-head {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 16px; margin-top: 8px;
+    }
+    .section-head h2 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+    .section-head .count {
+      font-size: 12px; color: var(--text-muted); background: var(--bg);
+      padding: 2px 10px; border-radius: 10px;
+    }
+
+    /* Cards grid */
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; margin-bottom: 32px; }
+
+    .card {
+      background: var(--bg-card); border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow: hidden;
+      cursor: pointer; transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+    .card-accent { height: 4px; }
+    .card-accent.green { background: linear-gradient(90deg, var(--green), #5cdb8b); }
+    .card-accent.amber { background: linear-gradient(90deg, var(--amber), #ffb84d); }
+    .card-accent.red { background: linear-gradient(90deg, var(--red), #ff6b6b); }
+
+    .card-body { padding: 20px; }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .card-title { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; }
+    .card-loc { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    .badge {
+      padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge-green { background: var(--green-bg); color: var(--green-dark); }
+    .badge-amber { background: var(--amber-bg); color: var(--amber-dark); }
+    .badge-red { background: var(--red-bg); color: var(--red-dark); }
+    .badge .pulse { width: 6px; height: 6px; border-radius: 50%; animation: pulse 2s infinite; }
+    .badge-red .pulse { background: var(--red); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .card-objective { font-size: 13px; color: var(--text-sec); margin-bottom: 14px; line-height: 1.4; }
+
+    /* Progress bar */
+    .progress-section { margin-bottom: 12px; }
+    .progress-header { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+    .progress-label { color: var(--text-muted); font-weight: 500; }
+    .progress-pct { font-weight: 700; }
+    .progress-bar { height: 6px; background: #e8e8ed; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+    .progress-fill.green { background: linear-gradient(90deg, var(--green), #5cdb8b); }
+    .progress-fill.amber { background: linear-gradient(90deg, var(--amber), #ffb84d); }
+    .progress-fill.red { background: linear-gradient(90deg, var(--red), #ff6b6b); }
+
+    /* Info rows */
+    .card-info { font-size: 12px; color: var(--text-sec); margin-bottom: 6px; display: flex; gap: 6px; }
+    .card-info .icon { flex-shrink: 0; width: 16px; text-align: center; }
+    .card-info.blocker { color: var(--red-dark); font-weight: 500; }
+
+    .card-footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border);
+    }
+    .card-time { font-size: 11px; }
+    .card-time.fresh { color: var(--green-dark); }
+    .card-time.aging { color: var(--amber-dark); }
+    .card-time.stale { color: var(--red-dark); }
+    .card-tags { display: flex; gap: 4px; }
+    .tag {
+      font-size: 10px; padding: 2px 8px; border-radius: 8px;
+      background: var(--bg); color: var(--text-muted); font-weight: 500;
+    }
+
+    /* Activity timeline */
+    .activity {
+      background: var(--bg-card); border-radius: var(--radius); padding: 20px;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+    }
+    .activity h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .activity-item {
+      display: flex; gap: 12px; padding: 8px 0;
+      border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon {
+      width: 28px; height: 28px; border-radius: 8px; display: flex;
+      align-items: center; justify-content: center; font-size: 13px;
+      flex-shrink: 0;
+    }
+    .ai-status { background: #e8f9ee; }
+    .ai-meeting { background: #e0ecff; }
+    .ai-decision { background: #f3e8ff; }
+    .activity-text { flex: 1; }
+    .activity-text .project { font-weight: 600; }
+    .activity-time { color: var(--text-muted); font-size: 12px; white-space: nowrap; align-self: center; }
+
+    .concept-badge {
+      position: fixed; bottom: 16px; right: 16px; background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px;
+      font-weight: 600; z-index: 99; box-shadow: 0 4px 12px rgba(118,75,162,0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="concept-badge">Concept B: Visual Status Board (Monday/Asana style)</div>
+
+<div class="header">
+  <h1>Project Dashboard</h1>
+  <div class="header-info">
+    <div class="avatar">SR</div>
+    <button class="refresh-btn">&#x21bb; Refresh</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Portfolio health overview -->
+  <div class="portfolio-health">
+    <div class="portfolio-score">
+      <div class="score-ring">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle class="bg" cx="50" cy="50" r="42"/>
+          <circle class="fill" cx="50" cy="50" r="42"
+            stroke-dasharray="264" stroke-dashoffset="106"/>
+        </svg>
+        <div class="score-value">60%</div>
+      </div>
+      <div class="score-label">Portfolio Health</div>
+    </div>
+    <div class="health-details">
+      <div class="health-column">
+        <h3>Needs Attention</h3>
+        <div class="health-item">
+          <span class="health-dot red"></span>
+          <span class="name">upstream-biologics-data-pipeline</span>
+          <span class="meta">Blocked 18d</span>
+        </div>
+        <div class="health-item">
+          <span class="health-dot amber"></span>
+          <span class="name">agent-system-testing</span>
+          <span class="meta">At Risk</span>
+        </div>
+      </div>
+      <div class="health-column">
+        <h3>On Track</h3>
+        <div class="health-item">
+          <span class="health-dot green"></span>
+          <span class="name">asm-schema-finder</span>
+          <span class="meta">2d ago</span>
+        </div>
+        <div class="health-item">
+          <span class="health-dot green"></span>
+          <span class="name">q2-planning</span>
+          <span class="meta">1d ago</span>
+        </div>
+        <div class="health-item">
+          <span class="health-dot green"></span>
+          <span class="name">ml-model-registry</span>
+          <span class="meta">3d ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Projects -->
+  <div class="section-head">
+    <h2>My Projects</h2>
+    <span class="count">2 projects</span>
+  </div>
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-accent green"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-title">asm-schema-finder</div>
+            <div class="card-loc">Personal</div>
+          </div>
+          <span class="badge badge-green">In Progress</span>
+        </div>
+        <div class="card-objective">Discover and catalog ASM schema patterns across biologics datasets</div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-pct">65%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:65%"></div></div>
+        </div>
+        <div class="card-info"><span class="icon">&#9654;</span> Map remaining schema variants</div>
+        <div class="card-footer">
+          <span class="card-time fresh">Updated 2 days ago</span>
+          <div class="card-tags"><span class="tag">data</span><span class="tag">research</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent green"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-title">q2-planning</div>
+            <div class="card-loc">Personal</div>
+          </div>
+          <span class="badge badge-green">On Track</span>
+        </div>
+        <div class="card-objective">Define Q2 OKRs and resource allocation for the team</div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-pct">40%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:40%"></div></div>
+        </div>
+        <div class="card-info"><span class="icon">&#9654;</span> Finalize resource allocation</div>
+        <div class="card-footer">
+          <span class="card-time fresh">Updated 1 day ago</span>
+          <div class="card-tags"><span class="tag">planning</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Team Projects -->
+  <div class="section-head">
+    <h2>Team: test-projects-repo</h2>
+    <span class="count">3 projects</span>
+  </div>
+  <div class="cards">
+
+    <div class="card">
+      <div class="card-accent red"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-title">upstream-biologics-data-pipeline</div>
+          </div>
+          <span class="badge badge-red"><span class="pulse"></span>Blocked</span>
+        </div>
+        <div class="card-objective">Build automated data pipeline for upstream biologics process data</div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-pct">30%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill red" style="width:30%"></div></div>
+        </div>
+        <div class="card-info blocker"><span class="icon">&#9888;</span> Waiting on infra access approval</div>
+        <div class="card-info"><span class="icon">&#9654;</span> Infra access approval (ETA: Mar 25)</div>
+        <div class="card-footer">
+          <span class="card-time stale">Updated 18 days ago</span>
+          <div class="card-tags"><span class="tag">pipeline</span><span class="tag">infra</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent amber"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-title">agent-system-testing</div>
+          </div>
+          <span class="badge badge-amber">At Risk</span>
+        </div>
+        <div class="card-objective">Comprehensive test framework for the DDT agent system</div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-pct">45%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill amber" style="width:45%"></div></div>
+        </div>
+        <div class="card-info"><span class="icon">&#9654;</span> Add integration test suite</div>
+        <div class="card-footer">
+          <span class="card-time aging">Updated 8 days ago</span>
+          <div class="card-tags"><span class="tag">testing</span><span class="tag">agent</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-accent green"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-title">ml-model-registry</div>
+          </div>
+          <span class="badge badge-green">On Track</span>
+        </div>
+        <div class="card-objective">Centralized registry for ML model versioning and deployment tracking</div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-pct">80%</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:80%"></div></div>
+        </div>
+        <div class="card-info"><span class="icon">&#9654;</span> Production rollout (Mar 28)</div>
+        <div class="card-footer">
+          <span class="card-time fresh">Updated 3 days ago</span>
+          <div class="card-tags"><span class="tag">ml</span><span class="tag">infra</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="activity">
+    <h3>Recent Activity</h3>
+    <div class="activity-item">
+      <div class="activity-icon ai-status">&#x2197;</div>
+      <div class="activity-text">Status updated for <span class="project">asm-schema-finder</span> &mdash; health: in-progress</div>
+      <div class="activity-time">2 days ago</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-icon ai-meeting">&#x1F4C5;</div>
+      <div class="activity-text">Meeting captured: <span class="project">upstream-biologics</span> &mdash; kickoff</div>
+      <div class="activity-time">4 days ago</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-icon ai-decision">&#x2696;</div>
+      <div class="activity-text">Decision recorded: <span class="project">ml-model-registry</span> &mdash; vendor selection</div>
+      <div class="activity-time">5 days ago</div>
+    </div>
+    <div class="activity-item">
+      <div class="activity-icon ai-status">&#x2197;</div>
+      <div class="activity-text">Status updated for <span class="project">agent-system-testing</span> &mdash; health: at-risk</div>
+      <div class="activity-time">8 days ago</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -3,314 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project Dashboard</title>
+  <title>Work Assistant Dashboard</title>
   <style>
     :root {
-      --bg-body: #faf8f5;
+      --bg: #f8f9fb;
       --bg-card: #ffffff;
-      --bg-surface: #f5f0eb;
-      --bg-panel: #ffffff;
-      --text-primary: #3d3529;
-      --text-secondary: #6b5e50;
-      --text-muted: #9a8e82;
-      --accent: #8b7355;
-      --accent-light: #b8a07a;
-      --divider: #ede8e1;
-      --shadow: 0 2px 8px rgba(139,115,85,0.08);
-      --shadow-hover: 0 6px 20px rgba(139,115,85,0.12);
-      --health-green: #2d8659;
-      --health-green-bg: #dcf5e7;
-      --health-green-text: #1a5c3a;
-      --health-amber: #c4841d;
-      --health-amber-bg: #fef0d5;
-      --health-amber-text: #8a5a10;
-      --health-red: #c53030;
-      --health-red-bg: #fee2e2;
-      --health-red-text: #8b1a1a;
+      --bg-hover: #f1f3f5;
+      --text: #111827;
+      --text-sec: #4b5563;
+      --text-muted: #9ca3af;
+      --border: #e5e7eb;
+      --border-light: #f3f4f6;
+      --accent: #4f46e5;
+      --accent-light: #eef2ff;
+      --green: #059669;
+      --green-bg: #ecfdf5;
+      --green-text: #065f46;
+      --amber: #d97706;
+      --amber-bg: #fffbeb;
+      --amber-text: #92400e;
+      --red: #dc2626;
+      --red-bg: #fef2f2;
+      --red-text: #991b1b;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg-body);
-      color: var(--text-primary);
-      line-height: 1.5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ── */
+    /* Header */
     .header {
-      background: linear-gradient(135deg, #7a6548 0%, #8b7355 50%, #a08462 100%);
-      color: #fff;
-      padding: 24px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: var(--bg-card); border-bottom: 1px solid var(--border);
+      padding: 0 28px; display: flex; justify-content: space-between; align-items: center;
+      height: 52px;
     }
-    .header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
-    .header .meta { font-size: 13px; opacity: 0.7; margin-top: 3px; }
-
-    .btn {
-      border: none; border-radius: 10px; padding: 8px 16px;
-      font-size: 13px; font-weight: 500; cursor: pointer;
-      transition: opacity 0.15s; display: flex; align-items: center; gap: 6px;
+    .header h1 { font-size: 15px; font-weight: 600; }
+    .header-right { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted); }
+    .btn-sm {
+      padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-card); color: var(--text-sec); font-size: 12px;
+      cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px;
     }
-    .btn:hover { opacity: 0.85; }
-    .btn-refresh { background: rgba(255,255,255,0.18); color: #fff; }
-    .btn-refresh.loading { opacity: 0.5; pointer-events: none; }
-    .btn-refresh.loading .spin { animation: spin 0.8s linear infinite; }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-sm.loading { opacity: 0.5; pointer-events: none; }
+    .btn-sm.loading .spin { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .spin { display: inline-block; }
 
-    /* ── Layout ── */
-    .container { max-width: 1140px; margin: 0 auto; padding: 28px 24px; }
+    .container { max-width: 1160px; margin: 0 auto; padding: 20px 24px; }
 
-    /* ── Alerts ── */
-    .alerts { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .alert { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 500; }
-    .alert-blocked      { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-    .alert-at-risk      { background: #fff8f0; color: #9a3412; border: 1px solid #fed7aa; }
-    .alert-stale        { background: #fefce8; color: #854d0e; border: 1px solid #fde68a; }
-    .alert-unregistered { background: #f0ece5; color: #5c5040; border: 1px solid #d6cfc4; }
+    /* Summary pills */
+    .summary-bar { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+    .summary-pill {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 500;
+      background: var(--bg-card); border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .summary-pill:hover { border-color: #c0c4cc; }
+    .summary-pill.active { border-color: var(--accent); background: var(--accent-light); }
+    .summary-pill .n { font-weight: 700; font-size: 16px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-all { background: var(--accent); }
+    .dot-green { background: var(--green); }
+    .dot-amber { background: var(--amber); }
+    .dot-red { background: var(--red); }
 
-    /* ── Stats ── */
-    .stats {
+    /* Alerts */
+    .alerts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .alert-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    }
+    .alert-chip.red { background: var(--red-bg); color: var(--red-text); }
+    .alert-chip.amber { background: var(--amber-bg); color: var(--amber-text); }
+    .alert-chip.muted { background: var(--border-light); color: var(--text-muted); }
+
+    /* Workspace tabs */
+    .workspace-tabs {
+      display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px;
+    }
+    .ws-tab {
+      padding: 10px 20px; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px; transition: all 0.15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ws-tab:hover { color: var(--text-sec); }
+    .ws-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .ws-tab .count {
+      background: var(--border-light); color: var(--text-muted);
+      padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .ws-tab.active .count { background: var(--accent-light); color: var(--accent); }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Project table */
+    .project-table {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
+    }
+    .table-head {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px; margin-bottom: 28px;
+      grid-template-columns: 10px 2fr 100px 2.5fr 1.5fr 100px 28px;
+      padding: 8px 16px; gap: 12px;
+      background: var(--bg); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); align-items: center;
     }
-    .stat-card {
-      background: var(--bg-card); border-radius: 16px; padding: 18px;
-      text-align: center; box-shadow: var(--shadow); cursor: pointer;
-      transition: box-shadow 0.15s, transform 0.15s;
-      border: 2px solid transparent;
-    }
-    .stat-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
-    .stat-card.selected { border-color: var(--accent); }
-    .stat-card .number { font-size: 32px; font-weight: 700; line-height: 1.1; }
-    .stat-card .label { font-size: 11px; color: var(--text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .c-total .number   { color: var(--text-primary); }
-    .c-track .number   { color: var(--health-green); }
-    .c-risk .number    { color: var(--health-amber); }
-    .c-blocked .number { color: var(--health-red); }
-
-    /* ── Sections ── */
-    .section-group { margin-bottom: 28px; }
-    .section-group-header {
-      font-size: 15px; font-weight: 600; color: var(--text-secondary);
-      margin-bottom: 14px; padding-bottom: 8px;
-      border-bottom: 2px solid var(--divider);
-      text-transform: uppercase; letter-spacing: 0.4px;
-    }
-
-    /* ── Project cards ── */
-    .projects-grid {
+    .project-row { border-bottom: 1px solid var(--border); }
+    .project-row:last-child { border-bottom: none; }
+    .row-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-      gap: 12px;
+      grid-template-columns: 10px 2fr 100px 2.5fr 1.5fr 100px 28px;
+      padding: 14px 16px; gap: 12px;
+      cursor: pointer; transition: background 0.1s; align-items: center; font-size: 13px;
     }
-    .project-card {
-      background: var(--bg-card); border-radius: 16px; padding: 20px;
-      box-shadow: var(--shadow); border-left: 4px solid var(--divider);
-      transition: box-shadow 0.15s; cursor: pointer;
+    .row-summary:hover { background: var(--border-light); }
+    .project-row.expanded .row-summary { background: var(--accent-light); }
+
+    .health-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .hd-on-track, .hd-in-progress { background: var(--green); }
+    .hd-at-risk { background: var(--amber); }
+    .hd-blocked { background: var(--red); animation: pulse 2s infinite; }
+    .hd-not-started { background: var(--text-muted); }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .proj-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .health-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
     }
-    .project-card:hover { box-shadow: var(--shadow-hover); }
-    .project-card.h-on-track,
-    .project-card.h-in-progress { border-left-color: var(--health-green); }
-    .project-card.h-at-risk     { border-left-color: var(--health-amber); }
-    .project-card.h-blocked     { border-left-color: var(--health-red); }
+    .hb-on-track, .hb-in-progress { background: var(--green-bg); color: var(--green-text); }
+    .hb-at-risk { background: var(--amber-bg); color: var(--amber-text); }
+    .hb-blocked { background: var(--red-bg); color: var(--red-text); }
+    .hb-not-started { background: var(--border-light); color: var(--text-muted); }
 
-    .project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-    .project-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .cell-text { color: var(--text-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cell-time { font-size: 12px; font-weight: 500; }
+    .ct-green { color: var(--green); }
+    .ct-amber { color: var(--amber); }
+    .ct-red { color: var(--red); }
 
-    .badge {
-      display: inline-block; padding: 2px 10px; border-radius: 12px;
+    .expand-icon { font-size: 10px; color: var(--text-muted); transition: transform 0.2s; text-align: center; }
+    .project-row.expanded .expand-icon { transform: rotate(180deg); }
+
+    /* Expanded detail */
+    .row-detail { max-height: 0; overflow: hidden; transition: max-height 0.35s ease-out; }
+    .project-row.expanded .row-detail { max-height: 2000px; }
+    .detail-inner { padding: 0 16px 20px 38px; border-top: 1px solid var(--border); }
+
+    .detail-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border); padding-top: 8px;
+    }
+    .dtab {
+      padding: 8px 16px; font-size: 12px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all 0.15s;
+    }
+    .dtab:hover { color: var(--text-sec); }
+    .dtab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .dtab .bcnt { font-size: 10px; background: var(--border-light); color: var(--text-muted); padding: 0 5px; border-radius: 8px; margin-left: 4px; }
+
+    .detail-panel { display: none; padding: 16px 0; }
+    .detail-panel.active { display: block; }
+
+    /* Rendered markdown */
+    .md h1 { font-size: 16px; font-weight: 600; margin: 16px 0 8px; }
+    .md h2 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: var(--text); }
+    .md h3 { font-size: 13px; font-weight: 600; margin: 12px 0 4px; color: var(--text); }
+    .md h1:first-child, .md h2:first-child, .md h3:first-child { margin-top: 0; }
+    .md p { font-size: 13px; color: var(--text-sec); margin-bottom: 8px; line-height: 1.6; }
+    .md ul { padding-left: 18px; margin-bottom: 8px; }
+    .md li { font-size: 13px; color: var(--text-sec); margin-bottom: 3px; line-height: 1.5; }
+    .md strong { color: var(--text); font-weight: 600; }
+    .md hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+    /* Status timeline */
+    .status-entry { padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+    .status-entry:last-child { border-bottom: none; }
+    .se-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .se-date { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .se-badge { font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 10px; }
+    .seb-on-track, .seb-in-progress { background: var(--green-bg); color: var(--green); }
+    .seb-at-risk { background: var(--amber-bg); color: var(--amber); }
+    .seb-blocked { background: var(--red-bg); color: var(--red); }
+    .seb-not-started { background: var(--border-light); color: var(--text-muted); }
+    .se-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .se-items { padding-left: 16px; }
+    .se-items li { font-size: 12px; color: var(--text-sec); margin-bottom: 2px; }
+
+    /* Artifact rows */
+    .artifact-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.1s; margin-bottom: 2px;
+    }
+    .artifact-row:hover { background: var(--border-light); }
+    .artifact-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+    }
+    .ai-meeting { background: #dbeafe; color: #1d4ed8; }
+    .ai-decision { background: #ede9fe; color: #6d28d9; }
+    .ai-plan { background: #d1fae5; color: #059669; }
+    .artifact-info { flex: 1; min-width: 0; }
+    .artifact-title { font-size: 13px; font-weight: 500; }
+    .artifact-sub { font-size: 11px; color: var(--text-muted); }
+    .artifact-date { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* Expandable artifact content */
+    .artifact-expand { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
+    .artifact-expand.open { max-height: 2000px; }
+    .artifact-expand-inner { padding: 8px 12px 12px 52px; }
+
+    /* Activity */
+    .activity-section {
+      margin-top: 28px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+    }
+    .activity-header {
+      padding: 14px 20px; font-size: 13px; font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .act-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; border-bottom: 1px solid var(--border-light); font-size: 13px;
+    }
+    .act-item:last-child { border-bottom: none; }
+    .act-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .act-dot.status { background: #818cf8; }
+    .act-dot.meeting { background: #3b82f6; }
+    .act-dot.decision { background: #8b5cf6; }
+    .act-dot.created { background: var(--green); }
+    .act-text { flex: 1; color: var(--text-sec); }
+    .act-text .proj { font-weight: 600; color: var(--text); }
+    .act-time { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+
+    /* Completed */
+    .completed-section { margin-top: 24px; }
+    .completed-label {
       font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.4px; white-space: nowrap;
-    }
-    .b-on-track, .b-in-progress { background: var(--health-green-bg); color: var(--health-green-text); }
-    .b-at-risk    { background: var(--health-amber-bg); color: var(--health-amber-text); }
-    .b-blocked    { background: var(--health-red-bg); color: var(--health-red-text); }
-    .b-not-started { background: var(--bg-surface); color: var(--text-muted); }
-    .b-location   { background: var(--bg-surface); color: var(--text-muted); font-size: 10px; margin-left: 6px; vertical-align: middle; }
-
-    .project-objective { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
-    .detail { font-size: 13px; color: var(--text-secondary); margin-bottom: 5px; line-height: 1.45; }
-    .detail strong { color: var(--text-primary); font-weight: 600; }
-    .detail.blocker { color: var(--health-red); }
-    .detail.updated { color: var(--text-muted); font-size: 12px; margin-top: 8px; margin-bottom: 0; }
-
-    /* ── Completed ── */
-    .section-title {
-      font-size: 15px; font-weight: 600; color: var(--text-secondary);
-      margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.4px;
+      letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 8px;
     }
     .completed-list {
-      background: var(--bg-card); border-radius: 16px; padding: 12px 20px;
-      box-shadow: var(--shadow); margin-bottom: 32px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
     }
-    .completed-item {
+    .comp-item {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 0; border-bottom: 1px solid var(--divider); font-size: 13px;
+      padding: 10px 20px; border-bottom: 1px solid var(--border-light); font-size: 13px;
     }
-    .completed-item:last-child { border-bottom: none; }
-    .completed-item .name { font-weight: 500; color: var(--text-primary); }
-    .completed-item .date { color: var(--text-muted); font-size: 12px; }
+    .comp-item:last-child { border-bottom: none; }
+    .comp-check { color: var(--green); margin-right: 8px; }
+    .comp-date { font-size: 12px; color: var(--text-muted); }
 
-    /* ── Empty / loading ── */
-    .empty-state, .loading-state {
-      text-align: center; padding: 56px 24px; color: var(--text-muted);
-      font-size: 14px; background: var(--bg-card); border-radius: 16px;
+    /* Empty / loading */
+    .empty-state {
+      text-align: center; padding: 40px 24px; color: var(--text-muted); font-size: 13px;
     }
+    .loading-state { text-align: center; padding: 56px 24px; color: var(--text-muted); font-size: 14px; }
 
-    /* ── Footer ── */
     .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--text-muted); }
 
-    /* ══ SLIDE-OUT PANEL ══ */
-    .panel-overlay {
-      position: fixed; inset: 0;
-      background: rgba(61,53,41,0.3);
-      z-index: 100; opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
+    /* Responsive */
+    @media (max-width: 768px) {
+      .table-head { grid-template-columns: 10px 1fr 80px 28px; }
+      .row-summary { grid-template-columns: 10px 1fr 80px 28px; }
+      .table-head > :nth-child(4), .table-head > :nth-child(5), .table-head > :nth-child(6),
+      .row-summary > :nth-child(4), .row-summary > :nth-child(5), .row-summary > :nth-child(6) { display: none; }
     }
-    .panel-overlay.open { opacity: 1; pointer-events: auto; }
-
-    .detail-panel {
-      position: fixed; top: 0; right: -500px; width: 500px; height: 100%;
-      background: var(--bg-panel); z-index: 101;
-      box-shadow: -4px 0 24px rgba(0,0,0,0.15);
-      transition: right 0.3s cubic-bezier(0.4,0,0.2,1);
-      overflow-y: auto;
-    }
-    .detail-panel.open { right: 0; }
-
-    .panel-header {
-      position: sticky; top: 0; background: var(--bg-panel);
-      padding: 20px 24px; border-bottom: 1px solid var(--divider);
-      display: flex; justify-content: space-between; align-items: flex-start;
-      z-index: 1;
-    }
-    .panel-name { font-size: 18px; font-weight: 600; color: var(--text-primary); }
-    .panel-meta { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
-    .panel-meta .badge { vertical-align: middle; }
-    .panel-close {
-      background: none; border: none; font-size: 24px; cursor: pointer;
-      color: var(--text-muted); padding: 4px 8px; border-radius: 8px;
-      line-height: 1;
-    }
-    .panel-close:hover { background: var(--bg-surface); color: var(--text-primary); }
-
-    .panel-body { padding: 0 24px 24px; }
-
-    .panel-section { margin-top: 24px; }
-    .panel-section-title {
-      font-size: 12px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.5px; color: var(--text-muted);
-      margin-bottom: 12px; padding-bottom: 6px;
-      border-bottom: 1px solid var(--divider);
-    }
-
-    /* Timeline */
-    .timeline-entry {
-      margin-bottom: 16px; padding-left: 16px;
-      border-left: 2px solid var(--divider);
-    }
-    .timeline-entry:first-child { border-left-color: var(--accent); }
-    .timeline-date {
-      font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px;
-    }
-    .timeline-date .badge { font-size: 10px; margin-left: 6px; vertical-align: middle; }
-    .timeline-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-    .timeline-content { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-    .timeline-content ul { margin: 4px 0; padding-left: 16px; }
-    .timeline-content li { margin-bottom: 2px; }
-    .timeline-label { font-weight: 600; color: var(--text-primary); font-size: 12px; margin-top: 6px; }
-
-    /* Expandable accordion */
-    .expandable { border: 1px solid var(--divider); border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
-    .expandable-header {
-      padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 500;
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--bg-surface); color: var(--text-primary);
-      transition: background 0.15s;
-    }
-    .expandable-header:hover { background: var(--divider); }
-    .expandable-body {
-      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-    }
-    .expandable.open .expandable-body { max-height: 3000px; }
-    .expandable-content { padding: 12px 16px; border-top: 1px solid var(--divider); }
-    .chevron { transition: transform 0.2s; font-size: 11px; color: var(--text-muted); }
-    .expandable.open .chevron { transform: rotate(180deg); }
-
-    /* Markdown-ish content */
-    .md-content {
-      font-size: 13px; line-height: 1.6; color: var(--text-secondary);
-      white-space: pre-wrap; word-wrap: break-word;
-    }
-
-    .panel-loading { text-align: center; padding: 48px; color: var(--text-muted); font-size: 14px; }
-
-    /* ── Responsive ── */
     @media (max-width: 640px) {
-      .detail-panel { width: 100%; right: -100%; }
-      .detail-panel.open { right: 0; }
-      .projects-grid { grid-template-columns: 1fr; }
+      .container { padding: 12px; }
+      .header { padding: 0 16px; }
+      .detail-inner { padding: 0 12px 16px 12px; }
     }
   </style>
 </head>
 <body>
 
-<!-- Slide-out panel -->
-<div class="panel-overlay" id="panel-overlay"></div>
-<div class="detail-panel" id="detail-panel">
-  <div class="panel-header">
-    <div>
-      <div class="panel-name" id="panel-name"></div>
-      <div class="panel-meta" id="panel-meta"></div>
-    </div>
-    <button class="panel-close" id="panel-close">&times;</button>
-  </div>
-  <div class="panel-body" id="panel-body">
-    <div class="panel-loading">Loading...</div>
-  </div>
-</div>
-
-<!-- Header -->
 <div class="header">
-  <div>
-    <h1>Project Dashboard</h1>
-    <div class="meta" id="header-meta">Loading...</div>
-  </div>
-  <div>
-    <button class="btn btn-refresh" id="btn-refresh" onclick="refresh()">
+  <h1>Work Assistant</h1>
+  <div class="header-right">
+    <span id="header-owner"></span>
+    <span id="header-date"></span>
+    <button class="btn-sm" id="btn-refresh" onclick="refresh()">
       <span class="spin">&#x21bb;</span> Refresh
     </button>
   </div>
 </div>
 
 <div class="container">
+  <div class="summary-bar" id="summary-bar"></div>
   <div class="alerts" id="alerts"></div>
-  <div class="stats" id="stats"></div>
-  <div id="project-sections">
-    <div class="loading-state">Loading dashboard data...</div>
+  <div class="workspace-tabs" id="workspace-tabs"></div>
+  <div id="tab-panels"><div class="loading-state">Loading dashboard data...</div></div>
+  <div class="activity-section" id="activity-section" style="display:none">
+    <div class="activity-header">Recent Activity</div>
+    <div id="activity-list"></div>
   </div>
-  <div id="completed-section" style="display:none">
-    <div class="section-title">Recently Completed</div>
-    <div class="completed-list" id="completed-projects"></div>
+  <div class="completed-section" id="completed-section" style="display:none">
+    <div class="completed-label">Completed</div>
+    <div class="completed-list" id="completed-list"></div>
   </div>
 </div>
 
-<div class="footer">
-  Work Assistant Dashboard &middot; <span id="footer-time"></span>
-</div>
+<div class="footer">Work Assistant Dashboard &middot; <span id="footer-time"></span></div>
 
 <script>
 (function () {
-  var currentFilter = 'all';
   var currentData = null;
-  var panelOpen = false;
+  var currentFilter = 'all';
+  var activeWsTab = null;
+  var detailCache = {};
 
   // ── Helpers ──────────────────────────────────────────────
 
@@ -321,9 +333,94 @@
     return d.innerHTML;
   }
 
+  function inlineMd(s) {
+    return s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function renderMd(text) {
+    if (!text) return '';
+    var lines = text.split('\n');
+    var html = '';
+    var inList = false;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (!line.trim()) {
+        if (inList) { html += '</ul>'; inList = false; }
+        continue;
+      }
+      if (/^[-*_]{3,}\s*$/.test(line.trim())) {
+        if (inList) { html += '</ul>'; inList = false; }
+        html += '<hr>';
+        continue;
+      }
+      var hMatch = line.match(/^(#{1,4})\s+(.+)$/);
+      if (hMatch) {
+        if (inList) { html += '</ul>'; inList = false; }
+        var lvl = hMatch[1].length;
+        html += '<h' + lvl + '>' + inlineMd(esc(hMatch[2])) + '</h' + lvl + '>';
+        continue;
+      }
+      var liMatch = line.match(/^[-*]\s+(?:\[[ x]]\s+)?(.+)$/);
+      if (liMatch) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += '<li>' + inlineMd(esc(liMatch[1])) + '</li>';
+        continue;
+      }
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<p>' + inlineMd(esc(line)) + '</p>';
+    }
+    if (inList) html += '</ul>';
+    return '<div class="md">' + html + '</div>';
+  }
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return '';
+    var now = new Date();
+    var then = new Date(dateStr + 'T00:00:00');
+    var days = Math.floor((now - then) / 86400000);
+    if (days < 0) return 'future';
+    if (days === 0) return 'today';
+    if (days === 1) return '1d ago';
+    if (days < 7) return days + 'd ago';
+    if (days < 30) return Math.floor(days / 7) + 'w ago';
+    if (days < 365) return Math.floor(days / 30) + 'mo ago';
+    return Math.floor(days / 365) + 'y ago';
+  }
+
+  function timeClass(dateStr) {
+    if (!dateStr) return 'ct-red';
+    var days = Math.floor((new Date() - new Date(dateStr + 'T00:00:00')) / 86400000);
+    if (days <= 7) return 'ct-green';
+    if (days <= 14) return 'ct-amber';
+    return 'ct-red';
+  }
+
+  function healthDot(h) {
+    return '<div class="health-dot hd-' + esc(h || 'on-track') + '"></div>';
+  }
+
   function healthBadge(h) {
     if (!h) return '';
-    return '<span class="badge b-' + esc(h) + '">' + esc(h) + '</span>';
+    var label = h.replace(/-/g, ' ');
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    return '<span class="health-badge hb-' + esc(h) + '">' + esc(label) + '</span>';
+  }
+
+  function statusBadge(h) {
+    if (!h) return '';
+    var label = h.replace(/-/g, ' ');
+    label = label.charAt(0).toUpperCase() + label.slice(1);
+    return '<span class="se-badge seb-' + esc(h) + '">' + esc(label) + '</span>';
+  }
+
+  function filterProjects(list) {
+    if (currentFilter === 'all') return list;
+    if (currentFilter === 'on-track') {
+      return list.filter(function (p) {
+        return p.health === 'on-track' || p.health === 'in-progress' || p.health === 'not-started';
+      });
+    }
+    return list.filter(function (p) { return p.health === currentFilter; });
   }
 
   // ── Fetch & render ──────────────────────────────────────
@@ -331,301 +428,375 @@
   window.refresh = function () {
     var btn = document.getElementById('btn-refresh');
     btn.classList.add('loading');
+    detailCache = {};
     fetch('/api/data')
       .then(function (r) { return r.json(); })
       .then(function (data) { currentData = data; render(data); })
       .catch(function (err) {
-        document.getElementById('project-sections').innerHTML =
-          '<div class="empty-state">Failed to load data.<br>' + esc(err.message) + '</div>';
+        document.getElementById('tab-panels').innerHTML =
+          '<div class="empty-state">Failed to load data: ' + esc(err.message) + '</div>';
       })
       .finally(function () { btn.classList.remove('loading'); });
   };
 
   function render(data) {
     var ts = new Date(data.generated).toLocaleString();
-    document.getElementById('header-meta').textContent = data.owner + ' \u2022 ' + ts;
+    document.getElementById('header-owner').textContent = data.owner || '';
+    document.getElementById('header-date').textContent = ts;
     document.getElementById('footer-time').textContent = ts;
 
-    var active    = (data.projects && data.projects.active) || [];
+    var active = (data.projects && data.projects.active) || [];
     var completed = (data.projects && data.projects.completed) || [];
-    var grouped   = (data.projects && data.projects.grouped) || { personal: { projects: [] }, teams: [] };
-    var alerts    = data.alerts || {};
+    var grouped = (data.projects && data.projects.grouped) || { personal: { projects: [] }, teams: [] };
+    var alerts = data.alerts || {};
+    var activities = data.activities || [];
 
-    // Stats
-    var onTrack = active.filter(function (p) { return p.health === 'on-track' || p.health === 'in-progress'; }).length;
-    var atRisk  = active.filter(function (p) { return p.health === 'at-risk'; }).length;
+    renderSummaryPills(active);
+    renderAlerts(alerts);
+    renderWorkspaceTabs(grouped);
+    renderActivityFeed(activities);
+    renderCompleted(completed);
+  }
+
+  // ── Summary pills ─────────────────────────────────────
+
+  function renderSummaryPills(active) {
+    var onTrack = active.filter(function (p) { return p.health === 'on-track' || p.health === 'in-progress' || p.health === 'not-started'; }).length;
+    var atRisk = active.filter(function (p) { return p.health === 'at-risk'; }).length;
     var blocked = active.filter(function (p) { return p.health === 'blocked'; }).length;
 
-    document.getElementById('stats').innerHTML =
-      statCard('c-total', active.length, 'All Active', 'all') +
-      statCard('c-track', onTrack, 'On Track', 'on-track') +
-      statCard('c-risk', atRisk, 'At Risk', 'at-risk') +
-      statCard('c-blocked', blocked, 'Blocked', 'blocked');
+    document.getElementById('summary-bar').innerHTML =
+      pill('all', 'dot-all', active.length, 'Active') +
+      pill('on-track', 'dot-green', onTrack, 'On Track') +
+      pill('at-risk', 'dot-amber', atRisk, 'At Risk') +
+      pill('blocked', 'dot-red', blocked, 'Blocked');
+  }
 
-    document.querySelectorAll('.stat-card').forEach(function (el) {
-      el.addEventListener('click', function () {
-        currentFilter = el.dataset.filter;
-        renderGrouped(grouped);
-        highlightFilter();
-      });
-    });
-    highlightFilter();
+  function pill(filter, dotClass, num, label) {
+    var cls = 'summary-pill' + (currentFilter === filter ? ' active' : '');
+    return '<div class="' + cls + '" data-filter="' + filter + '">' +
+      '<span class="dot ' + dotClass + '"></span>' +
+      '<span class="n">' + num + '</span> ' + esc(label) + '</div>';
+  }
 
-    // Alerts
-    var ah = '';
+  // ── Alerts ──────────────────────────────────────────────
+
+  function renderAlerts(alerts) {
+    var h = '';
     if (alerts.blocked && alerts.blocked.length)
-      ah += '<div class="alert alert-blocked">Blocked: ' + alerts.blocked.join(', ') + '</div>';
-    if (alerts.atRisk && alerts.atRisk.length)
-      ah += '<div class="alert alert-at-risk">At Risk: ' + alerts.atRisk.join(', ') + '</div>';
+      h += alerts.blocked.map(function (n) { return '<span class="alert-chip red">&#x26A0; ' + esc(n) + ' blocked</span>'; }).join('');
     if (alerts.stale && alerts.stale.length)
-      ah += '<div class="alert alert-stale">Stale (2+ weeks): ' + alerts.stale.join(', ') + '</div>';
+      h += alerts.stale.map(function (n) { return '<span class="alert-chip amber">&#x23F0; ' + esc(n) + ' stale</span>'; }).join('');
     if (alerts.unregistered && alerts.unregistered.length)
-      ah += '<div class="alert alert-unregistered">Unregistered: ' +
-        alerts.unregistered.map(function (u) { return u.name + ' (' + u.repo + ')'; }).join(', ') + '</div>';
-    document.getElementById('alerts').innerHTML = ah;
-
-    // Projects
-    renderGrouped(grouped);
-
-    // Completed
-    if (completed.length > 0) {
-      document.getElementById('completed-section').style.display = 'block';
-      document.getElementById('completed-projects').innerHTML = completed.map(function (p) {
-        return '<div class="completed-item">' +
-          '<span class="name">' + esc(p.name) + ' <span class="badge b-location">' + esc(p.location) + '</span></span>' +
-          '<span class="date">' + esc(p.completedDate || '') + '</span></div>';
-      }).join('');
-    } else {
-      document.getElementById('completed-section').style.display = 'none';
-    }
+      h += alerts.unregistered.map(function (u) { return '<span class="alert-chip muted">' + esc(u.name) + ' unregistered (' + esc(u.repo) + ')</span>'; }).join('');
+    document.getElementById('alerts').innerHTML = h;
   }
 
-  // ── Grouped rendering ───────────────────────────────────
+  // ── Workspace tabs ────────────────────────────────────
 
-  function filterProjects(list) {
-    if (currentFilter === 'all') return list;
-    if (currentFilter === 'on-track') {
-      return list.filter(function (p) { return p.health === 'on-track' || p.health === 'in-progress' || p.health === 'not-started'; });
-    }
-    return list.filter(function (p) { return p.health === currentFilter; });
-  }
+  function renderWorkspaceTabs(grouped) {
+    var tabsHtml = '';
+    var panelsHtml = '';
 
-  function renderGrouped(grouped) {
-    var container = document.getElementById('project-sections');
-    var html = '';
-    var total = 0;
+    // Determine default tab
+    if (!activeWsTab) activeWsTab = 'personal';
 
-    // Personal
-    var personal = filterProjects(grouped.personal.projects || []);
-    if (personal.length) {
-      total += personal.length;
-      html += '<div class="section-group">';
-      html += '<div class="section-group-header">' + esc(grouped.personal.label || 'My Projects') + '</div>';
-      html += '<div class="projects-grid">' + personal.map(projectCard).join('') + '</div>';
-      html += '</div>';
-    }
+    var personalFiltered = filterProjects(grouped.personal.projects || []);
+    tabsHtml += wsTab('personal', 'My Projects', personalFiltered.length);
+    panelsHtml += tabPanel('personal', personalFiltered);
 
-    // Teams
     (grouped.teams || []).forEach(function (team) {
-      var projects = filterProjects(team.projects || []);
-      if (projects.length) {
-        total += projects.length;
-        html += '<div class="section-group">';
-        html += '<div class="section-group-header">' + esc(team.label) + '</div>';
-        html += '<div class="projects-grid">' + projects.map(projectCard).join('') + '</div>';
-        html += '</div>';
-      }
+      var tabId = 'team-' + team.repo;
+      var teamFiltered = filterProjects(team.projects || []);
+      tabsHtml += wsTab(tabId, team.repo, teamFiltered.length);
+      panelsHtml += tabPanel(tabId, teamFiltered);
     });
 
-    if (total === 0) {
-      var allEmpty = !grouped.personal.projects.length && (!grouped.teams || !grouped.teams.length || grouped.teams.every(function (t) { return !t.projects.length; }));
-      var msg = allEmpty
-        ? 'No active projects. Use <strong>/new-project</strong> to get started.'
-        : 'No <strong>' + esc(currentFilter) + '</strong> projects.';
-      html = '<div class="empty-state">' + msg + '</div>';
-    }
-
-    container.innerHTML = html;
+    document.getElementById('workspace-tabs').innerHTML = tabsHtml;
+    document.getElementById('tab-panels').innerHTML = panelsHtml;
   }
 
-  function projectCard(p) {
-    var hClass = 'h-' + p.health;
-    var h = '<div class="project-card ' + hClass + '" data-project="' + esc(p.name) + '">';
-    h += '<div class="project-header"><div>';
-    h += '<span class="project-name">' + esc(p.name) + '</span>';
-    h += '</div>';
-    h += healthBadge(p.health);
-    h += '</div>';
-    if (p.objective)     h += '<div class="project-objective">' + esc(p.objective) + '</div>';
-    if (p.summary)       h += '<div class="detail"><strong>Progress:</strong> ' + esc(p.summary) + '</div>';
-    if (p.blocker)       h += '<div class="detail blocker"><strong>Blocker:</strong> ' + esc(p.blocker) + '</div>';
-    if (p.nextMilestone) h += '<div class="detail"><strong>Next:</strong> ' + esc(p.nextMilestone) + '</div>';
-    if (p.lastUpdated)   h += '<div class="detail updated">Updated ' + esc(p.lastUpdated) + '</div>';
+  function wsTab(tabId, label, count) {
+    var cls = 'ws-tab' + (activeWsTab === tabId ? ' active' : '');
+    return '<div class="' + cls + '" data-tab="' + esc(tabId) + '">' +
+      esc(label) + ' <span class="count">' + count + '</span></div>';
+  }
+
+  function tabPanel(tabId, projects) {
+    var cls = 'tab-panel' + (activeWsTab === tabId ? ' active' : '');
+    var h = '<div class="' + cls + '" id="panel-' + esc(tabId) + '">';
+
+    if (!projects.length) {
+      var msg = currentFilter === 'all'
+        ? 'No active projects in this workspace.'
+        : 'No <strong>' + esc(currentFilter.replace(/-/g, ' ')) + '</strong> projects.';
+      h += '<div class="empty-state">' + msg + '</div>';
+    } else {
+      h += '<div class="project-table">';
+      h += '<div class="table-head"><div></div><div>Project</div><div>Health</div><div>Progress</div><div>Next</div><div>Updated</div><div></div></div>';
+      projects.forEach(function (p) { h += projectRow(p); });
+      h += '</div>';
+    }
     h += '</div>';
     return h;
   }
 
-  // ── Stat helpers ────────────────────────────────────────
-
-  function statCard(cls, num, label, filter) {
-    return '<div class="stat-card ' + cls + '" data-filter="' + filter + '">' +
-      '<div class="number">' + num + '</div>' +
-      '<div class="label">' + label + '</div></div>';
+  function projectRow(p) {
+    var h = '<div class="project-row" data-project="' + esc(p.name) + '">';
+    h += '<div class="row-summary">';
+    h += healthDot(p.health);
+    h += '<div class="proj-name">' + esc(p.name) + '</div>';
+    h += '<div>' + healthBadge(p.health) + '</div>';
+    h += '<div class="cell-text">' + esc(p.summary || '') + '</div>';
+    h += '<div class="cell-text">' + esc(p.nextMilestone || '') + '</div>';
+    h += '<div class="cell-time ' + timeClass(p.lastUpdated) + '">' + relativeTime(p.lastUpdated) + '</div>';
+    h += '<div class="expand-icon">&#x25BC;</div>';
+    h += '</div>';
+    h += '<div class="row-detail"><div class="detail-loading" style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Loading...</div></div>';
+    h += '</div>';
+    return h;
   }
 
-  function highlightFilter() {
-    document.querySelectorAll('.stat-card').forEach(function (el) {
-      el.classList.toggle('selected', el.dataset.filter === currentFilter);
-    });
-  }
+  // ── Row expand / detail ──────────────────────────────
 
-  // ── Panel ───────────────────────────────────────────────
+  function toggleRow(rowEl) {
+    var name = rowEl.dataset.project;
+    var wasExpanded = rowEl.classList.contains('expanded');
 
-  function openPanel(name) {
-    panelOpen = true;
-    document.getElementById('panel-overlay').classList.add('open');
-    document.getElementById('detail-panel').classList.add('open');
-    document.getElementById('panel-name').textContent = '';
-    document.getElementById('panel-meta').textContent = '';
-    document.getElementById('panel-body').innerHTML = '<div class="panel-loading">Loading project details...</div>';
-    document.body.style.overflow = 'hidden';
+    if (wasExpanded) {
+      rowEl.classList.remove('expanded');
+      return;
+    }
+
+    rowEl.classList.add('expanded');
+
+    if (detailCache[name]) {
+      renderRowDetail(rowEl, detailCache[name]);
+      return;
+    }
 
     fetch('/api/project/' + encodeURIComponent(name))
       .then(function (r) { return r.json(); })
-      .then(function (d) { renderPanel(d); })
+      .then(function (d) {
+        detailCache[name] = d;
+        renderRowDetail(rowEl, d);
+      })
       .catch(function (err) {
-        document.getElementById('panel-body').innerHTML =
-          '<div class="panel-loading">Failed to load.<br>' + esc(err.message) + '</div>';
+        rowEl.querySelector('.row-detail').innerHTML =
+          '<div style="padding:16px;color:var(--red);">Failed to load: ' + esc(err.message) + '</div>';
       });
   }
 
-  function closePanel() {
-    panelOpen = false;
-    document.getElementById('panel-overlay').classList.remove('open');
-    document.getElementById('detail-panel').classList.remove('open');
-    document.body.style.overflow = '';
-  }
+  function renderRowDetail(rowEl, d) {
+    var name = d.name;
+    var prefix = name.replace(/[^a-z0-9]/g, '-');
+    var meetings = d.meetings || [];
+    var decisions = d.decisions || [];
+    var statusHistory = d.statusHistory || [];
 
-  function renderPanel(d) {
-    document.getElementById('panel-name').innerHTML = esc(d.name) + ' ' + healthBadge(d.statusHistory && d.statusHistory[0] ? d.statusHistory[0].health : null);
-    document.getElementById('panel-meta').innerHTML =
-      '<span class="badge b-location">' + esc(d.location) + '</span> Created ' + esc(d.created);
+    var tabs = [];
+    tabs.push({ id: prefix + '-overview', label: 'Overview', active: true });
+    tabs.push({ id: prefix + '-status', label: 'Status', count: statusHistory.length });
+    if (d.plan) tabs.push({ id: prefix + '-plan', label: 'Plan' });
+    tabs.push({ id: prefix + '-meetings', label: 'Meetings', count: meetings.length });
+    tabs.push({ id: prefix + '-decisions', label: 'Decisions', count: decisions.length });
 
-    var html = '';
+    var h = '<div class="detail-inner">';
 
-    // Overview
+    // Tabs
+    h += '<div class="detail-tabs">';
+    tabs.forEach(function (t) {
+      var cls = 'dtab' + (t.active ? ' active' : '');
+      h += '<div class="' + cls + '" data-panel="' + t.id + '">' + esc(t.label);
+      if (t.count !== undefined) h += '<span class="bcnt">' + t.count + '</span>';
+      h += '</div>';
+    });
+    h += '</div>';
+
+    // Overview panel
+    h += '<div class="detail-panel active" id="' + prefix + '-overview">';
     if (d.overview && d.overview.fullContent) {
-      html += '<div class="panel-section">';
-      html += '<div class="panel-section-title">Overview</div>';
-      html += '<div class="md-content">' + esc(d.overview.fullContent) + '</div>';
-      html += '</div>';
+      h += renderMd(d.overview.fullContent);
+    } else {
+      h += '<div style="color:var(--text-muted);font-size:13px;">No overview available.</div>';
     }
+    h += '</div>';
 
-    // Status timeline
-    if (d.statusHistory && d.statusHistory.length) {
-      html += '<div class="panel-section">';
-      html += '<div class="panel-section-title">Status Timeline</div>';
-      d.statusHistory.forEach(function (entry) {
-        html += '<div class="timeline-entry">';
-        html += '<div class="timeline-date">' + esc(entry.date || 'Unknown date') + ' ' + healthBadge(entry.health) + '</div>';
-        if (entry.title) html += '<div class="timeline-title">' + esc(entry.title) + '</div>';
-        html += '<div class="timeline-content">';
+    // Status panel
+    h += '<div class="detail-panel" id="' + prefix + '-status">';
+    if (statusHistory.length) {
+      statusHistory.forEach(function (entry) {
+        h += '<div class="status-entry">';
+        h += '<div class="se-head"><span class="se-date">' + esc(entry.date || 'Unknown') + '</span>' + statusBadge(entry.health) + '</div>';
+        if (entry.title) h += '<div style="font-size:13px;font-weight:600;margin-bottom:4px;">' + esc(entry.title) + '</div>';
         if (entry.progress.length) {
-          html += '<ul>' + entry.progress.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>';
+          h += '<ul class="se-items">' + entry.progress.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul>';
         }
-        if (entry.blockers.length) {
-          html += '<div class="timeline-label">Blockers</div>';
-          html += '<ul>' + entry.blockers.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>';
+        if (entry.blockers && entry.blockers.length) {
+          h += '<div class="se-label">Blockers</div>';
+          h += '<ul class="se-items">' + entry.blockers.map(function (b) { return '<li>' + esc(b) + '</li>'; }).join('') + '</ul>';
         }
-        if (entry.next.length) {
-          html += '<div class="timeline-label">Next</div>';
-          html += '<ul>' + entry.next.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
+        if (entry.risks && entry.risks.length) {
+          h += '<div class="se-label">Risks</div>';
+          h += '<ul class="se-items">' + entry.risks.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>';
         }
-        html += '</div></div>';
+        if (entry.next && entry.next.length) {
+          h += '<div class="se-label">Next</div>';
+          h += '<ul class="se-items">' + entry.next.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>';
+        }
+        h += '</div>';
       });
-      html += '</div>';
+    } else {
+      h += '<div style="color:var(--text-muted);font-size:13px;">No status history.</div>';
     }
+    h += '</div>';
 
-    // Plan
+    // Plan panel
     if (d.plan) {
-      html += '<div class="panel-section">';
-      html += '<div class="panel-section-title">Plan</div>';
-      html += '<div class="md-content">' + esc(d.plan) + '</div>';
-      html += '</div>';
+      h += '<div class="detail-panel" id="' + prefix + '-plan">';
+      h += renderMd(d.plan);
+      h += '</div>';
     }
 
-    // Meetings
-    if (d.meetings && d.meetings.length) {
-      html += '<div class="panel-section">';
-      html += '<div class="panel-section-title">Meetings</div>';
-      d.meetings.forEach(function (m) {
-        html += '<div class="expandable">';
-        html += '<div class="expandable-header">';
-        var mDetail = esc(m.date || '') + ' &mdash; ' + esc(m.topic);
-        if (m.purpose) mDetail += ' <span style="color:var(--text-muted);font-weight:400">— ' + esc(m.purpose) + '</span>';
-        if (m.attendees && m.attendees.length) mDetail += ' <span class="badge b-location">' + m.attendees.length + ' attendees</span>';
-        html += '<span>' + mDetail + '</span>';
-        html += '<span class="chevron">&#x25BC;</span>';
-        html += '</div>';
-        html += '<div class="expandable-body"><div class="expandable-content">';
-        html += '<div class="md-content">' + esc(m.content || '') + '</div>';
-        html += '</div></div></div>';
+    // Meetings panel
+    h += '<div class="detail-panel" id="' + prefix + '-meetings">';
+    if (meetings.length) {
+      meetings.forEach(function (m, idx) {
+        var mid = prefix + '-mtg-' + idx;
+        h += '<div class="artifact-row" data-expand="' + mid + '">';
+        h += '<div class="artifact-icon ai-meeting">&#x1F4C5;</div>';
+        h += '<div class="artifact-info"><div class="artifact-title">' + esc(m.topic) + '</div>';
+        h += '<div class="artifact-sub">';
+        if (m.attendees && m.attendees.length) h += m.attendees.length + ' attendees';
+        if (m.purpose) h += (m.attendees && m.attendees.length ? ' &middot; ' : '') + esc(m.purpose);
+        h += '</div></div>';
+        h += '<div class="artifact-date">' + esc(m.date || '') + '</div>';
+        h += '</div>';
+        h += '<div class="artifact-expand" id="' + mid + '"><div class="artifact-expand-inner">' + renderMd(m.content) + '</div></div>';
       });
-      html += '</div>';
+    } else {
+      h += '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No meetings recorded.</div>';
     }
+    h += '</div>';
 
-    // Decisions
-    if (d.decisions && d.decisions.length) {
-      html += '<div class="panel-section">';
-      html += '<div class="panel-section-title">Decisions</div>';
-      d.decisions.forEach(function (dec) {
-        html += '<div class="expandable">';
-        html += '<div class="expandable-header">';
-        var decDetail = esc(dec.name);
-        if (dec.date) decDetail = esc(dec.date) + ' &mdash; ' + decDetail;
-        if (dec.status) decDetail += ' ' + healthBadge(dec.status);
-        html += '<span>' + decDetail + '</span>';
-        html += '<span class="chevron">&#x25BC;</span>';
-        html += '</div>';
-        html += '<div class="expandable-body"><div class="expandable-content">';
-        html += '<div class="md-content">' + esc(dec.content || '') + '</div>';
-        html += '</div></div></div>';
+    // Decisions panel
+    h += '<div class="detail-panel" id="' + prefix + '-decisions">';
+    if (decisions.length) {
+      decisions.forEach(function (dec, idx) {
+        var did = prefix + '-dec-' + idx;
+        h += '<div class="artifact-row" data-expand="' + did + '">';
+        h += '<div class="artifact-icon ai-decision">&#x2696;</div>';
+        h += '<div class="artifact-info"><div class="artifact-title">' + esc(dec.name) + '</div>';
+        h += '<div class="artifact-sub">';
+        if (dec.status) h += esc(dec.status);
+        if (dec.participants && dec.participants.length) h += ' &middot; ' + dec.participants.length + ' participants';
+        h += '</div></div>';
+        h += '<div class="artifact-date">' + esc(dec.date || '') + '</div>';
+        h += '</div>';
+        h += '<div class="artifact-expand" id="' + did + '"><div class="artifact-expand-inner">' + renderMd(dec.content) + '</div></div>';
       });
-      html += '</div>';
+    } else {
+      h += '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No decisions recorded.</div>';
     }
+    h += '</div>';
 
-    if (!html) {
-      html = '<div class="panel-loading">No project data available.</div>';
-    }
+    h += '</div>';
+    rowEl.querySelector('.row-detail').innerHTML = h;
 
-    document.getElementById('panel-body').innerHTML = html;
+    // Bind detail tabs
+    rowEl.querySelectorAll('.dtab').forEach(function (tab) {
+      tab.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var inner = tab.closest('.detail-inner');
+        inner.querySelectorAll('.dtab').forEach(function (t) { t.classList.remove('active'); });
+        inner.querySelectorAll('.detail-panel').forEach(function (p) { p.classList.remove('active'); });
+        tab.classList.add('active');
+        var panel = document.getElementById(tab.dataset.panel);
+        if (panel) panel.classList.add('active');
+      });
+    });
 
-    // Bind expandable toggles
-    document.querySelectorAll('#panel-body .expandable-header').forEach(function (el) {
-      el.addEventListener('click', function () {
-        el.parentElement.classList.toggle('open');
+    // Bind artifact expand
+    rowEl.querySelectorAll('.artifact-row[data-expand]').forEach(function (ar) {
+      ar.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var target = document.getElementById(ar.dataset.expand);
+        if (target) target.classList.toggle('open');
       });
     });
   }
 
-  // ── Event listeners ─────────────────────────────────────
+  // ── Activity feed ───────────────────────────────────────
 
-  // Panel close
-  document.getElementById('panel-close').addEventListener('click', closePanel);
-  document.getElementById('panel-overlay').addEventListener('click', closePanel);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && panelOpen) closePanel();
-  });
+  function renderActivityFeed(activities) {
+    if (!activities || !activities.length) {
+      document.getElementById('activity-section').style.display = 'none';
+      return;
+    }
+    document.getElementById('activity-section').style.display = '';
+    var verbs = { status: 'Status updated on', meeting: 'Meeting captured for', decision: 'Decision recorded for', created: 'Project created:' };
+    var h = '';
+    activities.forEach(function (a) {
+      h += '<div class="act-item">';
+      h += '<div class="act-dot ' + esc(a.type) + '"></div>';
+      h += '<div class="act-text">' + esc(verbs[a.type] || '') + ' <span class="proj">' + esc(a.project) + '</span>';
+      if (a.summary && a.type !== 'created') h += ' &mdash; ' + esc(a.summary);
+      h += '</div>';
+      h += '<div class="act-time">' + relativeTime(a.date) + '</div>';
+      h += '</div>';
+    });
+    document.getElementById('activity-list').innerHTML = h;
+  }
 
-  // Project card clicks (event delegation)
-  document.getElementById('project-sections').addEventListener('click', function (e) {
-    var card = e.target.closest('.project-card');
-    if (card && card.dataset.project) {
-      openPanel(card.dataset.project);
+  // ── Completed ───────────────────────────────────────────
+
+  function renderCompleted(completed) {
+    if (!completed || !completed.length) {
+      document.getElementById('completed-section').style.display = 'none';
+      return;
+    }
+    document.getElementById('completed-section').style.display = '';
+    var h = '';
+    completed.forEach(function (p) {
+      h += '<div class="comp-item">';
+      h += '<div><span class="comp-check">&#10003;</span>' + esc(p.name) + '</div>';
+      h += '<div class="comp-date">' + esc(p.completedDate || '') + '</div>';
+      h += '</div>';
+    });
+    document.getElementById('completed-list').innerHTML = h;
+  }
+
+  // ── Event delegation ───────────────────────────────────
+
+  // Summary pill clicks
+  document.getElementById('summary-bar').addEventListener('click', function (e) {
+    var pill = e.target.closest('.summary-pill');
+    if (pill && pill.dataset.filter) {
+      currentFilter = pill.dataset.filter;
+      if (currentData) render(currentData);
     }
   });
 
-  // ── Init ────────────────────────────────────────────────
+  // Workspace tab clicks
+  document.getElementById('workspace-tabs').addEventListener('click', function (e) {
+    var tab = e.target.closest('.ws-tab');
+    if (tab && tab.dataset.tab) {
+      activeWsTab = tab.dataset.tab;
+      document.querySelectorAll('.ws-tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === activeWsTab); });
+      document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.toggle('active', p.id === 'panel-' + activeWsTab); });
+    }
+  });
+
+  // Project row clicks
+  document.getElementById('tab-panels').addEventListener('click', function (e) {
+    var summary = e.target.closest('.row-summary');
+    if (summary) {
+      var row = summary.closest('.project-row');
+      if (row) toggleRow(row);
+    }
+  });
+
+  // ── Init ─────────────────────────────────────────────────
 
   window.refresh();
 })();

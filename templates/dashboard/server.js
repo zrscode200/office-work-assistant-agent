@@ -130,66 +130,23 @@ function splitStatusSections(content) {
   return all.filter(s => /^\d{4}-\d{2}-\d{2}/.test(s));
 }
 
-function parseTopLevelHealth(content) {
-  // Match standalone "## Health: value" line
-  const m = content.match(/^## Health:\s*(.+)$/m);
-  return m ? m[1].trim().toLowerCase() : null;
-}
-
 function cleanLines(text) {
   return text.split('\n')
     .map(l => l.replace(/^[-*]\s*/, '').replace(/^\[[ x]]\s*/, '').trim())
     .filter(l => l && !l.startsWith('<!--') && !/^[_*]*(none|n\/a)[_*]*$/i.test(l));
 }
 
-function parseTopLevelBlock(content, label) {
-  // Match top-level sections like "## Blockers", "## Upcoming Milestones", etc.
-  // Label words only need to match the start of the heading (allows trailing words).
-  // Uses tempered greedy token to avoid multiline $ matching blank lines prematurely.
-  const re = new RegExp('^## (?:' + label + ')(?: [^\\n]*)?\\n((?:(?!\\n## )[\\s\\S])*)', 'm');
-  const m = content.match(re);
-  if (!m || !m[1]) return [];
-  return cleanLines(m[1]);
-}
-
 function parseStatus(filePath) {
   const content = read(filePath);
   if (!content) return null;
 
-  // Frontmatter path: structured data available
-  const { meta, body } = parseFrontmatter(content);
-  if (meta.health) {
-    return {
-      lastUpdated: meta.last_updated || null,
-      health: meta.health.toLowerCase(),
-      progress: meta.summary ? [meta.summary] : (Array.isArray(meta.progress) ? meta.progress : []),
-      blockers: Array.isArray(meta.blockers) ? meta.blockers : [],
-      next: Array.isArray(meta.next) ? meta.next : []
-    };
-  }
-
-  // Legacy fallback: parse from markdown
-  const topHealth = parseTopLevelHealth(content);
-  const dated = splitStatusSections(content);
-
-  if (!dated.length) {
-    return {
-      lastUpdated: null,
-      health: topHealth,
-      progress: parseTopLevelBlock(content, 'Recent Progress|Progress'),
-      blockers: parseTopLevelBlock(content, 'Blockers?'),
-      next: parseTopLevelBlock(content, 'Upcoming|Next')
-    };
-  }
-
-  const latest = parseStatusSection(dated[0]);
+  const { meta } = parseFrontmatter(content);
   return {
-    lastUpdated: latest.date,
-    health: latest.health || topHealth,
-    progress: latest.progress.length ? latest.progress
-      : dated[0].split('\n').map(l => l.replace(/^[-*]\s*/, '').trim()).filter(l => l && !l.match(/^\d{4}-\d{2}-\d{2}/) && !l.startsWith('**')),
-    blockers: latest.blockers.length ? latest.blockers : parseTopLevelBlock(content, 'Blockers?'),
-    next: latest.next.length ? latest.next : parseTopLevelBlock(content, 'Upcoming|Next')
+    lastUpdated: meta.last_updated || null,
+    health: meta.health ? meta.health.toLowerCase() : null,
+    progress: meta.summary ? [meta.summary] : (Array.isArray(meta.progress) ? meta.progress : []),
+    blockers: Array.isArray(meta.blockers) ? meta.blockers : [],
+    next: Array.isArray(meta.next) ? meta.next : []
   };
 }
 
@@ -197,15 +154,11 @@ function parseFullStatus(filePath) {
   const content = read(filePath);
   if (!content) return [];
 
-  // Use frontmatter health as top-level if available, else regex
   const { meta, body } = parseFrontmatter(content);
-  const parseContent = body || content;
-  const topHealth = meta.health ? meta.health.toLowerCase() : parseTopLevelHealth(content);
-  const topBlockers = Array.isArray(meta.blockers) && meta.blockers.length
-    ? meta.blockers : parseTopLevelBlock(parseContent, 'Blockers?');
-  const topNext = Array.isArray(meta.next) && meta.next.length
-    ? meta.next : parseTopLevelBlock(parseContent, 'Upcoming|Next');
-  const dated = splitStatusSections(parseContent);
+  const topHealth = meta.health ? meta.health.toLowerCase() : null;
+  const topBlockers = Array.isArray(meta.blockers) ? meta.blockers : [];
+  const topNext = Array.isArray(meta.next) ? meta.next : [];
+  const dated = splitStatusSections(body || content);
 
   const entries = dated.map(s => {
     const entry = parseStatusSection(s);
@@ -235,31 +188,16 @@ function parseOverview(filePath) {
   const content = read(filePath);
   if (!content) return null;
 
-  // Frontmatter path
-  const { meta } = parseFrontmatter(content);
-  if (meta.objective) {
-    let objective = meta.objective;
-    if (objective.length > 150) objective = objective.slice(0, 147) + '...';
-    return { objective, fullContent: content };
-  }
-
-  // Legacy fallback: regex on ## Objective section
-  const objMatch = content.match(/## Objective\n+([\s\S]*?)(?=\n##|$)/);
-  let objective = null;
-  if (objMatch) {
-    const lines = objMatch[1].split('\n')
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('<!--'));
-    if (lines.length) {
-      objective = lines[0];
-      if (objective.length > 150) objective = objective.slice(0, 147) + '...';
-    }
-  }
-  return { objective, fullContent: content };
+  const { meta, body } = parseFrontmatter(content);
+  let objective = meta.objective || null;
+  if (objective && objective.length > 150) objective = objective.slice(0, 147) + '...';
+  return { objective, fullContent: body };
 }
 
 function readPlan(filePath) {
-  return read(filePath);
+  const content = read(filePath);
+  if (!content) return null;
+  return parseFrontmatter(content).body;
 }
 
 function listMeetings(projectDir) {
@@ -276,7 +214,7 @@ function listMeetings(projectDir) {
         topic: fnMatch ? fnMatch[2].replace(/-/g, ' ') : f.replace('.md', ''),
         attendees: Array.isArray(meta.attendees) ? meta.attendees : [],
         purpose: meta.purpose || null,
-        content: raw
+        content: body
       };
     });
   } catch { return []; }
@@ -288,14 +226,14 @@ function listDecisions(projectDir) {
     const files = fs.readdirSync(dir).filter(f => f.endsWith('.md')).sort();
     return files.map(f => {
       const raw = read(path.join(dir, f));
-      const { meta } = parseFrontmatter(raw);
+      const { meta, body } = parseFrontmatter(raw);
       return {
         filename: f,
         name: f.replace('.md', '').replace(/-/g, ' '),
         date: meta.date || null,
         status: meta.status || null,
         participants: Array.isArray(meta.participants) ? meta.participants : [],
-        content: raw
+        content: body
       };
     });
   } catch { return []; }
@@ -412,6 +350,8 @@ function buildData() {
     projects: active.filter(p => p.location === repo)
   }));
 
+  const activities = buildActivities(config, registry, alerts.unregistered);
+
   return {
     generated: new Date().toISOString(),
     owner: config.owner,
@@ -423,8 +363,55 @@ function buildData() {
         teams
       }
     },
-    alerts
+    alerts,
+    activities
   };
+}
+
+// ── Build activity feed ──────────────────────────────────────
+
+function buildActivities(config, registry, unregistered) {
+  const items = [];
+  const allProjects = [];
+
+  for (const proj of registry) {
+    if (proj.status === 'archived' || proj.status === 'completed') continue;
+    const pPath = projectPath(proj, config.teamRepos);
+    if (pPath) allProjects.push({ name: proj.name, pPath, created: proj.created });
+  }
+  for (const unreg of (unregistered || [])) {
+    const repoPath = config.teamRepos[unreg.repo];
+    if (!repoPath) continue;
+    allProjects.push({ name: unreg.name, pPath: path.join(repoPath, 'projects', unreg.name), created: null });
+  }
+
+  for (const { name, pPath, created } of allProjects) {
+    const history = parseFullStatus(path.join(pPath, 'status.md'));
+    for (const entry of history) {
+      if (entry.date) {
+        items.push({ date: entry.date, type: 'status', project: name,
+          summary: entry.title || (entry.progress.length ? entry.progress[0] : 'Status updated') });
+      }
+    }
+    for (const m of listMeetings(pPath)) {
+      if (m.date) {
+        items.push({ date: m.date, type: 'meeting', project: name,
+          summary: m.topic + (m.purpose ? ' — ' + m.purpose : '') });
+      }
+    }
+    for (const d of listDecisions(pPath)) {
+      if (d.date) {
+        items.push({ date: d.date, type: 'decision', project: name,
+          summary: d.name + (d.status ? ' (' + d.status + ')' : '') });
+      }
+    }
+    if (created && !history.some(e => e.date === created)) {
+      items.push({ date: created, type: 'created', project: name, summary: 'Project created' });
+    }
+  }
+
+  items.sort((a, b) => b.date.localeCompare(a.date));
+  return items.slice(0, 20);
 }
 
 // ── Build project detail ─────────────────────────────────────
@@ -432,11 +419,24 @@ function buildData() {
 function buildProjectDetail(projectName) {
   const config   = parseConfig();
   const registry = parseRegistry();
-  const proj = registry.find(p => p.name === projectName);
-  if (!proj) return null;
+  let proj = registry.find(p => p.name === projectName);
+  let pPath;
 
-  const pPath = projectPath(proj, config.teamRepos);
-  if (!pPath) return null;
+  if (proj) {
+    pPath = projectPath(proj, config.teamRepos);
+  } else {
+    // Check unregistered team projects
+    for (const [repo, repoPath] of Object.entries(config.teamRepos)) {
+      const candidate = path.join(repoPath, 'projects', projectName);
+      try {
+        fs.statSync(candidate);
+        proj = { name: projectName, location: repo, status: 'active', created: '' };
+        pPath = candidate;
+        break;
+      } catch { /* not here */ }
+    }
+  }
+  if (!proj || !pPath) return null;
 
   const ov = parseOverview(path.join(pPath, 'overview.md'));
 

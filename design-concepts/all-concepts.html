@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Design Concepts</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+    /* Concept switcher bar */
+    .switcher {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+      background: #1a1a2e; padding: 0 24px;
+      display: flex; align-items: center; gap: 0;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      height: 48px;
+    }
+    .switcher-label {
+      color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600;
+      margin-right: 16px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .switcher button {
+      padding: 12px 20px; border: none; background: transparent;
+      color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; border-bottom: 2px solid transparent;
+      height: 48px;
+    }
+    .switcher button:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.05); }
+    .switcher button.active { color: #fff; border-bottom-color: #818cf8; }
+    .switcher .keys {
+      margin-left: auto; color: rgba(255,255,255,0.3); font-size: 11px;
+    }
+    .switcher .keys kbd {
+      background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 3px;
+      font-family: inherit; margin: 0 2px;
+    }
+
+    .concept-frame {
+      display: none; position: absolute; top: 48px; left: 0; right: 0; bottom: 0;
+      border: none; width: 100%; height: calc(100vh - 48px);
+    }
+    .concept-frame.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="switcher">
+  <span class="switcher-label">Concepts</span>
+  <button onclick="show('a')" id="btn-a">A: Clean Data</button>
+  <button onclick="show('b')" id="btn-b">B: Visual Status</button>
+  <button onclick="show('c')" id="btn-c">C: Executive</button>
+  <button class="active" onclick="show('d')" id="btn-d">D: Hybrid</button>
+  <button onclick="show('e')" id="btn-e">E: Mission Control</button>
+  <span class="keys">Press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>4</kbd> <kbd>5</kbd> to switch</span>
+</div>
+
+<iframe class="concept-frame" id="frame-a" src="concept-a-clean-data.html"></iframe>
+<iframe class="concept-frame" id="frame-b" src="concept-b-visual-status.html"></iframe>
+<iframe class="concept-frame" id="frame-c" src="concept-c-executive.html"></iframe>
+<iframe class="concept-frame active" id="frame-d" src="concept-d-hybrid.html"></iframe>
+<iframe class="concept-frame" id="frame-e" src="concept-e-mission-control.html"></iframe>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.concept-frame').forEach(f => f.classList.remove('active'));
+  document.querySelectorAll('.switcher button').forEach(b => b.classList.remove('active'));
+  document.getElementById('frame-' + id).classList.add('active');
+  document.getElementById('btn-' + id).classList.add('active');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === '1') show('a');
+  if (e.key === '2') show('b');
+  if (e.key === '3') show('c');
+  if (e.key === '4') show('d');
+  if (e.key === '5') show('e');
+});
+</script>
+
+</body>
+</html>

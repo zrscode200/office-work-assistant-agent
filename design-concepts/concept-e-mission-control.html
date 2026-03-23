@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept E: Mission Control</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --bg-card: #14161e;
+      --bg-elevated: #1a1d27;
+      --bg-hover: #1f2230;
+      --text: #e8eaf0;
+      --text-sec: #a0a4b8;
+      --text-muted: #5c6080;
+      --border: #252838;
+      --accent: #6c72ff;
+      --accent-glow: rgba(108, 114, 255, 0.15);
+      --green: #22d67a;
+      --green-dim: rgba(34, 214, 122, 0.12);
+      --amber: #ffb224;
+      --amber-dim: rgba(255, 178, 36, 0.12);
+      --red: #ff4757;
+      --red-dim: rgba(255, 71, 87, 0.12);
+      --blue: #4da6ff;
+      --purple: #b17aff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+      background: var(--bg); color: var(--text);
+      display: flex; height: 100vh; overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 280px; background: var(--bg-card);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 16px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-mark {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: white;
+    }
+    .sidebar-title { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; }
+
+    /* Portfolio pulse */
+    .pulse-section { padding: 16px 18px; border-bottom: 1px solid var(--border); }
+    .pulse-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 10px; }
+
+    .pulse-bar {
+      display: flex; height: 4px; border-radius: 2px; overflow: hidden; gap: 2px;
+      margin-bottom: 12px;
+    }
+    .pulse-seg { border-radius: 2px; }
+    .ps-green { background: var(--green); }
+    .ps-amber { background: var(--amber); }
+    .ps-red { background: var(--red); }
+
+    .pulse-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .pulse-stat {
+      text-align: center; padding: 8px 4px; border-radius: 6px;
+      background: var(--bg); border: 1px solid var(--border);
+    }
+    .pulse-stat .num { font-size: 18px; font-weight: 700; }
+    .pulse-stat .lbl { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .ps-g .num { color: var(--green); }
+    .ps-a .num { color: var(--amber); }
+    .ps-r .num { color: var(--red); }
+
+    /* Workspace sections */
+    .ws-section { padding: 12px 0; }
+    .ws-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--text-muted); padding: 0 18px; margin-bottom: 6px;
+    }
+
+    .project-nav { list-style: none; }
+    .project-nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 18px; cursor: pointer; transition: background 0.1s;
+      font-size: 12px;
+    }
+    .project-nav-item:hover { background: var(--bg-hover); }
+    .project-nav-item.active { background: var(--accent-glow); border-right: 2px solid var(--accent); }
+
+    .nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .nd-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .nd-amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .nd-red { background: var(--red); box-shadow: 0 0 6px var(--red); animation: glow-pulse 2s infinite; }
+    @keyframes glow-pulse { 0%,100% { box-shadow: 0 0 6px var(--red); } 50% { box-shadow: 0 0 12px var(--red); } }
+
+    .nav-name { flex: 1; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+
+    .sidebar-footer {
+      margin-top: auto; padding: 12px 18px; border-top: 1px solid var(--border);
+      font-size: 10px; color: var(--text-muted);
+      display: flex; justify-content: space-between;
+    }
+
+    /* ── Main content ── */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Top bar */
+    .topbar {
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-project { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+    .topbar-health {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .th-green { background: var(--green-dim); color: var(--green); }
+    .th-amber { background: var(--amber-dim); color: var(--amber); }
+    .th-red { background: var(--red-dim); color: var(--red); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .topbar-meta { font-size: 11px; color: var(--text-muted); }
+
+    /* Content tabs */
+    .content-tabs {
+      display: flex; gap: 0; padding: 0 24px; background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+    .ctab {
+      padding: 10px 16px; font-size: 11px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; transition: all 0.15s; text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .ctab:hover { color: var(--text-sec); }
+    .ctab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .ctab .cnt { font-size: 9px; background: var(--border); padding: 1px 5px; border-radius: 6px; margin-left: 4px; }
+    .ctab.active .cnt { background: var(--accent-glow); color: var(--accent); }
+
+    /* Content area */
+    .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+    /* Overview panel - bento grid */
+    .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .bento-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; overflow: hidden;
+    }
+    .bento-card.full { grid-column: 1 / -1; }
+    .bento-label {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-muted); margin-bottom: 10px; font-weight: 600;
+    }
+    .bento-value { font-size: 13px; color: var(--text-sec); line-height: 1.6; }
+    .bento-value strong { color: var(--text); font-weight: 600; }
+    .bento-value ul { padding-left: 16px; margin-top: 4px; }
+    .bento-value li { margin-bottom: 3px; }
+
+    /* Key metrics row */
+    .metrics { display: flex; gap: 8px; margin-bottom: 16px; }
+    .metric {
+      flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+    }
+    .metric-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 4px; }
+    .metric-value { font-size: 14px; font-weight: 600; }
+    .mv-green { color: var(--green); }
+    .mv-amber { color: var(--amber); }
+    .mv-red { color: var(--red); }
+
+    /* Status timeline */
+    .timeline {}
+    .tl-entry {
+      padding: 14px 16px; background: var(--bg-card);
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .tl-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .tl-date {
+      font-size: 11px; font-weight: 600; color: var(--text-muted);
+      font-family: 'SF Mono', monospace;
+    }
+    .tl-badge {
+      font-size: 10px; font-weight: 600; padding: 1px 8px; border-radius: 8px;
+    }
+    .tlb-green { background: var(--green-dim); color: var(--green); }
+    .tlb-amber { background: var(--amber-dim); color: var(--amber); }
+    .tlb-red { background: var(--red-dim); color: var(--red); }
+    .tl-content { font-size: 12px; color: var(--text-sec); line-height: 1.6; }
+    .tl-content ul { padding-left: 16px; margin-top: 4px; }
+    .tl-content li { margin-bottom: 2px; }
+    .tl-section-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted); margin-top: 8px;
+    }
+
+    /* Artifact cards */
+    .artifact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .acard {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .acard:hover { border-color: var(--accent); background: var(--accent-glow); }
+    .acard-icon { font-size: 18px; margin-bottom: 6px; }
+    .acard-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+    .acard-sub { font-size: 10px; color: var(--text-muted); }
+
+    /* Activity feed (right side) */
+    .split-view { display: flex; gap: 16px; height: 100%; }
+    .split-main { flex: 1; overflow-y: auto; }
+    .split-aside {
+      width: 260px; flex-shrink: 0; overflow-y: auto;
+      border-left: 1px solid var(--border); padding-left: 16px;
+    }
+
+    .feed-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--text-muted); margin-bottom: 12px; font-weight: 600;
+    }
+    .feed-item {
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-type {
+      display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+      margin-right: 6px;
+    }
+    .ft-status { background: var(--accent); }
+    .ft-meeting { background: var(--blue); }
+    .ft-decision { background: var(--purple); }
+    .ft-created { background: var(--green); }
+    .feed-text { color: var(--text-sec); line-height: 1.5; }
+    .feed-text .proj { color: var(--text); font-weight: 600; }
+    .feed-time { color: var(--text-muted); font-size: 10px; margin-top: 2px; }
+
+    /* Alert strip at bottom of sidebar */
+    .alert-list { padding: 0 18px 12px; }
+    .alert-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 6px; font-size: 11px;
+      margin-bottom: 4px;
+    }
+    .alert-item.blocked { background: var(--red-dim); color: var(--red); }
+    .alert-item.stale { background: var(--amber-dim); color: var(--amber); }
+    .alert-icon { font-size: 12px; }
+
+    /* Tab content areas */
+    .tab-area { display: none; }
+    .tab-area.active { display: block; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    .concept-badge {
+      position: fixed; bottom: 16px; right: 16px;
+      background: linear-gradient(135deg, #6c72ff, #b17aff);
+      color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px;
+      font-weight: 600; z-index: 99; box-shadow: 0 4px 16px rgba(108,114,255,0.4);
+      font-family: -apple-system, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<div class="concept-badge">Concept E: Mission Control (fresh redesign)</div>
+
+<!-- ── Sidebar ── -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-mark">W</div>
+    <div class="sidebar-title">MISSION CONTROL</div>
+  </div>
+
+  <!-- Portfolio pulse -->
+  <div class="pulse-section">
+    <div class="pulse-label">Portfolio Health</div>
+    <div class="pulse-bar">
+      <div class="pulse-seg ps-green" style="flex:3"></div>
+      <div class="pulse-seg ps-amber" style="flex:1"></div>
+      <div class="pulse-seg ps-red" style="flex:1"></div>
+    </div>
+    <div class="pulse-stats">
+      <div class="pulse-stat ps-g"><div class="num">3</div><div class="lbl">On Track</div></div>
+      <div class="pulse-stat ps-a"><div class="num">1</div><div class="lbl">At Risk</div></div>
+      <div class="pulse-stat ps-r"><div class="num">1</div><div class="lbl">Blocked</div></div>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div style="padding-top:12px">
+    <div class="ws-label">Alerts</div>
+    <div class="alert-list">
+      <div class="alert-item blocked"><span class="alert-icon">&#x26A0;</span> biologics-pipeline blocked</div>
+      <div class="alert-item stale"><span class="alert-icon">&#x23F0;</span> agent-testing stale 18d</div>
+    </div>
+  </div>
+
+  <!-- Personal projects -->
+  <div class="ws-section">
+    <div class="ws-label">Personal</div>
+    <ul class="project-nav">
+      <li class="project-nav-item active" onclick="selectProject(this, 'proj-asm')">
+        <span class="nav-dot nd-green"></span>
+        <span class="nav-name">asm-schema-finder</span>
+        <span class="nav-time">2d</span>
+      </li>
+      <li class="project-nav-item" onclick="selectProject(this, 'proj-q2')">
+        <span class="nav-dot nd-green"></span>
+        <span class="nav-name">q2-planning</span>
+        <span class="nav-time">1d</span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Team projects -->
+  <div class="ws-section">
+    <div class="ws-label">test-projects-repo</div>
+    <ul class="project-nav">
+      <li class="project-nav-item" onclick="selectProject(this, 'proj-bio')">
+        <span class="nav-dot nd-red"></span>
+        <span class="nav-name">upstream-biologics-data-pipeline</span>
+        <span class="nav-time">18d</span>
+      </li>
+      <li class="project-nav-item" onclick="selectProject(this, 'proj-agent')">
+        <span class="nav-dot nd-amber"></span>
+        <span class="nav-name">agent-system-testing</span>
+        <span class="nav-time">8d</span>
+      </li>
+      <li class="project-nav-item" onclick="selectProject(this, 'proj-ml')">
+        <span class="nav-dot nd-green"></span>
+        <span class="nav-name">ml-model-registry</span>
+        <span class="nav-time">3d</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="sidebar-footer">
+    <span>Suray R.</span>
+    <span>Mar 22, 2026</span>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+
+  <!-- ═══ Project: asm-schema-finder ═══ -->
+  <div class="project-view active" id="proj-asm">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-project">asm-schema-finder</span>
+        <span class="topbar-health th-green">&#x25CF; In Progress</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-meta">personal &middot; updated 2 days ago</span>
+      </div>
+    </div>
+    <div class="content-tabs">
+      <div class="ctab active" onclick="showCtab(this, 'asm-overview-tab')">Overview</div>
+      <div class="ctab" onclick="showCtab(this, 'asm-status-tab')">Status</div>
+      <div class="ctab" onclick="showCtab(this, 'asm-plan-tab')">Plan</div>
+      <div class="ctab" onclick="showCtab(this, 'asm-artifacts-tab')">Artifacts</div>
+    </div>
+    <div class="content">
+      <div class="split-view">
+        <div class="split-main">
+          <div class="tab-area active" id="asm-overview-tab">
+            <!-- Key metrics -->
+            <div class="metrics">
+              <div class="metric">
+                <div class="metric-label">Health</div>
+                <div class="metric-value mv-green">In Progress</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Last Update</div>
+                <div class="metric-value">Mar 20</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Created</div>
+                <div class="metric-value">Mar 10</div>
+              </div>
+              <div class="metric">
+                <div class="metric-label">Meetings</div>
+                <div class="metric-value">0</div>
+              </div>
+            </div>
+
+            <!-- Bento grid -->
+            <div class="bento">
+              <div class="bento-card full">
+                <div class="bento-label">Objective</div>
+                <div class="bento-value">Discover and catalog ASM schema patterns across biologics datasets to enable automated schema validation.</div>
+              </div>
+              <div class="bento-card">
+                <div class="bento-label">Business Context</div>
+                <div class="bento-value">Multiple teams use different schema conventions for ASM data. This project aims to find common patterns and propose a unified schema, reducing integration friction by ~40%.</div>
+              </div>
+              <div class="bento-card">
+                <div class="bento-label">Stakeholders</div>
+                <div class="bento-value">
+                  <ul>
+                    <li><strong>Suray R.</strong> — Lead</li>
+                    <li><strong>Data Platform Team</strong> — Consumers</li>
+                    <li><strong>Biologics Team</strong> — Producers</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="bento-card full">
+                <div class="bento-label">Current Approach</div>
+                <div class="bento-value">Scan existing datasets, extract schema fingerprints, cluster similar patterns, propose canonical schemas for top-5 data types.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-area" id="asm-status-tab">
+            <div class="timeline">
+              <div class="tl-entry">
+                <div class="tl-head">
+                  <span class="tl-date">2026-03-20</span>
+                  <span class="tl-badge tlb-green">In Progress</span>
+                </div>
+                <div class="tl-content">
+                  <ul>
+                    <li>Completed schema fingerprinting for 3 of 5 target datasets</li>
+                    <li>Identified 12 distinct patterns, 4 are near-duplicates</li>
+                  </ul>
+                  <div class="tl-section-label">Next</div>
+                  <ul>
+                    <li>Map remaining 2 dataset schema variants</li>
+                    <li>Draft canonical schema proposal for top-5 types</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="tl-entry">
+                <div class="tl-head">
+                  <span class="tl-date">2026-03-14</span>
+                  <span class="tl-badge tlb-green">In Progress</span>
+                </div>
+                <div class="tl-content">
+                  <ul>
+                    <li>Completed initial survey of 5 target datasets</li>
+                    <li>Built fingerprinting utility (Python script)</li>
+                    <li>Defined pattern taxonomy: structural, naming, type-level</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="tl-entry">
+                <div class="tl-head">
+                  <span class="tl-date">2026-03-10</span>
+                  <span class="tl-badge tlb-green">Not Started</span>
+                </div>
+                <div class="tl-content">
+                  <ul>
+                    <li>Project created and scoped</li>
+                    <li>Identified 5 target datasets across 3 teams</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-area" id="asm-plan-tab">
+            <div class="tl-entry">
+              <div class="tl-head">
+                <span class="tl-badge tlb-green">Active</span>
+                <span style="font-size:11px;color:var(--text-muted)">Updated Mar 18</span>
+              </div>
+              <div class="tl-content">
+                <div class="tl-section-label">Phase 1 — Survey (Complete)</div>
+                <ul>
+                  <li>Identify target datasets</li>
+                  <li>Build fingerprinting tool</li>
+                </ul>
+                <div class="tl-section-label">Phase 2 — Analysis (In Progress)</div>
+                <ul>
+                  <li>Run fingerprinting on all datasets</li>
+                  <li>Cluster and categorize patterns</li>
+                </ul>
+                <div class="tl-section-label">Phase 3 — Proposal</div>
+                <ul>
+                  <li>Draft canonical schema for top-5 types</li>
+                  <li>Review with stakeholders</li>
+                </ul>
+                <div class="tl-section-label">Phase 4 — Validation</div>
+                <ul>
+                  <li>Test canonical schemas against production data</li>
+                  <li>Document migration guides</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-area" id="asm-artifacts-tab">
+            <div class="artifact-grid">
+              <div class="acard">
+                <div class="acard-icon">&#x1F4CB;</div>
+                <div class="acard-title">Plan</div>
+                <div class="acard-sub">4 phases &middot; Updated Mar 18</div>
+              </div>
+              <div class="acard" style="opacity:0.4">
+                <div class="acard-icon">&#x1F4C5;</div>
+                <div class="acard-title">Meetings</div>
+                <div class="acard-sub">No meetings yet</div>
+              </div>
+              <div class="acard" style="opacity:0.4">
+                <div class="acard-icon">&#x2696;</div>
+                <div class="acard-title">Decisions</div>
+                <div class="acard-sub">No decisions yet</div>
+              </div>
+              <div class="acard" style="opacity:0.4">
+                <div class="acard-icon">&#x1F4E4;</div>
+                <div class="acard-title">Updates</div>
+                <div class="acard-sub">No updates sent</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity feed -->
+        <div class="split-aside">
+          <div class="feed-title">All Activity</div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-status"></span>Status updated on <span class="proj">asm-schema-finder</span></div>
+            <div class="feed-time">2 days ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-status"></span>Status updated on <span class="proj">q2-planning</span></div>
+            <div class="feed-time">1 day ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-meeting"></span>Meeting: <span class="proj">biologics-pipeline</span> kickoff</div>
+            <div class="feed-time">4 days ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-decision"></span>Decision: <span class="proj">ml-model-registry</span> vendor</div>
+            <div class="feed-time">10 days ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-status"></span>Status: <span class="proj">agent-testing</span> at-risk</div>
+            <div class="feed-time">8 days ago</div>
+          </div>
+          <div class="feed-item">
+            <div class="feed-text"><span class="feed-type ft-created"></span>Project created: <span class="proj">asm-schema-finder</span></div>
+            <div class="feed-time">12 days ago</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Project: q2-planning ═══ -->
+  <div class="project-view" id="proj-q2">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-project">q2-planning</span>
+        <span class="topbar-health th-green">&#x25CF; On Track</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-meta">personal &middot; updated 1 day ago</span>
+      </div>
+    </div>
+    <div class="content-tabs">
+      <div class="ctab active">Overview</div>
+      <div class="ctab">Status</div>
+    </div>
+    <div class="content">
+      <div class="bento">
+        <div class="bento-card full">
+          <div class="bento-label">Objective</div>
+          <div class="bento-value">Define Q2 OKRs and resource allocation for the team.</div>
+        </div>
+        <div class="bento-card full">
+          <div class="bento-label">Next Steps</div>
+          <div class="bento-value">
+            <ul>
+              <li>Finalize resource allocation matrix</li>
+              <li>Review with VP by Mar 28</li>
+              <li>Publish to team wiki</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Project: upstream-biologics ═══ -->
+  <div class="project-view" id="proj-bio">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-project">upstream-biologics-data-pipeline</span>
+        <span class="topbar-health th-red">&#x25CF; Blocked</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-meta">test-projects-repo &middot; updated 18 days ago</span>
+      </div>
+    </div>
+    <div class="content-tabs">
+      <div class="ctab active">Status</div>
+      <div class="ctab">Overview</div>
+      <div class="ctab">Meetings <span class="cnt">1</span></div>
+    </div>
+    <div class="content">
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Health</div>
+          <div class="metric-value mv-red">Blocked</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Blocker</div>
+          <div class="metric-value mv-red" style="font-size:12px">Infra access pending</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">ETA Unblock</div>
+          <div class="metric-value mv-amber">Mar 25</div>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="tl-entry">
+          <div class="tl-head">
+            <span class="tl-date">2026-03-04</span>
+            <span class="tl-badge tlb-red">Blocked</span>
+          </div>
+          <div class="tl-content">
+            <ul>
+              <li>Pipeline architecture design document completed and reviewed</li>
+              <li>Data source connectors prototyped for 3 of 5 sources</li>
+            </ul>
+            <div class="tl-section-label">Blockers</div>
+            <ul>
+              <li>Infrastructure access request pending IT approval (submitted Mar 1)</li>
+            </ul>
+            <div class="tl-section-label">Next</div>
+            <ul>
+              <li>Infra access approval (ETA: Mar 25)</li>
+              <li>Begin integration testing once access granted</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Project: agent-system-testing ═══ -->
+  <div class="project-view" id="proj-agent">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-project">agent-system-testing</span>
+        <span class="topbar-health th-amber">&#x25CF; At Risk</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-meta">test-projects-repo &middot; updated 8 days ago</span>
+      </div>
+    </div>
+    <div class="content-tabs">
+      <div class="ctab active">Status</div>
+      <div class="ctab">Overview</div>
+    </div>
+    <div class="content">
+      <div class="timeline">
+        <div class="tl-entry">
+          <div class="tl-head">
+            <span class="tl-date">2026-03-14</span>
+            <span class="tl-badge tlb-amber">At Risk</span>
+          </div>
+          <div class="tl-content">
+            <ul>
+              <li>Test framework scaffolded with Jest + custom harness</li>
+              <li>Unit test coverage at 45%, target is 80%</li>
+            </ul>
+            <div class="tl-section-label">Next</div>
+            <ul>
+              <li>Add integration test suite for agent commands</li>
+              <li>Set up CI pipeline for automated test runs</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Project: ml-model-registry ═══ -->
+  <div class="project-view" id="proj-ml">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-project">ml-model-registry</span>
+        <span class="topbar-health th-green">&#x25CF; On Track</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-meta">test-projects-repo &middot; updated 3 days ago</span>
+      </div>
+    </div>
+    <div class="content-tabs">
+      <div class="ctab active">Status</div>
+      <div class="ctab">Decisions <span class="cnt">1</span></div>
+    </div>
+    <div class="content">
+      <div class="timeline">
+        <div class="tl-entry">
+          <div class="tl-head">
+            <span class="tl-date">2026-03-19</span>
+            <span class="tl-badge tlb-green">On Track</span>
+          </div>
+          <div class="tl-content">
+            <ul>
+              <li>v2 API deployed to staging environment</li>
+              <li>All 47 regression tests passing</li>
+              <li>Performance benchmarks show 2.3x improvement over v1</li>
+            </ul>
+            <div class="tl-section-label">Next</div>
+            <ul>
+              <li>Production rollout scheduled for Mar 28</li>
+              <li>Team training session on Mar 26</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function selectProject(navItem, projectId) {
+  document.querySelectorAll('.project-nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.project-view').forEach(v => v.classList.remove('active'));
+  navItem.classList.add('active');
+  document.getElementById(projectId).classList.add('active');
+}
+
+function showCtab(tabEl, panelId) {
+  var view = tabEl.closest('.project-view');
+  view.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  view.querySelectorAll('.tab-area').forEach(p => p.classList.remove('active'));
+  tabEl.classList.add('active');
+  var panel = document.getElementById(panelId);
+  if (panel) panel.classList.add('active');
+}
+
+// Keyboard: up/down to navigate projects
+var projects = ['proj-asm', 'proj-q2', 'proj-bio', 'proj-agent', 'proj-ml'];
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    var current = projects.findIndex(function(id) {
+      return document.getElementById(id).classList.contains('active');
+    });
+    var next = e.key === 'ArrowDown'
+      ? (current + 1) % projects.length
+      : (current - 1 + projects.length) % projects.length;
+    var navItems = document.querySelectorAll('.project-nav-item');
+    selectProject(navItems[next], projects[next]);
+  }
+});
+</script>
+
+</body>
+</html>

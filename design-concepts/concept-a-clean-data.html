@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Concept A: Clean Data Dashboard</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-surface: #f8f9fa;
+      --bg-hover: #f1f3f5;
+      --text: #1a1a2e;
+      --text-secondary: #5a5a72;
+      --text-muted: #8e8ea0;
+      --border: #e8e8ed;
+      --accent: #6366f1;
+      --accent-light: #eef2ff;
+      --green: #10b981;
+      --green-bg: #ecfdf5;
+      --green-text: #065f46;
+      --amber: #f59e0b;
+      --amber-bg: #fffbeb;
+      --amber-text: #92400e;
+      --red: #ef4444;
+      --red-bg: #fef2f2;
+      --red-text: #991b1b;
+      --radius: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; background: var(--bg-surface); color: var(--text); line-height: 1.5; }
+
+    /* Header - minimal */
+    .header {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-left { display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 16px; font-weight: 600; }
+    .header .sep { color: var(--border); }
+    .header .owner { font-size: 13px; color: var(--text-muted); }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .header .timestamp { font-size: 12px; color: var(--text-muted); }
+    .btn-icon {
+      width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg); cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 14px; color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .btn-icon:hover { background: var(--bg-hover); border-color: #d0d0d8; }
+
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px 24px; }
+
+    /* Health summary bar */
+    .health-bar {
+      display: flex; gap: 1px; height: 6px; border-radius: 3px; overflow: hidden;
+      margin-bottom: 20px; background: var(--border);
+    }
+    .health-bar .seg { transition: width 0.3s; }
+    .health-bar .seg-green { background: var(--green); }
+    .health-bar .seg-amber { background: var(--amber); }
+    .health-bar .seg-red { background: var(--red); }
+
+    /* Stats row */
+    .stats-row {
+      display: flex; gap: 16px; margin-bottom: 24px;
+    }
+    .stat {
+      display: flex; align-items: baseline; gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 13px;
+    }
+    .stat:hover { border-color: var(--accent); }
+    .stat.active { border-color: var(--accent); background: var(--accent-light); }
+    .stat .num { font-size: 20px; font-weight: 700; }
+    .stat .label { color: var(--text-muted); font-size: 12px; }
+    .stat-green .num { color: var(--green); }
+    .stat-amber .num { color: var(--amber); }
+    .stat-red .num { color: var(--red); }
+
+    /* Alert strip */
+    .alert-strip {
+      display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .alert-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    }
+    .alert-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .alert-blocked { background: var(--red-bg); color: var(--red-text); }
+    .alert-blocked .dot { background: var(--red); }
+    .alert-stale { background: var(--amber-bg); color: var(--amber-text); }
+    .alert-stale .dot { background: var(--amber); }
+    .alert-unreg { background: #f0f0ff; color: #4338ca; }
+    .alert-unreg .dot { background: #6366f1; }
+
+    /* Section headers */
+    .section { margin-bottom: 24px; }
+    .section-header {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-muted);
+      margin-bottom: 8px; padding-left: 2px;
+    }
+
+    /* Table view */
+    .project-table {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .project-row {
+      display: grid;
+      grid-template-columns: 2fr 100px 2fr 1.5fr 120px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.1s;
+      align-items: center;
+    }
+    .project-row:last-child { border-bottom: none; }
+    .project-row:hover { background: var(--bg-hover); }
+    .project-row.table-header {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-muted);
+      background: var(--bg-surface); cursor: default;
+      padding: 8px 16px;
+    }
+    .project-row.table-header:hover { background: var(--bg-surface); }
+
+    .proj-name { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .proj-name .loc {
+      font-size: 10px; font-weight: 500; color: var(--text-muted);
+      background: var(--bg-surface); padding: 1px 6px; border-radius: 4px;
+    }
+
+    /* Health pill */
+    .health-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+    }
+    .health-pill .indicator { width: 7px; height: 7px; border-radius: 50%; }
+    .hp-on-track, .hp-in-progress { background: var(--green-bg); color: var(--green-text); }
+    .hp-on-track .indicator, .hp-in-progress .indicator { background: var(--green); }
+    .hp-at-risk { background: var(--amber-bg); color: var(--amber-text); }
+    .hp-at-risk .indicator { background: var(--amber); }
+    .hp-blocked { background: var(--red-bg); color: var(--red-text); }
+    .hp-blocked .indicator { background: var(--red); }
+
+    .proj-summary { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 12px; }
+    .proj-next { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 12px; }
+
+    /* Relative time with color */
+    .time-ago { font-size: 12px; }
+    .time-fresh { color: var(--green); }
+    .time-aging { color: var(--amber); }
+    .time-stale { color: var(--red); }
+
+    /* View toggle */
+    .view-toggle {
+      display: flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+    }
+    .view-toggle button {
+      padding: 4px 12px; border: none; background: var(--bg); cursor: pointer;
+      font-size: 12px; color: var(--text-muted); transition: all 0.15s;
+    }
+    .view-toggle button:not(:last-child) { border-right: 1px solid var(--border); }
+    .view-toggle button.active { background: var(--text); color: #fff; }
+    .view-toggle button:hover:not(.active) { background: var(--bg-hover); }
+
+    /* Card view (alt) */
+    .projects-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px;
+    }
+    .project-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 16px; cursor: pointer; transition: all 0.15s;
+    }
+    .project-card:hover { border-color: #c0c0cc; box-shadow: var(--shadow); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .card-name { font-size: 14px; font-weight: 600; }
+    .card-obj { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.4; }
+    .card-detail { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+    .card-detail strong { font-weight: 600; color: var(--text); }
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+    /* Completed */
+    .completed-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 16px; font-size: 13px;
+      border-bottom: 1px solid var(--border);
+    }
+    .completed-row:last-child { border-bottom: none; }
+    .completed-name { color: var(--text-secondary); }
+    .completed-date { color: var(--text-muted); font-size: 12px; }
+    .completed-check { color: var(--green); margin-right: 8px; }
+
+    .concept-badge {
+      position: fixed; bottom: 16px; right: 16px; background: var(--accent);
+      color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px;
+      font-weight: 600; z-index: 99; box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+  </style>
+</head>
+<body>
+
+<div class="concept-badge">Concept A: Clean Data Dashboard (Linear/Notion style)</div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Projects</h1>
+    <span class="sep">|</span>
+    <span class="owner">Suray R.</span>
+  </div>
+  <div class="header-right">
+    <span class="timestamp">Updated 2 min ago</span>
+    <div class="view-toggle">
+      <button class="active" title="Table view">&#9776;</button>
+      <button title="Card view">&#9638;</button>
+    </div>
+    <button class="btn-icon" title="Refresh">&#x21bb;</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Health bar -->
+  <div class="health-bar">
+    <div class="seg seg-green" style="width: 60%"></div>
+    <div class="seg seg-amber" style="width: 20%"></div>
+    <div class="seg seg-red" style="width: 20%"></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat active">
+      <span class="num">5</span>
+      <span class="label">Active</span>
+    </div>
+    <div class="stat stat-green">
+      <span class="num">3</span>
+      <span class="label">On Track</span>
+    </div>
+    <div class="stat stat-amber">
+      <span class="num">1</span>
+      <span class="label">At Risk</span>
+    </div>
+    <div class="stat stat-red">
+      <span class="num">1</span>
+      <span class="label">Blocked</span>
+    </div>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert-strip">
+    <span class="alert-chip alert-blocked"><span class="dot"></span>upstream-biologics-data-pipeline blocked</span>
+    <span class="alert-chip alert-stale"><span class="dot"></span>agent-system-testing stale (18 days)</span>
+    <span class="alert-chip alert-unreg"><span class="dot"></span>agent-system-testing unregistered</span>
+  </div>
+
+  <!-- Table view: My Projects -->
+  <div class="section">
+    <div class="section-header">My Projects</div>
+    <div class="project-table">
+      <div class="project-row table-header">
+        <div>Project</div>
+        <div>Health</div>
+        <div>Progress</div>
+        <div>Next</div>
+        <div>Updated</div>
+      </div>
+      <div class="project-row">
+        <div class="proj-name">asm-schema-finder <span class="loc">personal</span></div>
+        <div><span class="health-pill hp-in-progress"><span class="indicator"></span>In Progress</span></div>
+        <div class="proj-summary">Exploring ASM schema patterns across datasets</div>
+        <div class="proj-next">Map remaining schema variants</div>
+        <div class="time-ago time-fresh">2 days ago</div>
+      </div>
+      <div class="project-row">
+        <div class="proj-name">q2-planning <span class="loc">personal</span></div>
+        <div><span class="health-pill hp-on-track"><span class="indicator"></span>On Track</span></div>
+        <div class="proj-summary">Draft OKRs reviewed with leadership</div>
+        <div class="proj-next">Finalize resource allocation</div>
+        <div class="time-ago time-fresh">1 day ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table view: Team Projects -->
+  <div class="section">
+    <div class="section-header">Team: test-projects-repo</div>
+    <div class="project-table">
+      <div class="project-row table-header">
+        <div>Project</div>
+        <div>Health</div>
+        <div>Progress</div>
+        <div>Next</div>
+        <div>Updated</div>
+      </div>
+      <div class="project-row">
+        <div class="proj-name">upstream-biologics-data-pipeline</div>
+        <div><span class="health-pill hp-blocked"><span class="indicator"></span>Blocked</span></div>
+        <div class="proj-summary">Pipeline design complete, waiting on infra access</div>
+        <div class="proj-next">Infra access approval (ETA: Mar 25)</div>
+        <div class="time-ago time-stale">18 days ago</div>
+      </div>
+      <div class="project-row">
+        <div class="proj-name">agent-system-testing</div>
+        <div><span class="health-pill hp-at-risk"><span class="indicator"></span>At Risk</span></div>
+        <div class="proj-summary">Test framework scaffolded, coverage gaps identified</div>
+        <div class="proj-next">Add integration test suite</div>
+        <div class="time-ago time-aging">8 days ago</div>
+      </div>
+      <div class="project-row">
+        <div class="proj-name">ml-model-registry</div>
+        <div><span class="health-pill hp-on-track"><span class="indicator"></span>On Track</span></div>
+        <div class="proj-summary">v2 API deployed to staging</div>
+        <div class="proj-next">Production rollout (Mar 28)</div>
+        <div class="time-ago time-fresh">3 days ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Completed -->
+  <div class="section">
+    <div class="section-header">Completed</div>
+    <div class="project-table">
+      <div class="completed-row">
+        <div><span class="completed-check">&#10003;</span><span class="completed-name">data-quality-audit</span></div>
+        <div class="completed-date">Mar 10, 2026</div>
+      </div>
+      <div class="completed-row">
+        <div><span class="completed-check">&#10003;</span><span class="completed-name">onboarding-docs-v2</span></div>
+        <div class="completed-date">Feb 28, 2026</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
