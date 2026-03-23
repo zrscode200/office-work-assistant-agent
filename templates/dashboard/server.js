@@ -68,7 +68,7 @@ function extractBlock(section, label) {
   const re = new RegExp('\\*\\*' + label + ':\\*\\*\\n([\\s\\S]*?)(?=\\n\\*\\*|$)');
   const m = section.match(re);
   if (!m) return [];
-  return m[1].split('\n').map(l => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean);
+  return cleanLines(m[1]);
 }
 
 function parseStatusSection(section) {
@@ -99,13 +99,20 @@ function parseTopLevelHealth(content) {
   return m ? m[1].trim().toLowerCase() : null;
 }
 
+function cleanLines(text) {
+  return text.split('\n')
+    .map(l => l.replace(/^[-*]\s*/, '').replace(/^\[[ x]]\s*/, '').trim())
+    .filter(l => l && !l.startsWith('<!--') && !/^[_*]*(none|n\/a)[_*]*$/i.test(l));
+}
+
 function parseTopLevelBlock(content, label) {
-  // Match top-level "## Blockers" or "## Upcoming" sections
-  // Wrap label in group to avoid | precedence issues
-  const re = new RegExp('^## (?:' + label + ')\\n([\\s\\S]*?)(?=\\n## |$)', 'm');
+  // Match top-level sections like "## Blockers", "## Upcoming Milestones", etc.
+  // Label words only need to match the start of the heading (allows trailing words).
+  // Uses tempered greedy token to avoid multiline $ matching blank lines prematurely.
+  const re = new RegExp('^## (?:' + label + ')(?: [^\\n]*)?\\n((?:(?!\\n## )[\\s\\S])*)', 'm');
   const m = content.match(re);
   if (!m || !m[1]) return [];
-  return m[1].split('\n').map(l => l.replace(/^[-*]\s*/, '').trim()).filter(Boolean);
+  return cleanLines(m[1]);
 }
 
 function parseStatus(filePath) {
@@ -120,7 +127,7 @@ function parseStatus(filePath) {
     return {
       lastUpdated: null,
       health: topHealth,
-      progress: [],
+      progress: parseTopLevelBlock(content, 'Recent Progress|Progress'),
       blockers: parseTopLevelBlock(content, 'Blockers?'),
       next: parseTopLevelBlock(content, 'Upcoming|Next')
     };
@@ -297,6 +304,29 @@ function buildData() {
   }
 
   alerts.unregistered = scanUnregistered(config.teamRepos, known);
+
+  // Include unregistered team-repo projects as active cards
+  for (const unreg of alerts.unregistered) {
+    const repoPath = config.teamRepos[unreg.repo];
+    if (!repoPath) continue;
+    const pPath = path.join(repoPath, 'projects', unreg.name);
+    const st = parseStatus(path.join(pPath, 'status.md'));
+    const ov = parseOverview(path.join(pPath, 'overview.md'));
+    const entry = {
+      name: unreg.name,
+      location: unreg.repo,
+      health: st?.health || 'on-track',
+      summary: st?.progress?.slice(0, 2).join('. ') || null,
+      blocker: st?.blockers?.[0] || null,
+      nextMilestone: st?.next?.[0] || null,
+      lastUpdated: st?.lastUpdated || null,
+      objective: ov?.objective || null
+    };
+    active.push(entry);
+    if (entry.health === 'blocked') alerts.blocked.push(entry.name);
+    if (entry.health === 'at-risk') alerts.atRisk.push(entry.name);
+    if (isStale(entry.lastUpdated)) alerts.stale.push(entry.name);
+  }
 
   // Build grouped structure
   const personal = active.filter(p => p.location === 'personal');
