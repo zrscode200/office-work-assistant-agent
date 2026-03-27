@@ -274,8 +274,201 @@
 
     .footer { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
 
+    /* View switcher */
+    .view-switcher {
+      display: flex; background: var(--bg); border-radius: 8px; padding: 2px;
+      border: 1px solid var(--border);
+    }
+    .vs-btn {
+      padding: 5px 16px; border-radius: 6px; border: none; background: transparent;
+      font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .vs-btn:hover { color: var(--text-sec); }
+    .vs-btn.active { background: var(--accent); color: #fff; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Desk layout */
+    .desk-container {
+      display: flex; gap: 20px; min-height: calc(100vh - 120px);
+    }
+    .desk-todos {
+      flex: 1 1 50%; min-width: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .desk-right {
+      flex: 1 1 50%; min-width: 0;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .desk-scratch {
+      flex: 3 1 0; min-height: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .desk-notebook {
+      flex: 2 1 0; min-height: 0;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .desk-section-header {
+      padding: 12px 16px; font-size: 14px; font-weight: 600;
+      border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+      color: var(--text); flex-shrink: 0;
+    }
+    .desk-section-header .count {
+      background: var(--border-light); color: var(--text-muted);
+      padding: 1px 7px; border-radius: 10px; font-size: 12px; font-weight: 600;
+    }
+    .desk-section-body { flex: 1; overflow-y: auto; }
+
+    /* Todo stats */
+    .todo-stats {
+      display: flex; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .todo-stat {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+    }
+    .todo-stat .n { font-size: 18px; font-weight: 700; }
+    .todo-stat.overdue .n { color: var(--red); }
+    .todo-stat.today .n { color: var(--amber); }
+    .todo-stat.high .n { color: var(--accent); }
+
+    /* Todo filters */
+    .todo-filters {
+      display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border);
+      flex-wrap: wrap; flex-shrink: 0;
+    }
+    .todo-filter {
+      padding: 4px 12px; border-radius: 14px; border: 1px solid var(--border);
+      background: transparent; color: var(--text-muted); font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .todo-filter:hover { border-color: var(--accent); color: var(--accent); }
+    .todo-filter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* Todo list */
+    .todo-list { flex: 1; overflow-y: auto; }
+    .todo-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border-light);
+      transition: all 0.3s;
+    }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item.completing {
+      opacity: 0; transform: translateX(-20px); max-height: 0;
+      padding-top: 0; padding-bottom: 0; overflow: hidden;
+    }
+    .todo-checkbox {
+      width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--border);
+      cursor: pointer; flex-shrink: 0; margin-top: 2px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; background: transparent;
+    }
+    .todo-checkbox:hover { border-color: var(--accent); background: var(--accent-light); }
+    .todo-info { flex: 1; min-width: 0; }
+    .todo-what { font-size: 14px; color: var(--text); line-height: 1.4; }
+    .todo-meta {
+      display: flex; gap: 8px; align-items: center; margin-top: 3px; flex-wrap: wrap;
+    }
+    .todo-due {
+      font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px;
+    }
+    .todo-due.overdue { background: var(--red-bg); color: var(--red-text); }
+    .todo-due.today { background: var(--amber-bg); color: var(--amber-text); }
+    .todo-due.upcoming { background: var(--green-bg); color: var(--green-text); }
+    .todo-due.future { background: var(--border-light); color: var(--text-muted); }
+    .todo-pri {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .todo-pri.high { color: var(--red); }
+    .todo-pri.low { color: var(--text-muted); }
+    .todo-project {
+      font-size: 11px; color: var(--accent); background: var(--accent-light);
+      padding: 1px 6px; border-radius: 4px;
+    }
+    .todo-group {
+      font-size: 11px; color: var(--text-muted); background: var(--border-light);
+      padding: 1px 6px; border-radius: 4px;
+    }
+    .todo-recur {
+      font-size: 10px; color: var(--green); font-weight: 600;
+    }
+
+    /* Sub-items */
+    .todo-subs { padding-left: 28px; }
+    .todo-sub {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 16px 4px 0; font-size: 13px; color: var(--text-sec);
+    }
+    .todo-sub-check {
+      width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--border);
+      cursor: pointer; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; font-size: 9px; background: transparent;
+    }
+    .todo-sub-check:hover { border-color: var(--accent); }
+    .todo-sub-check.done { border-color: var(--green); background: var(--green); color: #fff; }
+    .todo-sub-what { flex: 1; }
+    .todo-sub.done .todo-sub-what { text-decoration: line-through; color: var(--text-muted); }
+
+    /* Scratch / notebook entries */
+    .desk-entry {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border-light);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .desk-entry:hover { background: var(--border-light); }
+    .desk-entry-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0;
+    }
+    .dei-scratch { background: #fef3c7; color: #92400e; }
+    .dei-notebook { background: #dbeafe; color: #1d4ed8; }
+    .dei-promoted { background: #d1fae5; color: #059669; }
+    .dei-graduated { background: #ede9fe; color: #6d28d9; }
+    .desk-entry-info { flex: 1; min-width: 0; }
+    .desk-entry-title {
+      font-size: 14px; font-weight: 500; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .desk-entry-sub {
+      font-size: 12px; color: var(--text-muted); margin-top: 1px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .desk-entry-date { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+    .desk-entry-badge {
+      font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .deb-active { background: var(--amber-bg); color: var(--amber-text); }
+    .deb-promoted { background: var(--green-bg); color: var(--green-text); }
+    .deb-developing { background: #dbeafe; color: #1d4ed8; }
+    .deb-graduated { background: #ede9fe; color: #6d28d9; }
+
+    .desk-entry-expand {
+      max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+    }
+    .desk-entry-expand.open { max-height: 3000px; }
+    .desk-entry-expand-inner { padding: 8px 16px 16px 54px; }
+
+    .desk-empty {
+      padding: 24px 16px; text-align: center; color: var(--text-muted); font-size: 13px;
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
+      .desk-container { flex-direction: column; }
+      .desk-todos, .desk-right { flex: none; }
+      .desk-right { flex-direction: column; }
+      .desk-scratch, .desk-notebook { flex: none; min-height: 300px; }
       .table-head { grid-template-columns: 10px 1fr 80px 28px; }
       .row-summary { grid-template-columns: 10px 1fr 80px 28px; }
       .table-head > :nth-child(4), .table-head > :nth-child(5), .table-head > :nth-child(6),
@@ -292,6 +485,10 @@
 
 <div class="header">
   <h1>Work Assistant</h1>
+  <div class="view-switcher">
+    <button class="vs-btn active" data-view="projects" onclick="switchView('projects')">Projects</button>
+    <button class="vs-btn" data-view="desk" onclick="switchView('desk')">Drafting Table</button>
+  </div>
   <div class="header-right">
     <span id="header-owner"></span>
     <span id="header-date"></span>
@@ -301,18 +498,43 @@
   </div>
 </div>
 
-<div class="container">
-  <div class="summary-bar" id="summary-bar"></div>
-  <div class="alerts" id="alerts"></div>
-  <div class="workspace-tabs" id="workspace-tabs"></div>
-  <div id="tab-panels"><div class="loading-state">Loading dashboard data...</div></div>
-  <div class="activity-section" id="activity-section" style="display:none">
-    <div class="activity-header">Recent Activity</div>
-    <div id="activity-list"></div>
+<div id="view-projects" class="view active">
+  <div class="container">
+    <div class="summary-bar" id="summary-bar"></div>
+    <div class="alerts" id="alerts"></div>
+    <div class="workspace-tabs" id="workspace-tabs"></div>
+    <div id="tab-panels"><div class="loading-state">Loading dashboard data...</div></div>
+    <div class="activity-section" id="activity-section" style="display:none">
+      <div class="activity-header">Recent Activity</div>
+      <div id="activity-list"></div>
+    </div>
+    <div class="completed-section" id="completed-section" style="display:none">
+      <div class="completed-label">Completed</div>
+      <div class="completed-list" id="completed-list"></div>
+    </div>
   </div>
-  <div class="completed-section" id="completed-section" style="display:none">
-    <div class="completed-label">Completed</div>
-    <div class="completed-list" id="completed-list"></div>
+</div>
+
+<div id="view-desk" class="view">
+  <div class="container">
+    <div class="desk-container">
+      <div class="desk-todos">
+        <div class="desk-section-header">Todos <span class="count" id="todo-count"></span></div>
+        <div class="todo-stats" id="todo-stats"></div>
+        <div class="todo-filters" id="todo-filters"></div>
+        <div class="todo-list desk-section-body" id="todo-list"></div>
+      </div>
+      <div class="desk-right">
+        <div class="desk-scratch">
+          <div class="desk-section-header">Scratch Pad <span class="count" id="scratch-count"></span></div>
+          <div class="desk-section-body" id="scratch-list"></div>
+        </div>
+        <div class="desk-notebook">
+          <div class="desk-section-header">Notebook <span class="count" id="notebook-count"></span></div>
+          <div class="desk-section-body" id="notebook-list"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -425,20 +647,6 @@
   }
 
   // ── Fetch & render ──────────────────────────────────────
-
-  window.refresh = function () {
-    var btn = document.getElementById('btn-refresh');
-    btn.classList.add('loading');
-    detailCache = {};
-    fetch('/api/data')
-      .then(function (r) { return r.json(); })
-      .then(function (data) { currentData = data; render(data); })
-      .catch(function (err) {
-        document.getElementById('tab-panels').innerHTML =
-          '<div class="empty-state">Failed to load data: ' + esc(err.message) + '</div>';
-      })
-      .finally(function () { btn.classList.remove('loading'); });
-  };
 
   function render(data) {
     var ts = new Date(data.generated).toLocaleString();
@@ -790,6 +998,265 @@
     document.getElementById('completed-list').innerHTML = h;
   }
 
+  // ── View switching ─────────────────────────────────────
+
+  var currentView = 'projects';
+  var deskData = null;
+  var deskContentCache = {};
+  var currentTodoFilter = 'all';
+
+  window.switchView = function (view) {
+    currentView = view;
+    document.querySelectorAll('.vs-btn').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.view === view);
+    });
+    document.querySelectorAll('.view').forEach(function (v) {
+      v.classList.toggle('active', v.id === 'view-' + view);
+    });
+    // Update URL
+    var url = new URL(window.location);
+    if (view === 'projects') url.searchParams.delete('view');
+    else url.searchParams.set('view', view);
+    history.replaceState(null, '', url);
+
+    if (view === 'desk' && !deskData) fetchDesk();
+  };
+
+  // ── Desk data fetching ────────────────────────────────
+
+  function fetchDesk() {
+    fetch('/api/desk')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        deskData = data;
+        renderDesk(data);
+      })
+      .catch(function (err) {
+        document.getElementById('todo-list').innerHTML =
+          '<div class="desk-empty">Failed to load: ' + esc(err.message) + '</div>';
+      });
+  }
+
+  function renderDesk(data) {
+    renderTodoStats(data.todos.stats);
+    renderTodoFilters();
+    renderTodoList(data.todos.items);
+    renderScratchList(data.scratch);
+    renderNotebookList(data.notebook);
+  }
+
+  // ── Todo rendering ────────────────────────────────────
+
+  function renderTodoStats(stats) {
+    var h = '';
+    h += '<div class="todo-stat overdue"><span class="n">' + stats.overdue + '</span> overdue</div>';
+    h += '<div class="todo-stat today"><span class="n">' + stats.today + '</span> due today</div>';
+    h += '<div class="todo-stat high"><span class="n">' + stats.high + '</span> high pri</div>';
+    h += '<div class="todo-stat"><span class="n">' + stats.total + '</span> open</div>';
+    document.getElementById('todo-stats').innerHTML = h;
+    document.getElementById('todo-count').textContent = stats.total;
+  }
+
+  function renderTodoFilters() {
+    var filters = [
+      { key: 'all', label: 'All' },
+      { key: 'overdue', label: 'Overdue' },
+      { key: 'today', label: 'Due Today' },
+      { key: 'high', label: 'High Priority' },
+      { key: 'has-project', label: 'By Project' }
+    ];
+    var h = '';
+    filters.forEach(function (f) {
+      var cls = 'todo-filter' + (currentTodoFilter === f.key ? ' active' : '');
+      h += '<button class="' + cls + '" data-filter="' + f.key + '">' + esc(f.label) + '</button>';
+    });
+    document.getElementById('todo-filters').innerHTML = h;
+  }
+
+  function filterTodoItems(items) {
+    var now = new Date().toISOString().slice(0, 10);
+    if (currentTodoFilter === 'all') return items;
+    if (currentTodoFilter === 'overdue') return items.filter(function (i) { return i.due && i.due < now; });
+    if (currentTodoFilter === 'today') return items.filter(function (i) { return i.due === now; });
+    if (currentTodoFilter === 'high') return items.filter(function (i) { return i.priority === 'high'; });
+    if (currentTodoFilter === 'has-project') return items.filter(function (i) { return i.project; });
+    return items;
+  }
+
+  function renderTodoList(items) {
+    var filtered = filterTodoItems(items);
+    if (!filtered.length) {
+      var msg = currentTodoFilter === 'all' ? 'No open todos.' : 'No matching todos.';
+      document.getElementById('todo-list').innerHTML = '<div class="desk-empty">' + msg + '</div>';
+      return;
+    }
+    var now = new Date().toISOString().slice(0, 10);
+    var h = '';
+
+    // Group by project if filter is by-project
+    if (currentTodoFilter === 'has-project') {
+      var groups = {};
+      filtered.forEach(function (i) {
+        var key = i.project || 'untagged';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(i);
+      });
+      Object.keys(groups).sort().forEach(function (proj) {
+        h += '<div style="padding:8px 16px 4px;font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.04em;">' + esc(proj) + '</div>';
+        groups[proj].forEach(function (i) { h += todoItemHtml(i, now); });
+      });
+    } else {
+      filtered.forEach(function (i) { h += todoItemHtml(i, now); });
+    }
+
+    document.getElementById('todo-list').innerHTML = h;
+  }
+
+  function todoItemHtml(item, now) {
+    var h = '<div class="todo-item" data-todo-id="' + esc(item.id) + '">';
+    h += '<div class="todo-checkbox" data-todo-check="' + esc(item.id) + '"></div>';
+    h += '<div class="todo-info">';
+    h += '<div class="todo-what">' + esc(item.what) + '</div>';
+    h += '<div class="todo-meta">';
+    if (item.due) {
+      var dc = item.due < now ? 'overdue' : (item.due === now ? 'today' : (daysDiff(item.due, now) <= 7 ? 'upcoming' : 'future'));
+      h += '<span class="todo-due ' + dc + '">' + esc(item.due) + '</span>';
+    }
+    if (item.priority && item.priority !== 'normal') {
+      h += '<span class="todo-pri ' + esc(item.priority) + '">' + esc(item.priority) + '</span>';
+    }
+    if (item.project && currentTodoFilter !== 'has-project') {
+      h += '<span class="todo-project">' + esc(item.project) + '</span>';
+    }
+    if (item.group) {
+      h += '<span class="todo-group">' + esc(item.group) + '</span>';
+    }
+    if (item.recurs) {
+      h += '<span class="todo-recur">&#x21bb; ' + esc(item.recurs) + '</span>';
+    }
+    h += '</div></div></div>';
+
+    // Sub-items
+    if (item.subs && item.subs.length) {
+      h += '<div class="todo-subs">';
+      item.subs.forEach(function (s) {
+        var isDone = s.status === 'done';
+        h += '<div class="todo-sub' + (isDone ? ' done' : '') + '">';
+        h += '<div class="todo-sub-check' + (isDone ? ' done' : '') + '" data-todo-check="' + esc(s.id) + '">' + (isDone ? '&#10003;' : '') + '</div>';
+        h += '<span class="todo-sub-what">' + esc(s.what) + '</span>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
+    return h;
+  }
+
+  function daysDiff(dateStr, now) {
+    return Math.floor((new Date(dateStr + 'T00:00:00') - new Date(now + 'T00:00:00')) / 86400000);
+  }
+
+  function handleTodoDone(id, el) {
+    fetch('/api/todo/' + encodeURIComponent(id) + '/done', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (result) {
+        if (!result.ok) return;
+        // Find the todo-item or todo-sub container
+        var itemEl = el.closest('.todo-item') || el.closest('.todo-sub');
+        if (itemEl) {
+          itemEl.classList.add('completing');
+          setTimeout(function () { fetchDesk(); }, 350);
+        } else {
+          fetchDesk();
+        }
+      });
+  }
+
+  // ── Scratch pad rendering ─────────────────────────────
+
+  function renderScratchList(entries) {
+    document.getElementById('scratch-count').textContent = entries.length;
+    if (!entries.length) {
+      document.getElementById('scratch-list').innerHTML = '<div class="desk-empty">No scratch pad entries.</div>';
+      return;
+    }
+    var h = '';
+    entries.forEach(function (e, idx) {
+      var eid = 'scratch-' + idx;
+      var iconClass = e.status === 'promoted' ? 'dei-promoted' : 'dei-scratch';
+      var icon = e.status === 'promoted' ? '&#10003;' : '&#x270E;';
+      var badgeClass = e.status === 'promoted' ? 'deb-promoted' : 'deb-active';
+      h += '<div class="desk-entry" data-expand="' + eid + '" data-scratch="' + esc(e.filename) + '">';
+      h += '<div class="desk-entry-icon ' + iconClass + '">' + icon + '</div>';
+      h += '<div class="desk-entry-info">';
+      h += '<div class="desk-entry-title">' + esc(e.title) + '</div>';
+      h += '<div class="desk-entry-sub">' + esc(e.topic) + '</div>';
+      h += '</div>';
+      h += '<span class="desk-entry-badge ' + badgeClass + '">' + esc(e.status) + '</span>';
+      h += '<div class="desk-entry-date">' + esc(e.date || '') + (e.time ? ' ' + esc(e.time) : '') + '</div>';
+      h += '</div>';
+      h += '<div class="desk-entry-expand" id="' + eid + '"><div class="desk-entry-expand-inner"><div class="desk-empty">Loading...</div></div></div>';
+    });
+    document.getElementById('scratch-list').innerHTML = h;
+  }
+
+  function toggleScratchEntry(filename, expandEl) {
+    var isOpen = expandEl.classList.contains('open');
+    expandEl.classList.toggle('open');
+    if (isOpen || deskContentCache['s:' + filename]) return;
+
+    fetch('/api/desk/scratch/' + encodeURIComponent(filename))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        deskContentCache['s:' + filename] = data.content;
+        expandEl.querySelector('.desk-entry-expand-inner').innerHTML = renderMd(data.content);
+      });
+  }
+
+  // ── Notebook rendering ────────────────────────────────
+
+  function renderNotebookList(entries) {
+    document.getElementById('notebook-count').textContent = entries.length;
+    if (!entries.length) {
+      document.getElementById('notebook-list').innerHTML = '<div class="desk-empty">No notebook entries.</div>';
+      return;
+    }
+    var h = '';
+    entries.forEach(function (e, idx) {
+      var eid = 'nb-' + idx;
+      var iconClass = e.status === 'graduated' ? 'dei-graduated' : 'dei-notebook';
+      var icon = e.status === 'graduated' ? '&#x1F393;' : '&#x1F4D3;';
+      var badgeClass = 'deb-' + (e.status || 'developing');
+      h += '<div class="desk-entry" data-expand="' + eid + '" data-notebook="' + esc(e.filename) + '">';
+      h += '<div class="desk-entry-icon ' + iconClass + '">' + icon + '</div>';
+      h += '<div class="desk-entry-info">';
+      h += '<div class="desk-entry-title">' + esc(e.title) + '</div>';
+      h += '<div class="desk-entry-sub">';
+      if (e.projects && e.projects.length) h += e.projects.map(function (p) { return '<span class="todo-project">' + esc(p) + '</span>'; }).join(' ');
+      if (e.graduated_to) h += ' &rarr; ' + esc(e.graduated_to);
+      h += '</div>';
+      h += '</div>';
+      h += '<span class="desk-entry-badge ' + badgeClass + '">' + esc(e.status) + '</span>';
+      h += '<div class="desk-entry-date">' + esc(e.date || '') + '</div>';
+      h += '</div>';
+      h += '<div class="desk-entry-expand" id="' + eid + '"><div class="desk-entry-expand-inner"><div class="desk-empty">Loading...</div></div></div>';
+    });
+    document.getElementById('notebook-list').innerHTML = h;
+  }
+
+  function toggleNotebookEntry(filename, expandEl) {
+    var isOpen = expandEl.classList.contains('open');
+    expandEl.classList.toggle('open');
+    if (isOpen || deskContentCache['n:' + filename]) return;
+
+    fetch('/api/desk/notebook/' + encodeURIComponent(filename))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        deskContentCache['n:' + filename] = data.content;
+        expandEl.querySelector('.desk-entry-expand-inner').innerHTML = renderMd(data.content);
+      });
+  }
+
   // ── Event delegation ───────────────────────────────────
 
   // Summary pill clicks
@@ -820,7 +1287,81 @@
     }
   });
 
+  // ── Desk event delegation ──────────────────────────────
+
+  // Todo filter clicks
+  document.getElementById('todo-filters').addEventListener('click', function (e) {
+    var btn = e.target.closest('.todo-filter');
+    if (btn && btn.dataset.filter) {
+      currentTodoFilter = btn.dataset.filter;
+      renderTodoFilters();
+      if (deskData) renderTodoList(deskData.todos.items);
+    }
+  });
+
+  // Todo checkbox clicks
+  document.getElementById('todo-list').addEventListener('click', function (e) {
+    var check = e.target.closest('[data-todo-check]');
+    if (check) {
+      e.stopPropagation();
+      handleTodoDone(check.dataset.todoCheck, check);
+    }
+  });
+
+  // Scratch entry expand
+  document.getElementById('scratch-list').addEventListener('click', function (e) {
+    var entry = e.target.closest('.desk-entry[data-scratch]');
+    if (entry) {
+      var expandEl = document.getElementById(entry.dataset.expand);
+      if (expandEl) toggleScratchEntry(entry.dataset.scratch, expandEl);
+    }
+  });
+
+  // Notebook entry expand
+  document.getElementById('notebook-list').addEventListener('click', function (e) {
+    var entry = e.target.closest('.desk-entry[data-notebook]');
+    if (entry) {
+      var expandEl = document.getElementById(entry.dataset.expand);
+      if (expandEl) toggleNotebookEntry(entry.dataset.notebook, expandEl);
+    }
+  });
+
   // ── Init ─────────────────────────────────────────────────
+
+  // Check URL for initial view
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('view') === 'desk') {
+    switchView('desk');
+  }
+
+  window.refresh = function () {
+    var btn = document.getElementById('btn-refresh');
+    btn.classList.add('loading');
+    detailCache = {};
+    deskContentCache = {};
+
+    var promises = [
+      fetch('/api/data').then(function (r) { return r.json(); })
+    ];
+    if (currentView === 'desk' || deskData) {
+      promises.push(fetch('/api/desk').then(function (r) { return r.json(); }));
+    }
+
+    Promise.all(promises)
+      .then(function (results) {
+        currentData = results[0];
+        render(results[0]);
+        if (results[1]) {
+          deskData = results[1];
+          renderDesk(results[1]);
+        }
+      })
+      .catch(function (err) {
+        document.getElementById('tab-panels').innerHTML =
+          '<div class="empty-state">Failed to load data: ' + esc(err.message) + '</div>';
+      })
+      .finally(function () { btn.classList.remove('loading'); });
+  };
 
   window.refresh();
 })();
