@@ -28,8 +28,8 @@ Tell the user:
 > This will update **system files** in `<path>`:
 > - CLAUDE.md (agent operating manual)
 > - README.md (workspace guide)
-> - Skills (project-manager, think-partner)
-> - Commands (new-project, status, meeting, decide, plan, dashboard, update, sync, jot, brainstorm, notebook)
+> - Skills (project-manager, think-partner, task-manager)
+> - Commands (new-project, status, meeting, decide, plan, dashboard, update, sync, jot, brainstorm, notebook, todo)
 > - Hooks (session-sync)
 >
 > Your **data and config are safe** — these are never touched:

@@ -9,6 +9,15 @@ Options:
 - gated: agent works autonomously on artifact creation, pauses for cross-project changes or deletions
 - autonomous: agent runs freely, pauses only for ambiguity
 
+## Todo Surfacing
+
+todo_surfacing: contextual
+
+Options:
+- passive: only show todos when /todo is invoked
+- contextual: also surface project-tagged todos during /project-status
+- proactive: also show summary at session start (overdue, due today)
+
 ## Workspace
 
 owner: [your name]

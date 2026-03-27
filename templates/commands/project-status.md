@@ -52,3 +52,15 @@ View or update the status of a project.
 5. If the user asks to reactivate an archived or completed project, update the registry status back to `active`.
 6. If the user is just asking for status, summarize the current state from existing artifacts.
 7. Proactively surface any blockers or overdue action items found in meeting notes or plans.
+8. **Contextual todo surfacing:** Check `todo_surfacing` in `.ddt/config.md`. If `contextual` or `proactive`, query project-tagged todos:
+   ```bash
+   node -e "
+     const fs=require('fs');
+     const f='.ddt/personal/todo.json';
+     if(!fs.existsSync(f))process.exit(0);
+     const t=JSON.parse(fs.readFileSync(f,'utf8'));
+     const p=t.items.filter(i=>i.project==='PROJECT_NAME'&&i.status!=='done');
+     if(p.length)console.log(JSON.stringify(p.map(i=>({id:i.id,what:i.what,due:i.due,priority:i.priority}))));
+   "
+   ```
+   Replace `PROJECT_NAME` with the resolved project name. If items are found, append to the status output: "You have N personal todos for this project:" with a brief list.

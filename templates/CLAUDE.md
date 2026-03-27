@@ -30,6 +30,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
         YYYY-MM-DD.md               # status updates / reports
 
   personal/
+    todo.json                       # personal action items (JSON, gitignored)
     scratch/                        # quick-capture scratch pad (gitignored)
       .index.md                     # manifest: tracks entries, topics, promotion status
       YYYY-MM-DD-HHMM-<slug>.md    # sticky notes (timestamped jots)
@@ -88,6 +89,15 @@ When the user has ideas that aren't fully formed:
 - Notebook entries (`.ddt/personal/notebook/`) are created only when the user explicitly asks — never automatically
 - Surface connections to existing projects, notebook entries, and scratch pad topics
 
+### Todo
+When the user manages personal action items:
+- Todo items live in `.ddt/personal/todo.json` (JSON format)
+- Created only via `/todo` command or explicit "todo"/"task" language (task-manager skill)
+- Can be tagged to a project and optionally made visible on the project dashboard via the `visibility` field
+- Use targeted `node -e` queries for data access — never read the full JSON file into context
+- Contextual surfacing: during `/project-status`, check for project-tagged todos (if `todo_surfacing` is `contextual` or `proactive` in `.ddt/config.md`)
+- Completed items are moved to `.ddt/personal/todo-complete.json` and auto-cleaned after 30 days
+
 ## Artifact Quality Standards
 
 ### Every project overview.md should have:
@@ -141,6 +151,7 @@ Project artifacts use YAML frontmatter (between `---` delimiters at the top of t
 | `updates/*.md` | `date`, `to`, `summary` |
 | `plan.md` | `updated`, `status` |
 | `notebook/*.md` | `date`, `projects: []`, `status`, `graduated_to` |
+| `todo.json` | JSON file — see `/todo` command for full schema |
 
 ## Operating Rules
 

@@ -34,3 +34,4 @@ Read the corresponding command file for detailed instructions on how to handle e
 - Reference `.ddt/norms.md` for team standards.
 - When in doubt about which project something belongs to, ask.
 - Resolve projects via the registry (`.ddt/registry.md`). The registry is the source of truth for project existence and location.
+- Personal action items (todos) are handled by the task-manager skill and `/todo` command — not by project-manager. If the user says "todo" or "task" in the context of personal action items, let task-manager handle it.

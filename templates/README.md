@@ -9,10 +9,11 @@ This directory is a Claude Code workspace for documenting, tracking, planning, a
 3. Optionally customize `.ddt/norms.md` with your team's working principles
 4. Open Claude Code in this directory: `claude`
 
-Two skills auto-trigger based on what you're doing:
+Three skills auto-trigger based on what you're doing:
 
 - **project-manager** — activates when you talk about projects, meetings, decisions, status, or planning
 - **think-partner** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
+- **task-manager** — activates when you explicitly mention "todo" or "task" to manage personal action items
 
 You don't need to invoke skills directly. Describe what you need and the assistant routes to the right one.
 
@@ -39,6 +40,12 @@ You don't need to invoke skills directly. Describe what you need and the assista
 | `/brainstorm` | Think through an idea interactively |
 | `/notebook` | Browse scratch pad and notebook, promote entries, manage thinking |
 
+### Todo
+
+| Command | Description |
+|---------|-------------|
+| `/todo` | Manage personal action items — add, complete, update, review, delete |
+
 ## Workspace Structure
 
 ```
@@ -59,6 +66,7 @@ You don't need to invoke skills directly. Describe what you need and the assista
       updates/
         YYYY-MM-DD.md                  # status updates / reports
   personal/
+    todo.json                          # personal action items (gitignored)
     scratch/                           # quick-capture scratch pad (gitignored)
       .index.md                        # manifest tracking entries and promotion status
       YYYY-MM-DD-HHMM-<slug>.md       # sticky notes
@@ -69,10 +77,11 @@ You don't need to invoke skills directly. Describe what you need and the assista
   skills/                              # auto-triggering skills (managed by bootstrap)
     project-manager/SKILL.md
     think-partner/SKILL.md
+    task-manager/SKILL.md
   commands/                            # slash commands (managed by bootstrap)
     new-project.md, project-status.md, meeting.md, decide.md,
     project-scoping.md, dashboard.md, create-project-update.md, sync.md,
-    jot.md, brainstorm.md, notebook.md
+    jot.md, brainstorm.md, notebook.md, todo.md
   hooks/
     session-sync.sh                    # auto-syncs team repos on session start
   settings.json                        # hook configuration
@@ -80,7 +89,7 @@ You don't need to invoke skills directly. Describe what you need and the assista
 
 ### What's gitignored
 
-Personal scratch pad and notebook entries are gitignored by default. They never leave your machine, even if you use team collaboration.
+Personal scratch pad, notebook entries, and todo list are gitignored by default. They never leave your machine, even if you use team collaboration.
 
 ## Autonomy Modes
 

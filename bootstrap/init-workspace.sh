@@ -18,10 +18,12 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
   - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
   - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
+  - .claude/skills/task-manager/ (auto-triggering todo/task management skill)
+  - .ddt/personal/todo.json (personal todo list, gitignored)
   - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
   - .claude/dashboard/ (visual project dashboard — Node.js server + HTML)
   - .claude/settings.json (hook configuration — never overwritten on update)
-  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, dashboard, create-project-update, jot, brainstorm, notebook)
+  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, dashboard, create-project-update, jot, brainstorm, notebook, todo)
 
 Options:
   --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
@@ -80,6 +82,7 @@ for file in \
   "$REPO_ROOT/templates/gitignore" \
   "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
   "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
+  "$REPO_ROOT/templates/skills/task-manager/SKILL.md" \
   "$REPO_ROOT/templates/hooks/session-sync.sh" \
   "$REPO_ROOT/templates/dashboard/template.html" \
   "$REPO_ROOT/templates/dashboard/server.js" \
@@ -103,6 +106,7 @@ mkdir -p "$TARGET_DIR/.claude/dashboard"
 mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
 mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
 mkdir -p "$TARGET_DIR/.claude/skills/think-partner"
+mkdir -p "$TARGET_DIR/.claude/skills/task-manager"
 mkdir -p "$TARGET_DIR/.claude/hooks"
 
 # Copy a file, skipping if it already exists
@@ -162,6 +166,10 @@ $copy_fn "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
 $copy_fn "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
   "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
   ".claude/skills/think-partner/SKILL.md"
+
+$copy_fn "$REPO_ROOT/templates/skills/task-manager/SKILL.md" \
+  "$TARGET_DIR/.claude/skills/task-manager/SKILL.md" \
+  ".claude/skills/task-manager/SKILL.md"
 
 # Session-sync hook
 $copy_fn "$REPO_ROOT/templates/hooks/session-sync.sh" \
@@ -227,6 +235,12 @@ if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" ]; then
   echo "create: .ddt/personal/scratch/.gitkeep"
 fi
 
+# Todo list
+if [ ! -e "$TARGET_DIR/.ddt/personal/todo.json" ]; then
+  printf '{\n  "version": 1,\n  "items": []\n}\n' > "$TARGET_DIR/.ddt/personal/todo.json"
+  echo "create: .ddt/personal/todo.json"
+fi
+
 # Scratch pad index
 if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.index.md" ]; then
   cat > "$TARGET_DIR/.ddt/personal/scratch/.index.md" <<'INDEXEOF'
@@ -248,7 +262,7 @@ if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
 Update complete. System files (CLAUDE.md, skills, commands, hooks) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/, scratch/.index.md) were not touched.
+User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/, scratch/.index.md, todo.json) were not touched.
 EOF
 else
   cat <<'EOF'
@@ -259,7 +273,7 @@ Setup complete. Next steps:
 - Edit .ddt/config.md to set your name and autonomy mode
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook
+- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo
 - For team collaboration: add team repos to the Team Repos section in .ddt/config.md
 EOF
 fi

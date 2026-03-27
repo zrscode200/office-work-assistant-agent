@@ -1,6 +1,8 @@
 # Office Work Assistant Agent - workspace entries
 .ddt/personal/notebook/
 .ddt/personal/scratch/
+.ddt/personal/todo.json
+.ddt/personal/todo-complete.json
 .ddt/personal/dashboard.html
 .ddt/personal/.dashboard.pid
 .ddt/personal/.dashboard.port

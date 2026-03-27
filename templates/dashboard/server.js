@@ -194,6 +194,18 @@ function parseOverview(filePath) {
   return { objective, fullContent: body };
 }
 
+function parseTodos() {
+  const f = path.join(WORKSPACE, '.ddt', 'personal', 'todo.json');
+  const content = read(f);
+  if (!content) return [];
+  try {
+    const t = JSON.parse(content);
+    return (t.items || []).filter(i =>
+      i.visibility === 'project' && i.status !== 'done' && i.project
+    );
+  } catch { return []; }
+}
+
 function readPlan(filePath) {
   const content = read(filePath);
   if (!content) return null;
@@ -276,6 +288,7 @@ function buildData() {
   const config   = parseConfig();
   const registry = parseRegistry();
   const known    = new Set(registry.map(p => p.name));
+  const allTodos = parseTodos();
 
   const active    = [];
   const completed = [];
@@ -299,6 +312,8 @@ function buildData() {
     // Active
     const st = pPath ? parseStatus(path.join(pPath, 'status.md')) : null;
     const ov = pPath ? parseOverview(path.join(pPath, 'overview.md')) : null;
+    const projTodos = allTodos.filter(t => t.project === proj.name)
+      .map(t => ({ id: t.id, what: t.what, due: t.due, priority: t.priority, status: t.status }));
     const entry = {
       name: proj.name,
       location: proj.location,
@@ -307,7 +322,8 @@ function buildData() {
       blocker: st?.blockers?.[0] || null,
       nextMilestone: st?.next?.[0] || null,
       lastUpdated: st?.lastUpdated || proj.created,
-      objective: ov?.objective || null
+      objective: ov?.objective || null,
+      todos: projTodos
     };
     active.push(entry);
 
@@ -439,6 +455,8 @@ function buildProjectDetail(projectName) {
   if (!proj || !pPath) return null;
 
   const ov = parseOverview(path.join(pPath, 'overview.md'));
+  const allTodos = parseTodos();
+  const projTodos = allTodos.filter(t => t.project === proj.name);
 
   return {
     name: proj.name,
@@ -449,7 +467,8 @@ function buildProjectDetail(projectName) {
     statusHistory: parseFullStatus(path.join(pPath, 'status.md')),
     plan: readPlan(path.join(pPath, 'plan.md')),
     meetings: listMeetings(pPath),
-    decisions: listDecisions(pPath)
+    decisions: listDecisions(pPath),
+    todos: projTodos
   };
 }
 

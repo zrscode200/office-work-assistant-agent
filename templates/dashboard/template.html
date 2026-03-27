@@ -214,6 +214,7 @@
     .ai-meeting { background: #dbeafe; color: #1d4ed8; }
     .ai-decision { background: #ede9fe; color: #6d28d9; }
     .ai-plan { background: #d1fae5; color: #059669; }
+    .ai-todo { background: #fef3c7; color: #92400e; }
     .artifact-info { flex: 1; min-width: 0; }
     .artifact-title { font-size: 16px; font-weight: 500; }
     .artifact-sub { font-size: 12px; color: var(--text-muted); }
@@ -545,7 +546,7 @@
     var h = '<div class="project-row" data-project="' + esc(p.name) + '">';
     h += '<div class="row-summary">';
     h += healthDot(p.health);
-    h += '<div class="proj-name">' + esc(p.name) + '</div>';
+    h += '<div class="proj-name">' + esc(p.name) + (p.todos && p.todos.length ? ' <span class="bcnt" style="font-size:10px;font-weight:600;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;margin-left:6px;">' + p.todos.length + ' todo' + (p.todos.length > 1 ? 's' : '') + '</span>' : '') + '</div>';
     h += '<div>' + healthBadge(p.health) + '</div>';
     h += '<div class="cell-text">' + esc(p.summary || '') + '</div>';
     h += '<div class="cell-text">' + esc(p.nextMilestone || '') + '</div>';
@@ -594,12 +595,15 @@
     var decisions = d.decisions || [];
     var statusHistory = d.statusHistory || [];
 
+    var todos = d.todos || [];
+
     var tabs = [];
     tabs.push({ id: prefix + '-overview', label: 'Overview', active: true });
     tabs.push({ id: prefix + '-status', label: 'Status', count: statusHistory.length });
     if (d.plan) tabs.push({ id: prefix + '-plan', label: 'Plan' });
     tabs.push({ id: prefix + '-meetings', label: 'Meetings', count: meetings.length });
     tabs.push({ id: prefix + '-decisions', label: 'Decisions', count: decisions.length });
+    if (todos.length) tabs.push({ id: prefix + '-todos', label: 'Todos', count: todos.length });
 
     var h = '<div class="detail-inner">';
 
@@ -699,6 +703,26 @@
       h += '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No decisions recorded.</div>';
     }
     h += '</div>';
+
+    // Todos panel
+    if (todos.length) {
+      h += '<div class="detail-panel" id="' + prefix + '-todos">';
+      todos.forEach(function (todo) {
+        h += '<div class="artifact-row">';
+        h += '<div class="artifact-icon ai-todo">&#x2610;</div>';
+        h += '<div class="artifact-info"><div class="artifact-title">' + esc(todo.what) + '</div>';
+        h += '<div class="artifact-sub">';
+        if (todo.priority && todo.priority !== 'normal') h += '<span style="font-weight:600;">' + esc(todo.priority) + '</span>';
+        if (todo.status && todo.status !== 'open') h += (todo.priority && todo.priority !== 'normal' ? ' &middot; ' : '') + esc(todo.status);
+        h += '</div></div>';
+        if (todo.due) {
+          var tc = timeClass(todo.due);
+          h += '<div class="artifact-date ' + tc + '">' + esc(todo.due) + '</div>';
+        }
+        h += '</div>';
+      });
+      h += '</div>';
+    }
 
     h += '</div>';
     rowEl.querySelector('.row-detail').innerHTML = h;

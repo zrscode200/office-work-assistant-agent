@@ -12,6 +12,7 @@ You bootstrap a target directory with a `CLAUDE.md` operating manual, `.ddt/` wo
 
 - **project-manager** — activates when you talk about projects, meetings, decisions, status, or planning
 - **think-partner** — activates when you're exploring ideas, brainstorming, or capturing quick thoughts
+- **task-manager** — activates when you explicitly mention "todo" or "task" to manage personal action items
 
 The assistant helps with:
 - **Document** — meeting summaries, decision records, project context
@@ -125,6 +126,12 @@ Note: writing to a team repo always requires user confirmation, regardless of au
 | `/brainstorm` | Think through an idea interactively |
 | `/notebook` | Browse scratch pad and notebook, promote entries, manage thinking |
 
+### Todo
+
+| Command | Description |
+|---------|-------------|
+| `/todo` | Manage personal action items — add, complete, update, review, delete |
+
 ## Workspace Structure
 
 After bootstrapping, your workspace looks like:
@@ -150,6 +157,7 @@ your-workspace/
         updates/
           YYYY-MM-DD.md                  # status updates / reports
     personal/
+      todo.json                          # personal action items (gitignored)
       scratch/                           # quick-capture scratch pad (gitignored)
         .index.md                        # manifest tracking entries and promotion status
         YYYY-MM-DD-HHMM-<slug>.md       # sticky notes
@@ -159,10 +167,11 @@ your-workspace/
     skills/
       project-manager/SKILL.md           # PM skill (routes to project commands)
       think-partner/SKILL.md              # thinking partner skill
+      task-manager/SKILL.md               # todo/task management skill
     commands/
       new-project.md, project-status.md, meeting.md, decide.md,
       project-scoping.md, dashboard.md, create-project-update.md, sync.md,
-      jot.md, brainstorm.md, notebook.md
+      jot.md, brainstorm.md, notebook.md, todo.md
     hooks/
       session-sync.sh                     # auto-syncs team repos on session start
     settings.json                          # hook configuration
@@ -195,10 +204,12 @@ office-work-assistant-agent/
         SKILL.md                         # project manager skill
       think-partner/
         SKILL.md                         # thinking partner skill
+      task-manager/
+        SKILL.md                         # todo/task management skill
     commands/
       new-project.md, project-status.md, meeting.md, decide.md,
       project-scoping.md, dashboard.md, create-project-update.md, sync.md,
-      jot.md, brainstorm.md, notebook.md
+      jot.md, brainstorm.md, notebook.md, todo.md
     hooks/
       session-sync.sh                     # auto-syncs team repos on session start
     settings.json                          # Claude Code hook configuration
