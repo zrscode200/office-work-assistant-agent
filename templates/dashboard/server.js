@@ -397,8 +397,55 @@ function parseTodosAll() {
       recurs: i.recurs || null,
       subs: (i.subs || []).map(s => ({ id: s.id, what: s.what, status: s.status }))
     }));
-    return { stats, items };
-  } catch { return { stats: { total: 0, overdue: 0, today: 0, high: 0 }, items: [] }; }
+    // Recently completed items (from todo-complete.json)
+    const completeFile = path.join(WORKSPACE, '.ddt', 'personal', 'todo-complete.json');
+    const cc = read(completeFile);
+    let completed = [];
+    if (cc) {
+      try {
+        const tc = JSON.parse(cc);
+        completed = (tc.items || [])
+          .sort((a, b) => (b.completed || '').localeCompare(a.completed || ''))
+          .slice(0, 30)
+          .map(i => ({
+            id: i.id, what: i.what, due: i.due || null,
+            priority: i.priority || 'normal', project: i.project || null,
+            group: i.group || null, completed: i.completed || null,
+            recurs: i.recurs || null
+          }));
+      } catch { /* ignore */ }
+    }
+
+    return { stats, items, completed };
+  } catch { return { stats: { total: 0, overdue: 0, today: 0, high: 0 }, items: [], completed: [] }; }
+}
+
+function undoTodoDone(id) {
+  const todoFile = path.join(WORKSPACE, '.ddt', 'personal', 'todo.json');
+  const completeFile = path.join(WORKSPACE, '.ddt', 'personal', 'todo-complete.json');
+  const cc = read(completeFile);
+  if (!cc) return { ok: false, error: 'No completed items file' };
+
+  try {
+    const tc = JSON.parse(cc);
+    const idx = tc.items.findIndex(i => i.id === id);
+    if (idx === -1) return { ok: false, error: 'Item not found in completed list' };
+
+    const item = tc.items[idx];
+    item.status = 'open';
+    item.completed = null;
+    tc.items.splice(idx, 1);
+    fs.writeFileSync(completeFile, JSON.stringify(tc, null, 2));
+
+    const content = read(todoFile);
+    const t = content ? JSON.parse(content) : { version: 1, items: [] };
+    t.items.push(item);
+    fs.writeFileSync(todoFile, JSON.stringify(t, null, 2));
+
+    return { ok: true, id };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
 }
 
 function markTodoDone(id) {
@@ -722,6 +769,14 @@ const server = http.createServer((req, res) => {
   const todoMatch = req.method === 'POST' && req.url.match(/^\/api\/todo\/([a-z0-9.]+)\/done$/);
   if (todoMatch) {
     const result = markTodoDone(decodeURIComponent(todoMatch[1]));
+    res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+    return;
+  }
+
+  const undoMatch = req.method === 'POST' && req.url.match(/^\/api\/todo\/([a-z0-9.]+)\/undo$/);
+  if (undoMatch) {
+    const result = undoTodoDone(decodeURIComponent(undoMatch[1]));
     res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(result));
     return;
