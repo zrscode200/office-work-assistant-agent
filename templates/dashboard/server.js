@@ -4,6 +4,7 @@
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const WORKSPACE    = process.cwd();
 const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 min
@@ -512,6 +513,31 @@ function markTodoDone(id) {
   }
 }
 
+// ── Team repo sync ──────────────────────────────────────────
+
+function syncTeamRepos(teamRepos) {
+  const results = [];
+  for (const [name, repoPath] of Object.entries(teamRepos)) {
+    if (!fs.existsSync(path.join(repoPath, '.git'))) {
+      results.push({ repo: name, status: 'error', message: 'Not a git repo' });
+      continue;
+    }
+    try {
+      const output = execSync('git pull --ff-only', {
+        cwd: repoPath, timeout: 15000, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe']
+      });
+      if (/Already up to date/.test(output)) {
+        results.push({ repo: name, status: 'ok' });
+      } else {
+        results.push({ repo: name, status: 'updated' });
+      }
+    } catch {
+      results.push({ repo: name, status: 'error', message: 'Needs manual sync (diverged or conflicts)' });
+    }
+  }
+  return results;
+}
+
 // ── Build dashboard data ─────────────────────────────────────
 
 function buildData() {
@@ -708,7 +734,10 @@ const server = http.createServer((req, res) => {
   resetIdle(server);
 
   if (req.method === 'GET' && req.url === '/api/data') {
+    const config = parseConfig();
+    const syncStatus = syncTeamRepos(config.teamRepos);
     const data = buildData();
+    data.syncStatus = syncStatus;
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
     return;

@@ -746,6 +746,8 @@
     var completed = (data.projects && data.projects.completed) || [];
     var grouped = (data.projects && data.projects.grouped) || { personal: { projects: [] }, teams: [] };
     var alerts = data.alerts || {};
+    var syncStatus = data.syncStatus || [];
+    alerts.syncErrors = syncStatus.filter(function (s) { return s.status === 'error'; });
     var activities = data.activities || [];
 
     renderSummaryPills(active);
@@ -786,6 +788,8 @@
       h += alerts.stale.map(function (n) { return '<span class="alert-chip amber">&#x23F0; ' + esc(n) + ' stale</span>'; }).join('');
     if (alerts.unregistered && alerts.unregistered.length)
       h += alerts.unregistered.map(function (u) { return '<span class="alert-chip muted">' + esc(u.name) + ' unregistered (' + esc(u.repo) + ')</span>'; }).join('');
+    if (alerts.syncErrors && alerts.syncErrors.length)
+      h += alerts.syncErrors.map(function (s) { return '<span class="alert-chip amber">&#x1F504; ' + esc(s.repo) + ': ' + esc(s.message) + '</span>'; }).join('');
     document.getElementById('alerts').innerHTML = h;
   }
 
