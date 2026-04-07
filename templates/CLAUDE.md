@@ -22,6 +22,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
       overview.md                   # scope, goals, stakeholders, approach
       status.md                     # current status, health, blockers, risks
       plan.md                       # task breakdown, milestones, timeline
+      comments.md                   # project comment thread (quick notes, questions, reminders)
       decisions/
         <decision-name>.md          # decision records
       meetings/
@@ -41,7 +42,7 @@ Read `.ddt/profile.md` to understand who you're working with — their role, tea
 <repo-path>/
   projects/                         # team projects (visible to that team, git-synced)
     <project-name>/
-      overview.md, status.md, plan.md
+      overview.md, status.md, plan.md, comments.md
       decisions/, meetings/, updates/
 ```
 
@@ -130,6 +131,12 @@ When the user manages personal action items:
 - Decisions made (if any, link to decision records)
 - Action items with owners and deadlines
 
+### comments.md (project comment thread):
+- **Frontmatter:** `last_updated`
+- Entries delimited by `####` headers, newest first (prepend)
+- Each entry: `#### YYYY-MM-DD HH:MM — Author Name` followed by comment content
+- Lightweight — comments, questions, reminders. No rigid structure required.
+
 ## Artifact Frontmatter
 
 Project artifacts use YAML frontmatter (between `---` delimiters at the top of the file) as a structured data contract. The frontmatter holds machine-parseable fields; the markdown body holds human-readable narrative. The dashboard and other tools read frontmatter for reliable data extraction.
@@ -148,6 +155,7 @@ Project artifacts use YAML frontmatter (between `---` delimiters at the top of t
 | `status.md` | `health`, `last_updated`, `summary`, `blockers: []`, `risks: []`, `next: []` |
 | `decisions/*.md` | `date`, `status`, `participants: []` |
 | `meetings/*.md` | `date`, `attendees: []`, `purpose` |
+| `comments.md` | `last_updated` |
 | `updates/*.md` | `date`, `to`, `summary` |
 | `plan.md` | `updated`, `status` |
 | `notebook/*.md` | `date`, `projects: []`, `status`, `graduated_to` |
@@ -219,6 +227,7 @@ When writing to a project whose location is a team repo name in the registry. Pe
 - "Add decision record: <project> - <decision-name>"
 - "Create project: <project>"
 - "Update plan: <project>"
+- "Add comment: <project> (YYYY-MM-DD)"
 - "Add status update: <project> (YYYY-MM-DD)"
 
 ## Team Repo Freshness

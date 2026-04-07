@@ -248,6 +248,7 @@
     .act-dot.meeting { background: #3b82f6; }
     .act-dot.decision { background: #8b5cf6; }
     .act-dot.created { background: var(--green); }
+    .act-dot.comment { background: #f59e0b; }
     .act-text { flex: 1; color: var(--text-sec); }
     .act-text .proj { font-weight: 600; color: var(--text); }
     .act-time { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
@@ -483,6 +484,18 @@
       opacity: 0; transform: translateX(-20px); max-height: 0;
       padding-top: 0; padding-bottom: 0; overflow: hidden; transition: all 0.3s;
     }
+
+    /* Comment entries */
+    .comment-entry {
+      padding: 12px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .comment-entry:last-child { border-bottom: none; }
+    .comment-head {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 12px;
+    }
+    .comment-author { font-weight: 600; color: var(--text); }
+    .comment-time { color: var(--text-muted); }
+    .comment-body { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
 
     /* Scratch / notebook entries */
     .desk-entry {
@@ -932,6 +945,7 @@
     var statusHistory = d.statusHistory || [];
 
     var todos = d.todos || [];
+    var comments = d.comments || [];
 
     var tabs = [];
     tabs.push({ id: prefix + '-overview', label: 'Overview', active: true });
@@ -939,6 +953,7 @@
     if (d.plan) tabs.push({ id: prefix + '-plan', label: 'Plan' });
     tabs.push({ id: prefix + '-meetings', label: 'Meetings', count: meetings.length });
     tabs.push({ id: prefix + '-decisions', label: 'Decisions', count: decisions.length });
+    if (comments.length) tabs.push({ id: prefix + '-comments', label: 'Comments', count: comments.length });
     if (todos.length) tabs.push({ id: prefix + '-todos', label: 'Todos', count: todos.length });
 
     var h = '<div class="detail-inner">';
@@ -1040,6 +1055,21 @@
     }
     h += '</div>';
 
+    // Comments panel
+    if (comments.length) {
+      h += '<div class="detail-panel" id="' + prefix + '-comments">';
+      comments.forEach(function (c) {
+        h += '<div class="comment-entry">';
+        h += '<div class="comment-head">';
+        h += '<span class="comment-author">' + esc(c.author) + '</span>';
+        h += '<span class="comment-time">' + esc(c.date + ' ' + c.time) + '</span>';
+        h += '</div>';
+        h += '<div class="comment-body">' + esc(c.content) + '</div>';
+        h += '</div>';
+      });
+      h += '</div>';
+    }
+
     // Todos panel
     if (todos.length) {
       h += '<div class="detail-panel" id="' + prefix + '-todos" data-project-todos="' + esc(name) + '">';
@@ -1094,7 +1124,7 @@
       return;
     }
     document.getElementById('activity-section').style.display = '';
-    var verbs = { status: 'Status updated on', meeting: 'Meeting captured for', decision: 'Decision recorded for', created: 'Project created:' };
+    var verbs = { status: 'Status updated on', meeting: 'Meeting captured for', decision: 'Decision recorded for', comment: 'Comment on', created: 'Project created:' };
     var h = '';
     activities.forEach(function (a) {
       h += '<div class="act-item">';

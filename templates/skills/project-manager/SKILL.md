@@ -18,6 +18,7 @@ Based on what the user needs, identify the action and follow the corresponding c
 | Describes a decision or asks to document one | `/decide` |
 | Discusses progress, blockers, or asks about status | `/project-status` |
 | Needs to plan work, break down tasks, or think through approach | `/project-scoping` |
+| Wants to add a comment, note, or question to a project | `/project-comment` |
 | Needs to communicate project status to others | `/create-project-update` |
 | Wants to see across all projects | `/dashboard` |
 | Wants to sync, pull, or push team repos | `/sync` |

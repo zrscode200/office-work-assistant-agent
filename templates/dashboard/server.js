@@ -252,6 +252,34 @@ function listDecisions(projectDir) {
   } catch { return []; }
 }
 
+function listComments(projectDir) {
+  const filePath = path.join(projectDir, 'comments.md');
+  const content = read(filePath);
+  if (!content) return [];
+
+  const { meta, body } = parseFrontmatter(content);
+  if (!body) return [];
+
+  // Split on #### headers
+  const entries = [];
+  const parts = body.split(/^####\s+/m).filter(s => s.trim());
+  for (const part of parts) {
+    // First line: "YYYY-MM-DD HH:MM — Author Name"
+    const lines = part.split('\n');
+    const header = lines[0].trim();
+    const headerMatch = header.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})\s*[—–-]\s*(.+)$/);
+    if (!headerMatch) continue;
+    const content = lines.slice(1).join('\n').trim();
+    entries.push({
+      date: headerMatch[1],
+      time: headerMatch[2],
+      author: headerMatch[3].trim(),
+      content
+    });
+  }
+  return entries;
+}
+
 function projectPath(project, teamRepos) {
   if (project.location === 'personal') {
     return path.join(WORKSPACE, '.ddt', 'projects', project.name);
@@ -699,6 +727,13 @@ function buildActivities(config, registry, unregistered) {
           summary: d.name + (d.status ? ' (' + d.status + ')' : '') });
       }
     }
+    for (const c of listComments(pPath)) {
+      if (c.date) {
+        const preview = c.content.length > 80 ? c.content.slice(0, 77) + '...' : c.content;
+        items.push({ date: c.date, type: 'comment', project: name,
+          summary: c.author + ': ' + preview });
+      }
+    }
     if (created && !history.some(e => e.date === created)) {
       items.push({ date: created, type: 'created', project: name, summary: 'Project created' });
     }
@@ -746,6 +781,7 @@ function buildProjectDetail(projectName) {
     plan: readPlan(path.join(pPath, 'plan.md')),
     meetings: listMeetings(pPath),
     decisions: listDecisions(pPath),
+    comments: listComments(pPath),
     todos: projTodos
   };
 }
