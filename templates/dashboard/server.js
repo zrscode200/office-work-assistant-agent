@@ -393,9 +393,12 @@ function parseTodosAll() {
       due: i.due || null,
       priority: i.priority || 'normal',
       project: i.project || null,
+      visibility: i.visibility || 'private',
       group: i.group || null,
       status: i.status,
       recurs: i.recurs || null,
+      created: i.created || null,
+      completions: i.completions || [],
       subs: (i.subs || []).map(s => ({ id: s.id, what: s.what, status: s.status }))
     }));
     // Recently completed items (from todo-complete.json)
@@ -508,6 +511,25 @@ function markTodoDone(id) {
     fs.writeFileSync(completeFile, JSON.stringify(complete, null, 2));
 
     return { ok: true, id, recurring: false, nextDue: null };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+function toggleTodoVisibility(id) {
+  const todoFile = path.join(WORKSPACE, '.ddt', 'personal', 'todo.json');
+  const content = read(todoFile);
+  if (!content) return { ok: false, error: 'todo.json not found' };
+
+  try {
+    const t = JSON.parse(content);
+    const item = t.items.find(i => i.id === id);
+    if (!item) return { ok: false, error: 'Item not found' };
+    if (!item.project) return { ok: false, error: 'Item has no project tag — set a project first' };
+
+    item.visibility = (item.visibility === 'project') ? 'private' : 'project';
+    fs.writeFileSync(todoFile, JSON.stringify(t, null, 2));
+    return { ok: true, id, visibility: item.visibility };
   } catch (e) {
     return { ok: false, error: e.message };
   }
@@ -806,6 +828,14 @@ const server = http.createServer((req, res) => {
   const undoMatch = req.method === 'POST' && req.url.match(/^\/api\/todo\/([a-z0-9.]+)\/undo$/);
   if (undoMatch) {
     const result = undoTodoDone(decodeURIComponent(undoMatch[1]));
+    res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+    return;
+  }
+
+  const visMatch = req.method === 'POST' && req.url.match(/^\/api\/todo\/([a-z0-9.]+)\/visibility$/);
+  if (visMatch) {
+    const result = toggleTodoVisibility(decodeURIComponent(visMatch[1]));
     res.writeHead(result.ok ? 200 : 400, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(result));
     return;

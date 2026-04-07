@@ -448,6 +448,42 @@
     .todo-sub-what { flex: 1; }
     .todo-sub.done .todo-sub-what { text-decoration: line-through; color: var(--text-muted); }
 
+    /* Todo detail dropdown */
+    .todo-detail {
+      max-height: 0; overflow: hidden; transition: max-height 0.25s ease-out;
+      padding: 0 16px 0 44px;
+    }
+    .todo-item.detail-open .todo-detail { max-height: 300px; }
+    .todo-detail-inner {
+      padding: 8px 12px 10px; margin-bottom: 6px;
+      background: var(--border-light); border-radius: 6px;
+      font-size: 12px; color: var(--text-sec);
+      display: flex; flex-wrap: wrap; gap: 6px 16px;
+    }
+    .todo-detail-field { display: flex; align-items: center; gap: 4px; }
+    .todo-detail-field .label { font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 10px; letter-spacing: 0.04em; }
+    .todo-detail-field .value { color: var(--text); }
+    .todo-vis-toggle {
+      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+      cursor: pointer; border: 1px solid var(--border); background: #fff;
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .todo-vis-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .todo-vis-toggle.is-project { background: var(--green-bg); color: var(--green-text); border-color: var(--green-bg); }
+    .todo-completions { font-size: 11px; color: var(--text-muted); }
+    .todo-row-clickable { cursor: pointer; }
+
+    /* Project detail todo checkboxes */
+    .proj-todo-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border-light);
+    }
+    .proj-todo-item:last-child { border-bottom: none; }
+    .proj-todo-item.completing {
+      opacity: 0; transform: translateX(-20px); max-height: 0;
+      padding-top: 0; padding-bottom: 0; overflow: hidden; transition: all 0.3s;
+    }
+
     /* Scratch / notebook entries */
     .desk-entry {
       display: flex; align-items: center; gap: 10px;
@@ -1006,20 +1042,20 @@
 
     // Todos panel
     if (todos.length) {
-      h += '<div class="detail-panel" id="' + prefix + '-todos">';
+      h += '<div class="detail-panel" id="' + prefix + '-todos" data-project-todos="' + esc(name) + '">';
       todos.forEach(function (todo) {
-        h += '<div class="artifact-row">';
-        h += '<div class="artifact-icon ai-todo">&#x2610;</div>';
-        h += '<div class="artifact-info"><div class="artifact-title">' + esc(todo.what) + '</div>';
-        h += '<div class="artifact-sub">';
-        if (todo.priority && todo.priority !== 'normal') h += '<span style="font-weight:600;">' + esc(todo.priority) + '</span>';
-        if (todo.status && todo.status !== 'open') h += (todo.priority && todo.priority !== 'normal' ? ' &middot; ' : '') + esc(todo.status);
-        h += '</div></div>';
+        h += '<div class="proj-todo-item" data-todo-id="' + esc(todo.id) + '">';
+        h += '<div class="todo-checkbox" data-todo-check="' + esc(todo.id) + '"></div>';
+        h += '<div class="todo-info">';
+        h += '<div class="todo-what">' + esc(todo.what) + '</div>';
+        h += '<div class="todo-meta">';
         if (todo.due) {
           var tc = timeClass(todo.due);
-          h += '<div class="artifact-date ' + tc + '">' + esc(todo.due) + '</div>';
+          h += '<span class="todo-due ' + tc + '">' + esc(todo.due) + '</span>';
         }
-        h += '</div>';
+        if (todo.priority && todo.priority !== 'normal') h += '<span class="todo-pri ' + esc(todo.priority) + '">' + esc(todo.priority) + '</span>';
+        if (todo.status && todo.status !== 'open') h += '<span style="font-size:11px;color:var(--text-muted);">' + esc(todo.status) + '</span>';
+        h += '</div></div></div>';
       });
       h += '</div>';
     }
@@ -1221,7 +1257,7 @@
   function todoItemHtml(item, now) {
     var h = '<div class="todo-item" data-todo-id="' + esc(item.id) + '">';
     h += '<div class="todo-checkbox" data-todo-check="' + esc(item.id) + '"></div>';
-    h += '<div class="todo-info">';
+    h += '<div class="todo-info todo-row-clickable" data-todo-expand="' + esc(item.id) + '">';
     h += '<div class="todo-what">' + esc(item.what) + '</div>';
     h += '<div class="todo-meta">';
     if (item.due) {
@@ -1254,6 +1290,27 @@
       });
       h += '</div>';
     }
+
+    // Detail dropdown
+    h += '<div class="todo-detail">';
+    h += '<div class="todo-detail-inner">';
+    h += '<div class="todo-detail-field"><span class="label">ID</span> <span class="value">' + esc(item.id) + '</span></div>';
+    h += '<div class="todo-detail-field"><span class="label">Status</span> <span class="value">' + esc(item.status || 'open') + '</span></div>';
+    if (item.created) {
+      h += '<div class="todo-detail-field"><span class="label">Created</span> <span class="value">' + esc(item.created) + '</span></div>';
+    }
+    if (item.project) {
+      var visClass = item.visibility === 'project' ? ' is-project' : '';
+      var visLabel = item.visibility === 'project' ? '&#x1F441; Public' : '&#x1F512; Private';
+      h += '<div class="todo-detail-field"><span class="label">Dashboard</span> '
+        + '<span class="todo-vis-toggle' + visClass + '" data-todo-vis="' + esc(item.id) + '">' + visLabel + '</span></div>';
+    }
+    if (item.recurs && item.completions && item.completions.length) {
+      h += '<div class="todo-detail-field"><span class="label">Completions</span> '
+        + '<span class="value">' + item.completions.length + ' time' + (item.completions.length > 1 ? 's' : '')
+        + ', last: ' + esc(item.completions[item.completions.length - 1]) + '</span></div>';
+    }
+    h += '</div></div>';
 
     return h;
   }
@@ -1327,6 +1384,14 @@
           completedTodosOpen = true;
           fetchDesk();
         }
+      });
+  }
+
+  function handleTodoVisToggle(id) {
+    fetch('/api/todo/' + encodeURIComponent(id) + '/visibility', { method: 'POST' })
+      .then(function (r) { return r.json(); })
+      .then(function (result) {
+        if (result.ok) fetchDesk();
       });
   }
 
@@ -1478,8 +1543,39 @@
     }
   });
 
-  // Project row clicks
+  // Project row clicks + project detail todo checkboxes
   document.getElementById('tab-panels').addEventListener('click', function (e) {
+    // Todo checkbox in project detail
+    var check = e.target.closest('[data-project-todos] [data-todo-check]');
+    if (check) {
+      e.stopPropagation();
+      var id = check.dataset.todoCheck;
+      fetch('/api/todo/' + encodeURIComponent(id) + '/done', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (result) {
+          if (!result.ok) return;
+          var itemEl = check.closest('.proj-todo-item');
+          if (itemEl) {
+            itemEl.classList.add('completing');
+            setTimeout(function () {
+              var panel = check.closest('[data-project-todos]');
+              var projectName = panel ? panel.dataset.projectTodos : null;
+              if (projectName) {
+                delete detailCache[projectName];
+                var rowEl = document.querySelector('.project-row[data-project="' + projectName + '"]');
+                if (rowEl) {
+                  fetch('/api/project/' + encodeURIComponent(projectName))
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) { detailCache[projectName] = d; renderRowDetail(rowEl, d); });
+                }
+              }
+              fetchDesk();
+            }, 350);
+          }
+        });
+      return;
+    }
+    // Row summary expand/collapse
     var summary = e.target.closest('.row-summary');
     if (summary) {
       var row = summary.closest('.project-row');
@@ -1501,10 +1597,25 @@
 
   // Todo checkbox clicks
   document.getElementById('todo-list').addEventListener('click', function (e) {
+    // Visibility toggle
+    var vis = e.target.closest('[data-todo-vis]');
+    if (vis) {
+      e.stopPropagation();
+      handleTodoVisToggle(vis.dataset.todoVis);
+      return;
+    }
+    // Checkbox
     var check = e.target.closest('[data-todo-check]');
     if (check) {
       e.stopPropagation();
       handleTodoDone(check.dataset.todoCheck, check);
+      return;
+    }
+    // Detail expand
+    var expand = e.target.closest('[data-todo-expand]');
+    if (expand) {
+      var item = expand.closest('.todo-item');
+      if (item) item.classList.toggle('detail-open');
     }
   });
 
