@@ -23,7 +23,7 @@ Stamps a target directory with the office work assistant agent:
   - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
   - .claude/dashboard/ (visual project dashboard — Node.js server + HTML)
   - .claude/settings.json (hook configuration — never overwritten on update)
-  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, jot, brainstorm, notebook, todo)
+  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, jot, brainstorm, notebook, todo, self-tutorial)
 
 Options:
   --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
@@ -273,7 +273,7 @@ Setup complete. Next steps:
 - Edit .ddt/config.md to set your name and autonomy mode
 - Open Claude Code in the workspace directory
 - Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /project-comment, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo
+- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /project-comment, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo, /self-tutorial
 - For team collaboration: add team repos to the Team Repos section in .ddt/config.md
 EOF
 fi
