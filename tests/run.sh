@@ -90,7 +90,8 @@ is_user_owned_generated_file() {
     .ddt/personal/todo.json|\
     .ddt/personal/scratch/.index.md|\
     .claude/settings.json|\
-    .codex/config.toml)
+    .codex/config.toml|\
+    opencode.json)
       return 0
       ;;
     *)
@@ -155,6 +156,9 @@ assert_user_files_preserved() {
       ;;
     codex)
       assert_contains "$update_target/.codex/config.toml" "USER CODEX CONFIG SENTINEL"
+      ;;
+    opencode)
+      assert_contains "$update_target/opencode.json" "USER OPENCODE CONFIG SENTINEL"
       ;;
     *)
       fail "unknown runtime for preservation assertion: $runtime"
@@ -468,13 +472,41 @@ node --check "$codex_target/.codex/dashboard/server.js"
 git -C "$codex_target" rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
   fail "codex target should be a git worktree"
 
+opencode_target="$TMP_ROOT/opencode runtime workspace"
+mkdir -p "$opencode_target"
+"$BOOTSTRAP" --runtime opencode "$opencode_target" > "$TMP_ROOT/opencode-bootstrap.log"
+
+assert_file "$opencode_target/AGENTS.md"
+assert_file "$opencode_target/README.md"
+assert_file "$opencode_target/opencode.json"
+assert_file "$opencode_target/.opencode/commands/new-project.md"
+assert_file "$opencode_target/.opencode/commands/self-tutorial.md"
+assert_file "$opencode_target/.opencode/skills/project-manager/SKILL.md"
+assert_file "$opencode_target/.opencode/skills/think-partner/SKILL.md"
+assert_file "$opencode_target/.opencode/skills/task-manager/SKILL.md"
+assert_file "$opencode_target/.opencode/dashboard/template.html"
+assert_file "$opencode_target/.opencode/dashboard/server.js"
+assert_file "$opencode_target/.ddt/config.md"
+assert_file "$opencode_target/.ddt/profile.md"
+assert_file "$opencode_target/.ddt/norms.md"
+assert_file "$opencode_target/.ddt/registry.md"
+assert_file "$opencode_target/.ddt/personal/todo.json"
+assert_missing "$opencode_target/CLAUDE.md"
+assert_missing "$opencode_target/.claude"
+assert_missing "$opencode_target/.codex"
+assert_install_matches_generated "$GENERATED_OPENCODE" "$opencode_target"
+python3 -m json.tool "$opencode_target/opencode.json" >/dev/null
+node --check "$opencode_target/.opencode/dashboard/server.js"
+git -C "$opencode_target" rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
+  fail "opencode target should be a git worktree"
+
 unsupported_target="$TMP_ROOT/unsupported runtime workspace"
 mkdir -p "$unsupported_target"
 printf 'keep\n' > "$unsupported_target/keep.txt"
-if "$BOOTSTRAP" --runtime opencode "$unsupported_target" > "$TMP_ROOT/unsupported.log" 2> "$TMP_ROOT/unsupported.err"; then
+if "$BOOTSTRAP" --runtime copilot "$unsupported_target" > "$TMP_ROOT/unsupported.log" 2> "$TMP_ROOT/unsupported.err"; then
   fail "unsupported runtime should fail"
 fi
-assert_contains "$TMP_ROOT/unsupported.err" "unsupported runtime: opencode"
+assert_contains "$TMP_ROOT/unsupported.err" "unsupported runtime: copilot"
 assert_file "$unsupported_target/keep.txt"
 assert_missing "$unsupported_target/.ddt"
 assert_missing "$unsupported_target/.claude"
@@ -504,6 +536,17 @@ assert_user_files_preserved "$codex_target" codex
 assert_system_files_refreshed "$GENERATED_CODEX" "$codex_target"
 assert_missing "$codex_target/CLAUDE.md"
 assert_missing "$codex_target/.claude"
+
+write_shared_user_sentinels "$opencode_target"
+printf 'USER OPENCODE CONFIG SENTINEL\n' > "$opencode_target/opencode.json"
+
+stale_system_files "$GENERATED_OPENCODE" "$opencode_target"
+"$BOOTSTRAP" --update --runtime opencode "$opencode_target" > "$TMP_ROOT/opencode-update.log"
+assert_user_files_preserved "$opencode_target" opencode
+assert_system_files_refreshed "$GENERATED_OPENCODE" "$opencode_target"
+assert_missing "$opencode_target/CLAUDE.md"
+assert_missing "$opencode_target/.claude"
+assert_missing "$opencode_target/.codex"
 
 hook_target="$TMP_ROOT/hook workspace with spaces"
 mkdir -p "$hook_target"
