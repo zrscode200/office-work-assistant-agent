@@ -3,6 +3,7 @@ set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 BOOTSTRAP="$ROOT/bootstrap/init-workspace.sh"
+GENERATED_CLAUDE="$ROOT/generated/claude"
 TMP_ROOT="${TMPDIR:-/tmp}/office-work-assistant-agent-test-$$"
 
 fail() {
@@ -118,9 +119,10 @@ assert_executable "$target/.claude/hooks/session-sync.sh"
 assert_file "$target/.claude/skills/project-manager/SKILL.md"
 assert_file "$target/.claude/skills/think-partner/SKILL.md"
 assert_file "$target/.claude/skills/task-manager/SKILL.md"
-for command_template in "$ROOT/templates/commands/"*.md; do
+for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
   command_name=$(basename "$command_template")
   assert_file "$target/.claude/commands/$command_name"
+  assert_same "$command_template" "$target/.claude/commands/$command_name"
 done
 
 git -C "$target" rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
@@ -128,6 +130,29 @@ git -C "$target" rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
 
 assert_contains "$target/.gitignore" ".ddt/personal/notebook/"
 assert_contains "$target/.gitignore" ".ddt/personal/scratch/"
+assert_same "$GENERATED_CLAUDE/README.md" "$target/README.md"
+assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$target/CLAUDE.md"
+assert_same "$GENERATED_CLAUDE/.gitignore" "$target/.gitignore"
+assert_same "$GENERATED_CLAUDE/.ddt/config.md" "$target/.ddt/config.md"
+assert_same "$GENERATED_CLAUDE/.ddt/profile.md" "$target/.ddt/profile.md"
+assert_same "$GENERATED_CLAUDE/.ddt/norms.md" "$target/.ddt/norms.md"
+assert_same "$GENERATED_CLAUDE/.ddt/registry.md" "$target/.ddt/registry.md"
+assert_same "$GENERATED_CLAUDE/.ddt/personal/todo.json" "$target/.ddt/personal/todo.json"
+assert_same "$GENERATED_CLAUDE/.ddt/personal/scratch/.index.md" \
+  "$target/.ddt/personal/scratch/.index.md"
+assert_same "$GENERATED_CLAUDE/.claude/settings.json" "$target/.claude/settings.json"
+assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
+  "$target/.claude/hooks/session-sync.sh"
+assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \
+  "$target/.claude/dashboard/template.html"
+assert_same "$GENERATED_CLAUDE/.claude/dashboard/server.js" \
+  "$target/.claude/dashboard/server.js"
+assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
+  "$target/.claude/skills/project-manager/SKILL.md"
+assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
+  "$target/.claude/skills/think-partner/SKILL.md"
+assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
+  "$target/.claude/skills/task-manager/SKILL.md"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
   "$target/.ddt/personal/todo.json"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
@@ -162,14 +187,20 @@ assert_contains "$target/.ddt/personal/todo.json" '"keep"'
 assert_contains "$target/.ddt/personal/scratch/.index.md" "scratch index sentinel"
 assert_file "$target/.ddt/projects/sample/status.md"
 
-assert_same "$ROOT/templates/CLAUDE.md" "$target/CLAUDE.md"
-assert_same "$ROOT/templates/README.md" "$target/README.md"
-assert_same "$ROOT/templates/commands/todo.md" "$target/.claude/commands/todo.md"
-assert_same "$ROOT/templates/skills/project-manager/SKILL.md" \
+assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$target/CLAUDE.md"
+assert_same "$GENERATED_CLAUDE/README.md" "$target/README.md"
+for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
+  command_name=$(basename "$command_template")
+  assert_same "$command_template" "$target/.claude/commands/$command_name"
+done
+assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
   "$target/.claude/skills/project-manager/SKILL.md"
-assert_same "$ROOT/templates/hooks/session-sync.sh" "$target/.claude/hooks/session-sync.sh"
-assert_same "$ROOT/templates/dashboard/template.html" "$target/.claude/dashboard/template.html"
-assert_same "$ROOT/templates/dashboard/server.js" "$target/.claude/dashboard/server.js"
+assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
+  "$target/.claude/hooks/session-sync.sh"
+assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \
+  "$target/.claude/dashboard/template.html"
+assert_same "$GENERATED_CLAUDE/.claude/dashboard/server.js" \
+  "$target/.claude/dashboard/server.js"
 assert_executable "$target/.claude/hooks/session-sync.sh"
 
 hook_target="$TMP_ROOT/hook workspace with spaces"

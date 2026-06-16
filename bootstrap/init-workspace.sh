@@ -63,6 +63,7 @@ fi
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+CLAUDE_TEMPLATE_ROOT="$REPO_ROOT/generated/claude"
 TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd)
 
 if [ "$TARGET_DIR" = "$REPO_ROOT" ]; then
@@ -71,30 +72,35 @@ if [ "$TARGET_DIR" = "$REPO_ROOT" ]; then
   exit 1
 fi
 
-# Validate required template files
+# Validate required generated Claude files
 for file in \
-  "$REPO_ROOT/templates/README.md" \
-  "$REPO_ROOT/templates/CLAUDE.md" \
-  "$REPO_ROOT/templates/config.md" \
-  "$REPO_ROOT/templates/profile.md" \
-  "$REPO_ROOT/templates/norms.md" \
-  "$REPO_ROOT/templates/registry.md" \
-  "$REPO_ROOT/templates/gitignore" \
-  "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
-  "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
-  "$REPO_ROOT/templates/skills/task-manager/SKILL.md" \
-  "$REPO_ROOT/templates/hooks/session-sync.sh" \
-  "$REPO_ROOT/templates/dashboard/template.html" \
-  "$REPO_ROOT/templates/dashboard/server.js" \
-  "$REPO_ROOT/templates/settings.json"; do
+  "$CLAUDE_TEMPLATE_ROOT/README.md" \
+  "$CLAUDE_TEMPLATE_ROOT/CLAUDE.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/config.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/profile.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/norms.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/registry.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.gitignore" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/todo.json" \
+  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/template.html" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/server.js" \
+  "$CLAUDE_TEMPLATE_ROOT/.claude/settings.json"; do
   if [ ! -f "$file" ]; then
-    echo "Error: missing template file: $file" >&2
+    echo "Error: missing generated Claude file: $file" >&2
     exit 1
   fi
 done
 
-if [ ! -d "$REPO_ROOT/templates/commands" ]; then
-  echo "Error: missing commands directory: $REPO_ROOT/templates/commands" >&2
+if [ ! -d "$CLAUDE_TEMPLATE_ROOT/.claude/commands" ]; then
+  echo "Error: missing generated Claude commands directory: $CLAUDE_TEMPLATE_ROOT/.claude/commands" >&2
   exit 1
 fi
 
@@ -153,52 +159,52 @@ else
 fi
 
 # README.md
-$copy_fn "$REPO_ROOT/templates/README.md" "$TARGET_DIR/README.md" "README.md"
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/README.md" "$TARGET_DIR/README.md" "README.md"
 
 # CLAUDE.md
-$copy_fn "$REPO_ROOT/templates/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
 
 # Skills
-$copy_fn "$REPO_ROOT/templates/skills/project-manager/SKILL.md" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
   ".claude/skills/project-manager/SKILL.md"
 
-$copy_fn "$REPO_ROOT/templates/skills/think-partner/SKILL.md" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
   "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
   ".claude/skills/think-partner/SKILL.md"
 
-$copy_fn "$REPO_ROOT/templates/skills/task-manager/SKILL.md" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/task-manager/SKILL.md" \
   ".claude/skills/task-manager/SKILL.md"
 
 # Session-sync hook
-$copy_fn "$REPO_ROOT/templates/hooks/session-sync.sh" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
   "$TARGET_DIR/.claude/hooks/session-sync.sh" \
   ".claude/hooks/session-sync.sh"
 chmod +x "$TARGET_DIR/.claude/hooks/session-sync.sh"
 
 # Slash commands
-for cmd in "$REPO_ROOT/templates/commands/"*.md; do
+for cmd in "$CLAUDE_TEMPLATE_ROOT/.claude/commands/"*.md; do
   cmd_name=$(basename "$cmd")
   $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
 done
 
 # Dashboard
-$copy_fn "$REPO_ROOT/templates/dashboard/template.html" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/template.html" \
   "$TARGET_DIR/.claude/dashboard/template.html" \
   ".claude/dashboard/template.html"
 
-$copy_fn "$REPO_ROOT/templates/dashboard/server.js" \
+$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/server.js" \
   "$TARGET_DIR/.claude/dashboard/server.js" \
   ".claude/dashboard/server.js"
 
 # --- User files (never overwritten, even with --update) ---
 
-copy_if_missing "$REPO_ROOT/templates/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
-copy_if_missing "$REPO_ROOT/templates/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
-copy_if_missing "$REPO_ROOT/templates/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
-copy_if_missing "$REPO_ROOT/templates/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
-copy_if_missing "$REPO_ROOT/templates/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
 
 # Gitignore (append if .gitignore exists, create if not)
 if [ -e "$TARGET_DIR/.gitignore" ]; then
@@ -213,44 +219,34 @@ if [ -e "$TARGET_DIR/.gitignore" ]; then
     echo "update: added notebook to .gitignore"
   else
     echo "" >> "$TARGET_DIR/.gitignore"
-    cat "$REPO_ROOT/templates/gitignore" >> "$TARGET_DIR/.gitignore"
+    cat "$CLAUDE_TEMPLATE_ROOT/.gitignore" >> "$TARGET_DIR/.gitignore"
     echo "update: appended workspace entries to .gitignore"
   fi
 else
-  cp "$REPO_ROOT/templates/gitignore" "$TARGET_DIR/.gitignore"
+  cp "$CLAUDE_TEMPLATE_ROOT/.gitignore" "$TARGET_DIR/.gitignore"
   echo "create: .gitignore"
 fi
 
 # Placeholder files for empty directories
-if [ ! -e "$TARGET_DIR/.ddt/projects/.gitkeep" ]; then
-  touch "$TARGET_DIR/.ddt/projects/.gitkeep"
-  echo "create: .ddt/projects/.gitkeep"
-fi
-if [ ! -e "$TARGET_DIR/.ddt/personal/notebook/.gitkeep" ]; then
-  touch "$TARGET_DIR/.ddt/personal/notebook/.gitkeep"
-  echo "create: .ddt/personal/notebook/.gitkeep"
-fi
-if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" ]; then
-  touch "$TARGET_DIR/.ddt/personal/scratch/.gitkeep"
-  echo "create: .ddt/personal/scratch/.gitkeep"
-fi
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
+  "$TARGET_DIR/.ddt/projects/.gitkeep" \
+  ".ddt/projects/.gitkeep"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
+  "$TARGET_DIR/.ddt/personal/notebook/.gitkeep" \
+  ".ddt/personal/notebook/.gitkeep"
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
+  "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" \
+  ".ddt/personal/scratch/.gitkeep"
 
 # Todo list
-if [ ! -e "$TARGET_DIR/.ddt/personal/todo.json" ]; then
-  printf '{\n  "version": 1,\n  "items": []\n}\n' > "$TARGET_DIR/.ddt/personal/todo.json"
-  echo "create: .ddt/personal/todo.json"
-fi
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/todo.json" \
+  "$TARGET_DIR/.ddt/personal/todo.json" \
+  ".ddt/personal/todo.json"
 
 # Scratch pad index
-if [ ! -e "$TARGET_DIR/.ddt/personal/scratch/.index.md" ]; then
-  cat > "$TARGET_DIR/.ddt/personal/scratch/.index.md" <<'INDEXEOF'
-# Scratch Pad Index
-
-| File | Topic | Status | Promoted To |
-|------|-------|--------|-------------|
-INDEXEOF
-  echo "create: .ddt/personal/scratch/.index.md"
-fi
+copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
+  "$TARGET_DIR/.ddt/personal/scratch/.index.md" \
+  ".ddt/personal/scratch/.index.md"
 
 # Init git if not already a repo
 if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
