@@ -4,11 +4,11 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap/init-workspace.sh [--update] [--runtime claude] /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] [--runtime claude|codex] /path/to/target-dir
 
 Stamps a target directory with the office work assistant agent:
   - README.md (workspace guide — structure, commands, conventions)
-  - CLAUDE.md (agent operating manual — project management assistant)
+  - Runtime operating manual (CLAUDE.md for Claude, AGENTS.md for Codex)
   - .ddt/config.md (workspace settings and autonomy mode)
   - .ddt/profile.md (user profile template — role, team, context)
   - .ddt/norms.md (team working principles)
@@ -16,21 +16,19 @@ Stamps a target directory with the office work assistant agent:
   - .ddt/projects/ (where project artifacts live)
   - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
   - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
-  - .claude/skills/project-manager/ (auto-triggering PM workflow skill)
-  - .claude/skills/think-partner/ (auto-triggering thinking partner skill)
-  - .claude/skills/task-manager/ (auto-triggering todo/task management skill)
+  - Runtime skills (Claude .claude/skills, Codex .codex/skills)
   - .ddt/personal/todo.json (personal todo list, gitignored)
-  - .claude/hooks/session-sync.sh (auto-syncs team repos on session start)
-  - .claude/dashboard/ (visual project dashboard — Node.js server + HTML)
-  - .claude/settings.json (hook configuration — never overwritten on update)
-  - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, jot, brainstorm, notebook, todo, self-tutorial)
+  - Runtime dashboard assets (Claude .claude/dashboard, Codex .codex/dashboard)
+  - Runtime user config (.claude/settings.json or .codex/config.toml — never overwritten on update)
+  - Runtime command/reference files
 
 Options:
-  --runtime claude
+  --runtime claude|codex
               Select the runtime surface to install. Currently supported:
-              claude. If omitted, claude is used.
-  --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
-              User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/) are never touched.
+              claude, codex. If omitted, claude is used.
+  --update    Update system files for the selected runtime in an existing workspace.
+              User files (.ddt/config.md, profile.md, norms.md, registry.md,
+              .claude/settings.json, .codex/config.toml, projects/) are never touched.
 
 If no path is given, the current directory is used.
 Existing files are never overwritten unless --update is specified.
@@ -38,7 +36,7 @@ EOF
 }
 
 UPDATE_MODE=false
-SUPPORTED_RUNTIMES="claude"
+SUPPORTED_RUNTIMES="claude codex"
 RUNTIME_INPUT="claude"
 TARGET_INPUT=""
 
@@ -73,7 +71,7 @@ done
 TARGET_INPUT="${TARGET_INPUT:-.}"
 
 case "$RUNTIME_INPUT" in
-  claude) ;;
+  claude|codex) ;;
   *)
     echo "Error: unsupported runtime: $RUNTIME_INPUT" >&2
     echo "Supported runtimes: $SUPPORTED_RUNTIMES" >&2
@@ -117,7 +115,8 @@ is_user_owned_file() {
     .ddt/personal/scratch/.gitkeep|\
     .ddt/personal/todo.json|\
     .ddt/personal/scratch/.index.md|\
-    .claude/settings.json)
+    .claude/settings.json|\
+    .codex/config.toml)
       return 0
       ;;
     *)
@@ -254,11 +253,24 @@ fi
 if [ "$UPDATE_MODE" = true ]; then
   cat <<'EOF'
 
-Update complete. System files (CLAUDE.md, skills, commands, hooks) have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/, scratch/.index.md, todo.json) were not touched.
+Update complete. System files for the selected runtime have been refreshed.
+User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, .codex/config.toml, projects/, scratch/.index.md, todo.json) were not touched.
 EOF
 else
-  cat <<'EOF'
+  if [ "$RUNTIME_INPUT" = "codex" ]; then
+    cat <<'EOF'
+
+Setup complete. Next steps:
+- Fill in .ddt/profile.md with your role, team, and context
+- Review .ddt/norms.md and customize your team's working principles
+- Edit .ddt/config.md to set your name and autonomy mode
+- Open Codex in the workspace directory
+- Try: "new project: <name>" or use the project-manager skill references for common workflows
+- Available workflows: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, sync, jot, brainstorm, notebook, todo, self-tutorial
+- For team collaboration: add team repos to the Team Repos section in .ddt/config.md
+EOF
+  else
+    cat <<'EOF'
 
 Setup complete. Next steps:
 - Fill in .ddt/profile.md with your role, team, and context
@@ -269,4 +281,5 @@ Setup complete. Next steps:
 - Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /project-comment, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo, /self-tutorial
 - For team collaboration: add team repos to the Team Repos section in .ddt/config.md
 EOF
+  fi
 fi

@@ -56,7 +56,9 @@ process.stdout.write(settings.hooks.SessionStart[0].hooks[0].command);
 }
 
 generated_files() {
-  (cd "$GENERATED_CLAUDE" && find . -type f -print | sed 's#^\./##' | sort)
+  generated_root="$1"
+
+  (cd "$generated_root" && find . -type f -print | sed 's#^\./##' | sort)
 }
 
 codex_command_reference() {
@@ -86,7 +88,8 @@ is_user_owned_generated_file() {
     .ddt/personal/scratch/.gitkeep|\
     .ddt/personal/todo.json|\
     .ddt/personal/scratch/.index.md|\
-    .claude/settings.json)
+    .claude/settings.json|\
+    .codex/config.toml)
       return 0
       ;;
     *)
@@ -107,21 +110,23 @@ is_preserved_on_update() {
 }
 
 assert_install_matches_generated() {
-  install_target="$1"
+  generated_root="$1"
+  install_target="$2"
 
-  generated_files | while IFS= read -r rel; do
+  generated_files "$generated_root" | while IFS= read -r rel; do
     assert_file "$install_target/$rel"
-    assert_same "$GENERATED_CLAUDE/$rel" "$install_target/$rel"
-    if [ -x "$GENERATED_CLAUDE/$rel" ]; then
+    assert_same "$generated_root/$rel" "$install_target/$rel"
+    if [ -x "$generated_root/$rel" ]; then
       assert_executable "$install_target/$rel"
     fi
   done
 }
 
 stale_system_files() {
-  update_target="$1"
+  generated_root="$1"
+  update_target="$2"
 
-  generated_files | while IFS= read -r rel; do
+  generated_files "$generated_root" | while IFS= read -r rel; do
     is_preserved_on_update "$rel" && continue
     printf 'STALE MANAGED FILE: %s\n' "$rel" > "$update_target/$rel"
     chmod 644 "$update_target/$rel"
@@ -130,27 +135,56 @@ stale_system_files() {
 
 assert_user_files_preserved() {
   update_target="$1"
+  runtime="$2"
 
   assert_contains "$update_target/.ddt/config.md" "USER CONFIG SENTINEL"
   assert_contains "$update_target/.ddt/profile.md" "USER PROFILE SENTINEL"
   assert_contains "$update_target/.ddt/norms.md" "USER NORMS SENTINEL"
   assert_contains "$update_target/.ddt/registry.md" "USER REGISTRY SENTINEL"
-  assert_contains "$update_target/.claude/settings.json" '"user"'
   assert_contains "$update_target/.ddt/personal/todo.json" '"keep"'
   assert_contains "$update_target/.ddt/personal/scratch/.index.md" "scratch index sentinel"
   assert_contains "$update_target/.ddt/projects/.gitkeep" "projects placeholder sentinel"
   assert_contains "$update_target/.ddt/personal/notebook/.gitkeep" "notebook placeholder sentinel"
   assert_contains "$update_target/.ddt/personal/scratch/.gitkeep" "scratch placeholder sentinel"
   assert_file "$update_target/.ddt/projects/sample/status.md"
+
+  case "$runtime" in
+    claude)
+      assert_contains "$update_target/.claude/settings.json" '"user"'
+      ;;
+    codex)
+      assert_contains "$update_target/.codex/config.toml" "USER CODEX CONFIG SENTINEL"
+      ;;
+    *)
+      fail "unknown runtime for preservation assertion: $runtime"
+      ;;
+  esac
+}
+
+write_shared_user_sentinels() {
+  update_target="$1"
+
+  printf 'USER CONFIG SENTINEL\n' > "$update_target/.ddt/config.md"
+  printf 'USER PROFILE SENTINEL\n' > "$update_target/.ddt/profile.md"
+  printf 'USER NORMS SENTINEL\n' > "$update_target/.ddt/norms.md"
+  printf 'USER REGISTRY SENTINEL\n' > "$update_target/.ddt/registry.md"
+  mkdir -p "$update_target/.ddt/projects/sample"
+  printf 'project data\n' > "$update_target/.ddt/projects/sample/status.md"
+  printf '{ "version": 1, "items": [{"id":"keep"}] }\n' > "$update_target/.ddt/personal/todo.json"
+  printf 'scratch index sentinel\n' > "$update_target/.ddt/personal/scratch/.index.md"
+  printf 'projects placeholder sentinel\n' > "$update_target/.ddt/projects/.gitkeep"
+  printf 'notebook placeholder sentinel\n' > "$update_target/.ddt/personal/notebook/.gitkeep"
+  printf 'scratch placeholder sentinel\n' > "$update_target/.ddt/personal/scratch/.gitkeep"
 }
 
 assert_system_files_refreshed() {
-  update_target="$1"
+  generated_root="$1"
+  update_target="$2"
 
-  generated_files | while IFS= read -r rel; do
+  generated_files "$generated_root" | while IFS= read -r rel; do
     is_preserved_on_update "$rel" && continue
-    assert_same "$GENERATED_CLAUDE/$rel" "$update_target/$rel"
-    if [ -x "$GENERATED_CLAUDE/$rel" ]; then
+    assert_same "$generated_root/$rel" "$update_target/$rel"
+    if [ -x "$generated_root/$rel" ]; then
       assert_executable "$update_target/$rel"
     fi
   done
@@ -312,7 +346,7 @@ assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
   "$target/.claude/skills/think-partner/SKILL.md"
 assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
   "$target/.claude/skills/task-manager/SKILL.md"
-assert_install_matches_generated "$target"
+assert_install_matches_generated "$GENERATED_CLAUDE" "$target"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
   "$target/.ddt/personal/todo.json"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
@@ -334,42 +368,66 @@ for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
   command_name=$(basename "$command_template")
   assert_same "$command_template" "$runtime_target/.claude/commands/$command_name"
 done
-assert_install_matches_generated "$runtime_target"
+assert_install_matches_generated "$GENERATED_CLAUDE" "$runtime_target"
+
+codex_target="$TMP_ROOT/codex runtime workspace"
+mkdir -p "$codex_target"
+"$BOOTSTRAP" --runtime codex "$codex_target" > "$TMP_ROOT/codex-bootstrap.log"
+
+assert_file "$codex_target/AGENTS.md"
+assert_file "$codex_target/.codex/config.toml"
+assert_file "$codex_target/.codex/skills/project-manager/SKILL.md"
+assert_file "$codex_target/.codex/skills/think-partner/SKILL.md"
+assert_file "$codex_target/.codex/skills/task-manager/SKILL.md"
+assert_file "$codex_target/.codex/dashboard/template.html"
+assert_file "$codex_target/.codex/dashboard/server.js"
+assert_file "$codex_target/.ddt/config.md"
+assert_file "$codex_target/.ddt/profile.md"
+assert_file "$codex_target/.ddt/norms.md"
+assert_file "$codex_target/.ddt/registry.md"
+assert_file "$codex_target/.ddt/personal/todo.json"
+assert_missing "$codex_target/CLAUDE.md"
+assert_missing "$codex_target/.claude"
+assert_install_matches_generated "$GENERATED_CODEX" "$codex_target"
+node --check "$codex_target/.codex/dashboard/server.js"
+git -C "$codex_target" rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
+  fail "codex target should be a git worktree"
 
 unsupported_target="$TMP_ROOT/unsupported runtime workspace"
 mkdir -p "$unsupported_target"
 printf 'keep\n' > "$unsupported_target/keep.txt"
-if "$BOOTSTRAP" --runtime codex "$unsupported_target" > "$TMP_ROOT/unsupported.log" 2> "$TMP_ROOT/unsupported.err"; then
+if "$BOOTSTRAP" --runtime opencode "$unsupported_target" > "$TMP_ROOT/unsupported.log" 2> "$TMP_ROOT/unsupported.err"; then
   fail "unsupported runtime should fail"
 fi
-assert_contains "$TMP_ROOT/unsupported.err" "unsupported runtime: codex"
+assert_contains "$TMP_ROOT/unsupported.err" "unsupported runtime: opencode"
 assert_file "$unsupported_target/keep.txt"
 assert_missing "$unsupported_target/.ddt"
 assert_missing "$unsupported_target/.claude"
+assert_missing "$unsupported_target/.codex"
 assert_missing "$unsupported_target/README.md"
 
-printf 'USER CONFIG SENTINEL\n' > "$target/.ddt/config.md"
-printf 'USER PROFILE SENTINEL\n' > "$target/.ddt/profile.md"
-printf 'USER NORMS SENTINEL\n' > "$target/.ddt/norms.md"
-printf 'USER REGISTRY SENTINEL\n' > "$target/.ddt/registry.md"
+write_shared_user_sentinels "$target"
 printf '{"user":"settings"}\n' > "$target/.claude/settings.json"
-mkdir -p "$target/.ddt/projects/sample"
-printf 'project data\n' > "$target/.ddt/projects/sample/status.md"
-printf '{ "version": 1, "items": [{"id":"keep"}] }\n' > "$target/.ddt/personal/todo.json"
-printf 'scratch index sentinel\n' > "$target/.ddt/personal/scratch/.index.md"
-printf 'projects placeholder sentinel\n' > "$target/.ddt/projects/.gitkeep"
-printf 'notebook placeholder sentinel\n' > "$target/.ddt/personal/notebook/.gitkeep"
-printf 'scratch placeholder sentinel\n' > "$target/.ddt/personal/scratch/.gitkeep"
 
-stale_system_files "$target"
+stale_system_files "$GENERATED_CLAUDE" "$target"
 "$BOOTSTRAP" --update "$target" > "$TMP_ROOT/default-update.log"
-assert_user_files_preserved "$target"
-assert_system_files_refreshed "$target"
+assert_user_files_preserved "$target" claude
+assert_system_files_refreshed "$GENERATED_CLAUDE" "$target"
 
-stale_system_files "$target"
+stale_system_files "$GENERATED_CLAUDE" "$target"
 "$BOOTSTRAP" --update --runtime claude "$target" > "$TMP_ROOT/update.log"
-assert_user_files_preserved "$target"
-assert_system_files_refreshed "$target"
+assert_user_files_preserved "$target" claude
+assert_system_files_refreshed "$GENERATED_CLAUDE" "$target"
+
+write_shared_user_sentinels "$codex_target"
+printf 'USER CODEX CONFIG SENTINEL\n' > "$codex_target/.codex/config.toml"
+
+stale_system_files "$GENERATED_CODEX" "$codex_target"
+"$BOOTSTRAP" --update --runtime codex "$codex_target" > "$TMP_ROOT/codex-update.log"
+assert_user_files_preserved "$codex_target" codex
+assert_system_files_refreshed "$GENERATED_CODEX" "$codex_target"
+assert_missing "$codex_target/CLAUDE.md"
+assert_missing "$codex_target/.claude"
 
 hook_target="$TMP_ROOT/hook workspace with spaces"
 mkdir -p "$hook_target"
