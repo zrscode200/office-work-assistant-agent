@@ -11,7 +11,7 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIMES = ("claude", "codex")
+RUNTIMES = ("claude", "codex", "opencode")
 COMMANDS = tuple(sorted(path.name for path in (ROOT / "core/commands").glob("*.md")))
 SKILLS = (
     "project-manager/SKILL.md",
@@ -67,40 +67,80 @@ def write(path: Path, text: str, mode: int = 0o644) -> None:
     os.chmod(path, mode)
 
 
-def render_codex_text(text: str) -> str:
+def render_runtime_text(
+    text: str,
+    *,
+    runtime_name: str,
+    instruction_doc: str,
+    dashboard_dir: str,
+    settings_path: str,
+    skill_dir: str,
+    command_dir: str,
+    sync_command_label: str,
+    commands_are_references: bool,
+) -> str:
     replacements = (
-        ("CLAUDE.md", "AGENTS.md"),
-        ("Claude Code", "Codex"),
-        (".claude/dashboard", ".codex/dashboard"),
-        (".claude/settings.json", ".codex/config.toml"),
-        (".claude/skills", ".codex/skills"),
-        (".claude/commands", ".codex/skills/*/references"),
-        ("Slash Commands", "Command References"),
-        ("Slash commands", "Command references"),
-        ("slash commands", "command references"),
-        ("slash command", "command reference"),
+        ("CLAUDE.md", instruction_doc),
+        ("Claude Code", runtime_name),
+        (".claude/dashboard", dashboard_dir),
+        (".claude/settings.json", settings_path),
+        (".claude/skills", skill_dir),
+        (".claude/commands", command_dir),
         ("Session sync", "Manual sync"),
         ("session sync", "manual sync"),
     )
     for old, new in replacements:
         text = text.replace(old, new)
     text = text.replace(
-        'Explain **manual sync**: "When you open Codex, a hook automatically pulls all team repos '
+        f'Explain **manual sync**: "When you open {runtime_name}, a hook automatically pulls all team repos '
         '(`git pull --ff-only`) so you start with fresh data."',
-        'Explain **manual sync**: "Codex does not run an automatic workspace sync hook. Use the '
-        '`sync` reference when you want to pull team repos before reading or writing shared artifacts."',
+        f'Explain **manual sync**: "{runtime_name} does not run an automatic workspace sync hook. Use the '
+        f'{sync_command_label} when you want to pull team repos before reading or writing shared artifacts."',
     )
-    for command in COMMANDS:
-        name = command.removesuffix(".md")
-        text = text.replace(f"`/{name}`", f"`{name}` reference")
-        text = text.replace(f"type `{name}` reference", f"ask for the `{name}` reference")
+    if commands_are_references:
+        text = text.replace("Slash Commands", "Command References")
+        text = text.replace("Slash commands", "Command references")
+        text = text.replace("slash commands", "command references")
+        text = text.replace("slash command", "command reference")
+        for command in COMMANDS:
+            name = command.removesuffix(".md")
+            text = text.replace(f"`/{name}`", f"`{name}` reference")
+            text = text.replace(f"type `{name}` reference", f"ask for the `{name}` reference")
     return text
 
 
-def render_codex_dashboard_server(text: str) -> str:
+def render_codex_text(text: str) -> str:
+    return render_runtime_text(
+        text,
+        runtime_name="Codex",
+        instruction_doc="AGENTS.md",
+        dashboard_dir=".codex/dashboard",
+        settings_path=".codex/config.toml",
+        skill_dir=".codex/skills",
+        command_dir=".codex/skills/*/references",
+        sync_command_label="`sync` reference",
+        commands_are_references=True,
+    )
+
+
+def render_opencode_text(text: str) -> str:
+    return render_runtime_text(
+        text,
+        runtime_name="OpenCode",
+        instruction_doc="AGENTS.md",
+        dashboard_dir=".opencode/dashboard",
+        settings_path="opencode.json",
+        skill_dir=".opencode/skills",
+        command_dir=".opencode/commands",
+        sync_command_label="`/sync` command",
+        commands_are_references=False,
+    )
+
+
+def render_read_only_dashboard_server(text: str, runtime_dir: str) -> str:
     text = text.replace("const { execSync } = require('child_process');\n", "")
-    text = text.replace(".claude/dashboard", ".codex/dashboard")
-    text = text.replace("'.claude', 'dashboard'", "'.codex', 'dashboard'")
+    text = text.replace(".claude/dashboard", f"{runtime_dir}/dashboard")
+    text = text.replace("'.claude', 'dashboard'", f"'{runtime_dir}', 'dashboard'")
     text = text.replace(
         """function syncTeamRepos(teamRepos) {
   const results = [];
@@ -143,6 +183,14 @@ def render_codex_dashboard_server(text: str) -> str:
 """,
     )
     return text
+
+
+def render_codex_dashboard_server(text: str) -> str:
+    return render_read_only_dashboard_server(text, ".codex")
+
+
+def render_opencode_dashboard_server(text: str) -> str:
+    return render_read_only_dashboard_server(text, ".opencode")
 
 
 def render_claude(out_root: Path) -> None:
@@ -198,10 +246,44 @@ def render_codex(out_root: Path) -> None:
         write(out / rel, text)
 
 
+def render_opencode(out_root: Path) -> None:
+    out = out_root / "opencode"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+
+    copy_tree(ROOT / "core/shared", out)
+    copy_tree(ROOT / "adapters/opencode", out)
+    dashboard_src = ROOT / "adapters/claude/.claude/dashboard"
+    dashboard_out = out / ".opencode/dashboard"
+    copy_tree(dashboard_src, dashboard_out)
+    server = dashboard_out / "server.js"
+    if server.exists():
+        server.write_text(
+            render_opencode_dashboard_server(server.read_text(encoding="utf-8")),
+            encoding="utf-8",
+        )
+
+    for skill in SKILLS:
+        src = ROOT / "core/skills" / skill
+        write(out / ".opencode/skills" / skill, render_opencode_text(src.read_text(encoding="utf-8")))
+
+    for command in COMMANDS:
+        src = ROOT / "core/commands" / command
+        write(
+            out / ".opencode/commands" / command,
+            render_opencode_text(src.read_text(encoding="utf-8")),
+        )
+
+    for rel, text in PLACEHOLDERS.items():
+        write(out / rel, text)
+
+
 def render_all(out_root: Path) -> None:
     out_root.mkdir(parents=True, exist_ok=True)
     render_claude(out_root)
     render_codex(out_root)
+    render_opencode(out_root)
 
 
 def compare_dirs(left: Path, right: Path) -> list[str]:

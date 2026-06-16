@@ -5,6 +5,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 BOOTSTRAP="$ROOT/bootstrap/init-workspace.sh"
 GENERATED_CLAUDE="$ROOT/generated/claude"
 GENERATED_CODEX="$ROOT/generated/codex"
+GENERATED_OPENCODE="$ROOT/generated/opencode"
 TMP_ROOT="${TMPDIR:-/tmp}/office-work-assistant-agent-test-$$"
 
 fail() {
@@ -298,6 +299,69 @@ for command_template in "$ROOT/core/commands/"*.md; do
   assert_file "$(codex_command_reference "$command_name")"
 done
 
+assert_file "$GENERATED_OPENCODE/AGENTS.md"
+assert_file "$GENERATED_OPENCODE/README.md"
+assert_file "$GENERATED_OPENCODE/opencode.json"
+assert_file "$GENERATED_OPENCODE/.gitignore"
+assert_file "$GENERATED_OPENCODE/.ddt/config.md"
+assert_file "$GENERATED_OPENCODE/.ddt/profile.md"
+assert_file "$GENERATED_OPENCODE/.ddt/norms.md"
+assert_file "$GENERATED_OPENCODE/.ddt/registry.md"
+assert_file "$GENERATED_OPENCODE/.ddt/projects/.gitkeep"
+assert_file "$GENERATED_OPENCODE/.ddt/personal/notebook/.gitkeep"
+assert_file "$GENERATED_OPENCODE/.ddt/personal/scratch/.gitkeep"
+assert_file "$GENERATED_OPENCODE/.ddt/personal/scratch/.index.md"
+assert_file "$GENERATED_OPENCODE/.ddt/personal/todo.json"
+assert_tracked "generated/opencode/.ddt/personal/notebook/.gitkeep"
+assert_tracked "generated/opencode/.ddt/personal/scratch/.gitkeep"
+assert_tracked "generated/opencode/.ddt/personal/scratch/.index.md"
+assert_tracked "generated/opencode/.ddt/personal/todo.json"
+assert_file "$GENERATED_OPENCODE/.opencode/skills/project-manager/SKILL.md"
+assert_file "$GENERATED_OPENCODE/.opencode/skills/think-partner/SKILL.md"
+assert_file "$GENERATED_OPENCODE/.opencode/skills/task-manager/SKILL.md"
+assert_file "$GENERATED_OPENCODE/.opencode/dashboard/template.html"
+assert_file "$GENERATED_OPENCODE/.opencode/dashboard/server.js"
+assert_missing "$GENERATED_OPENCODE/.claude"
+assert_missing "$GENERATED_OPENCODE/.codex"
+assert_missing "$GENERATED_OPENCODE/CLAUDE.md"
+python3 -m json.tool "$GENERATED_OPENCODE/opencode.json" >/dev/null
+node --check "$GENERATED_OPENCODE/.opencode/dashboard/server.js"
+assert_contains "$GENERATED_OPENCODE/opencode.json" '"instructions"'
+assert_contains "$GENERATED_OPENCODE/opencode.json" '"AGENTS.md"'
+assert_contains "$GENERATED_OPENCODE/.opencode/skills/project-manager/SKILL.md" "AGENTS.md"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/skills/project-manager/SKILL.md" "CLAUDE.md"
+assert_contains "$GENERATED_OPENCODE/.opencode/commands/dashboard.md" \
+  ".opencode/dashboard/server.js"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/commands/dashboard.md" \
+  ".claude/dashboard"
+assert_contains "$GENERATED_OPENCODE/.opencode/dashboard/server.js" "'.opencode', 'dashboard'"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/dashboard/server.js" ".claude/dashboard"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/dashboard/server.js" "git pull --ff-only"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/dashboard/server.js" "execSync"
+assert_not_contains "$GENERATED_OPENCODE/.opencode/commands/self-tutorial.md" \
+  "hook automatically pulls"
+assert_contains "$GENERATED_OPENCODE/.opencode/commands/self-tutorial.md" \
+  "OpenCode does not run an automatic workspace sync hook"
+assert_contains "$GENERATED_OPENCODE/.opencode/commands/self-tutorial.md" \
+  "Use the \`/sync\` command"
+for shared_file in \
+  .gitignore \
+  .ddt/config.md \
+  .ddt/profile.md \
+  .ddt/norms.md \
+  .ddt/registry.md \
+  .ddt/projects/.gitkeep \
+  .ddt/personal/notebook/.gitkeep \
+  .ddt/personal/scratch/.gitkeep \
+  .ddt/personal/scratch/.index.md \
+  .ddt/personal/todo.json; do
+  assert_same "$GENERATED_CLAUDE/$shared_file" "$GENERATED_OPENCODE/$shared_file"
+done
+for command_template in "$ROOT/core/commands/"*.md; do
+  command_name=$(basename "$command_template")
+  assert_file "$GENERATED_OPENCODE/.opencode/commands/$command_name"
+done
+
 target="$TMP_ROOT/work assistant workspace"
 mkdir -p "$target"
 "$BOOTSTRAP" "$target" > "$TMP_ROOT/bootstrap.log"
@@ -415,6 +479,7 @@ assert_file "$unsupported_target/keep.txt"
 assert_missing "$unsupported_target/.ddt"
 assert_missing "$unsupported_target/.claude"
 assert_missing "$unsupported_target/.codex"
+assert_missing "$unsupported_target/.opencode"
 assert_missing "$unsupported_target/README.md"
 
 write_shared_user_sentinels "$target"
