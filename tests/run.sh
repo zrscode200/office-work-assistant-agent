@@ -172,6 +172,8 @@ printf 'STALE SYSTEM CLAUDE\n' > "$target/CLAUDE.md"
 printf 'STALE SYSTEM README\n' > "$target/README.md"
 printf 'STALE COMMAND\n' > "$target/.claude/commands/todo.md"
 printf 'STALE SKILL\n' > "$target/.claude/skills/project-manager/SKILL.md"
+printf 'STALE THINK SKILL\n' > "$target/.claude/skills/think-partner/SKILL.md"
+printf 'STALE TASK SKILL\n' > "$target/.claude/skills/task-manager/SKILL.md"
 printf '#!/usr/bin/env sh\n# stale hook\n' > "$target/.claude/hooks/session-sync.sh"
 printf 'STALE DASHBOARD HTML\n' > "$target/.claude/dashboard/template.html"
 printf 'STALE DASHBOARD JS\n' > "$target/.claude/dashboard/server.js"
@@ -195,6 +197,10 @@ for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
 done
 assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
   "$target/.claude/skills/project-manager/SKILL.md"
+assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
+  "$target/.claude/skills/think-partner/SKILL.md"
+assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
+  "$target/.claude/skills/task-manager/SKILL.md"
 assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
   "$target/.claude/hooks/session-sync.sh"
 assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \

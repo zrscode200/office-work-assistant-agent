@@ -2,7 +2,11 @@
 
 A portable toolkit that turns any directory into a work assistant workspace powered by Claude Code.
 
-This is a bootstrap repository, not an application. It provides templates and a setup script that you copy into a target directory to make Claude Code behave like a work assistant — helping you document, track, plan, and think through work.
+This is a bootstrap repository, not an application. It provides shared sources,
+a Claude adapter, checked-in generated output, and a setup script that copies
+that generated Claude output into a target directory to make Claude Code behave
+like a work assistant — helping you document, track, plan, and think through
+work.
 
 Workspace artifacts live in a `.ddt/` directory (short for **d**ocument, **d**ecide, **t**rack).
 
@@ -28,11 +32,12 @@ The assistant helps with:
 
 | Repo | Purpose | Required? |
 |------|---------|-----------|
-| **This repo** (office-work-assistant-agent) | Source of templates. Clone it, run the bootstrap script, done. You only need it again to pull updates. | Yes |
+| **This repo** (office-work-assistant-agent) | Source of the generated Claude workspace. Clone it, run the bootstrap script, done. You only need it again to pull updates. | Yes |
 | **Your workspace** | The directory you bootstrap. This is where you open Claude Code and do your work. Git-initialized by the script if it isn't already. | Yes |
 | **Team repo(s)** | A plain git repo with a `projects/` folder. Multiple people point their workspaces at it for shared project artifacts. You can configure multiple — one per team. | Only for team collaboration |
 
-After bootstrapping, your workspace has no dependency on this repo — all templates are copied into the target directory.
+After bootstrapping, your workspace has no dependency on this repo — generated
+Claude files are copied into the target directory.
 
 ## Quick Setup
 
@@ -48,7 +53,8 @@ cd /path/to/your-workspace
 claude
 ```
 
-To update an existing workspace with latest templates (preserves your data):
+To update an existing workspace with the latest generated Claude output
+(preserves your data):
 
 ```sh
 ./office-work-assistant-agent/bootstrap/init-workspace.sh --update /path/to/your-workspace
@@ -190,30 +196,31 @@ your-workspace/
 office-work-assistant-agent/
   README.md
   bootstrap/
-    init-workspace.sh                    # one-command setup script (supports --update)
-  templates/
-    README.md                            # workspace guide template
-    CLAUDE.md                            # agent operating manual template
-    config.md                            # workspace config template
-    profile.md                           # user profile template
-    norms.md                             # team norms template
-    registry.md                          # project registry template
-    gitignore                            # workspace .gitignore entries
-    skills/
-      project-manager/
-        SKILL.md                         # project manager skill
-      think-partner/
-        SKILL.md                         # thinking partner skill
-      task-manager/
-        SKILL.md                         # todo/task management skill
-    commands/
-      new-project.md, project-status.md, meeting.md, decide.md,
-      project-scoping.md, dashboard.md, create-project-update.md, sync.md,
-      jot.md, brainstorm.md, notebook.md, todo.md
-    hooks/
-      session-sync.sh                     # auto-syncs team repos on session start
-    settings.json                          # Claude Code hook configuration
+    init-workspace.sh                    # one-command setup from generated/claude
+  core/
+    shared/                              # runtime-neutral .ddt files and .gitignore
+    commands/                            # canonical work-assistant commands
+    skills/                              # canonical work-assistant skills
+  adapters/
+    claude/                              # Claude root docs, settings, hook, dashboard
+  generated/
+    claude/                              # checked-in installer source for Claude workspaces
+  scripts/
+    render_templates.py                  # regenerates generated/claude and checks freshness
+  templates/                             # legacy Claude template tree kept during transition
+  tests/
+    run.sh                               # local smoke and generated-parity checks
 ```
+
+When changing workspace behavior, edit `core/` or `adapters/claude/`, then run:
+
+```sh
+python3 scripts/render_templates.py
+./tests/run.sh
+```
+
+`bootstrap/init-workspace.sh` installs from `generated/claude`; direct edits to
+`templates/` are legacy-only and do not change installed output.
 
 ## Design Principles
 
