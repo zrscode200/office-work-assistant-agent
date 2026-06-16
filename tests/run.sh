@@ -36,6 +36,11 @@ assert_same() {
   cmp -s "$1" "$2" || fail "files differ: $1 $2"
 }
 
+assert_tracked() {
+  git -C "$ROOT" ls-files --error-unmatch "$1" >/dev/null 2>&1 ||
+    fail "expected tracked file: $1"
+}
+
 settings_command() {
   node -e '
 const fs = require("fs");
@@ -52,6 +57,42 @@ echo "test root: $TMP_ROOT"
 sh -n "$BOOTSTRAP"
 sh -n "$ROOT/templates/hooks/session-sync.sh"
 node --check "$ROOT/templates/dashboard/server.js"
+python3 "$ROOT/scripts/render_templates.py" --check >/dev/null
+
+assert_file "$ROOT/generated/claude/README.md"
+assert_file "$ROOT/generated/claude/CLAUDE.md"
+assert_file "$ROOT/generated/claude/.gitignore"
+assert_file "$ROOT/generated/claude/.ddt/config.md"
+assert_file "$ROOT/generated/claude/.ddt/profile.md"
+assert_file "$ROOT/generated/claude/.ddt/norms.md"
+assert_file "$ROOT/generated/claude/.ddt/registry.md"
+assert_file "$ROOT/generated/claude/.ddt/projects/.gitkeep"
+assert_file "$ROOT/generated/claude/.ddt/personal/notebook/.gitkeep"
+assert_file "$ROOT/generated/claude/.ddt/personal/scratch/.gitkeep"
+assert_file "$ROOT/generated/claude/.ddt/personal/scratch/.index.md"
+assert_file "$ROOT/generated/claude/.ddt/personal/todo.json"
+assert_tracked "generated/claude/.ddt/personal/notebook/.gitkeep"
+assert_tracked "generated/claude/.ddt/personal/scratch/.gitkeep"
+assert_tracked "generated/claude/.ddt/personal/scratch/.index.md"
+assert_tracked "generated/claude/.ddt/personal/todo.json"
+assert_file "$ROOT/generated/claude/.claude/settings.json"
+assert_file "$ROOT/generated/claude/.claude/hooks/session-sync.sh"
+assert_executable "$ROOT/generated/claude/.claude/hooks/session-sync.sh"
+assert_file "$ROOT/generated/claude/.claude/dashboard/template.html"
+assert_file "$ROOT/generated/claude/.claude/dashboard/server.js"
+assert_file "$ROOT/generated/claude/.claude/skills/project-manager/SKILL.md"
+assert_file "$ROOT/generated/claude/.claude/skills/think-partner/SKILL.md"
+assert_file "$ROOT/generated/claude/.claude/skills/task-manager/SKILL.md"
+sh -n "$ROOT/generated/claude/.claude/hooks/session-sync.sh"
+node --check "$ROOT/generated/claude/.claude/dashboard/server.js"
+node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
+  "$ROOT/generated/claude/.claude/settings.json"
+node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
+  "$ROOT/generated/claude/.ddt/personal/todo.json"
+for command_template in "$ROOT/core/commands/"*.md; do
+  command_name=$(basename "$command_template")
+  assert_file "$ROOT/generated/claude/.claude/commands/$command_name"
+done
 
 target="$TMP_ROOT/work assistant workspace"
 mkdir -p "$target"
