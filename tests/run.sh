@@ -15,6 +15,10 @@ assert_file() {
   [ -f "$1" ] || fail "missing file: $1"
 }
 
+assert_missing() {
+  [ ! -e "$1" ] || fail "expected missing path: $1"
+}
+
 assert_dir() {
   [ -d "$1" ] || fail "missing directory: $1"
 }
@@ -48,6 +52,57 @@ const fs = require("fs");
 const settings = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
 process.stdout.write(settings.hooks.SessionStart[0].hooks[0].command);
 ' "$1"
+}
+
+stale_system_files() {
+  update_target="$1"
+
+  printf 'STALE SYSTEM CLAUDE\n' > "$update_target/CLAUDE.md"
+  printf 'STALE SYSTEM README\n' > "$update_target/README.md"
+  printf 'STALE COMMAND\n' > "$update_target/.claude/commands/todo.md"
+  printf 'STALE SKILL\n' > "$update_target/.claude/skills/project-manager/SKILL.md"
+  printf 'STALE THINK SKILL\n' > "$update_target/.claude/skills/think-partner/SKILL.md"
+  printf 'STALE TASK SKILL\n' > "$update_target/.claude/skills/task-manager/SKILL.md"
+  printf '#!/usr/bin/env sh\n# stale hook\n' > "$update_target/.claude/hooks/session-sync.sh"
+  printf 'STALE DASHBOARD HTML\n' > "$update_target/.claude/dashboard/template.html"
+  printf 'STALE DASHBOARD JS\n' > "$update_target/.claude/dashboard/server.js"
+}
+
+assert_user_files_preserved() {
+  update_target="$1"
+
+  assert_contains "$update_target/.ddt/config.md" "USER CONFIG SENTINEL"
+  assert_contains "$update_target/.ddt/profile.md" "USER PROFILE SENTINEL"
+  assert_contains "$update_target/.ddt/norms.md" "USER NORMS SENTINEL"
+  assert_contains "$update_target/.ddt/registry.md" "USER REGISTRY SENTINEL"
+  assert_contains "$update_target/.claude/settings.json" '"user"'
+  assert_contains "$update_target/.ddt/personal/todo.json" '"keep"'
+  assert_contains "$update_target/.ddt/personal/scratch/.index.md" "scratch index sentinel"
+  assert_file "$update_target/.ddt/projects/sample/status.md"
+}
+
+assert_system_files_refreshed() {
+  update_target="$1"
+
+  assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$update_target/CLAUDE.md"
+  assert_same "$GENERATED_CLAUDE/README.md" "$update_target/README.md"
+  for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
+    command_name=$(basename "$command_template")
+    assert_same "$command_template" "$update_target/.claude/commands/$command_name"
+  done
+  assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
+    "$update_target/.claude/skills/project-manager/SKILL.md"
+  assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
+    "$update_target/.claude/skills/think-partner/SKILL.md"
+  assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
+    "$update_target/.claude/skills/task-manager/SKILL.md"
+  assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
+    "$update_target/.claude/hooks/session-sync.sh"
+  assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \
+    "$update_target/.claude/dashboard/template.html"
+  assert_same "$GENERATED_CLAUDE/.claude/dashboard/server.js" \
+    "$update_target/.claude/dashboard/server.js"
+  assert_executable "$update_target/.claude/hooks/session-sync.sh"
 }
 
 trap 'rm -rf "$TMP_ROOT"' EXIT HUP INT TERM
@@ -158,6 +213,35 @@ node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
   "$target/.claude/settings.json"
 
+runtime_target="$TMP_ROOT/runtime explicit workspace"
+mkdir -p "$runtime_target"
+"$BOOTSTRAP" --runtime claude "$runtime_target" > "$TMP_ROOT/runtime-bootstrap.log"
+
+assert_same "$GENERATED_CLAUDE/README.md" "$runtime_target/README.md"
+assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$runtime_target/CLAUDE.md"
+assert_same "$GENERATED_CLAUDE/.ddt/profile.md" "$runtime_target/.ddt/profile.md"
+assert_same "$GENERATED_CLAUDE/.claude/settings.json" \
+  "$runtime_target/.claude/settings.json"
+assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
+  "$runtime_target/.claude/hooks/session-sync.sh"
+assert_executable "$runtime_target/.claude/hooks/session-sync.sh"
+for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
+  command_name=$(basename "$command_template")
+  assert_same "$command_template" "$runtime_target/.claude/commands/$command_name"
+done
+
+unsupported_target="$TMP_ROOT/unsupported runtime workspace"
+mkdir -p "$unsupported_target"
+printf 'keep\n' > "$unsupported_target/keep.txt"
+if "$BOOTSTRAP" --runtime codex "$unsupported_target" > "$TMP_ROOT/unsupported.log" 2> "$TMP_ROOT/unsupported.err"; then
+  fail "unsupported runtime should fail"
+fi
+assert_contains "$TMP_ROOT/unsupported.err" "unsupported runtime: codex"
+assert_file "$unsupported_target/keep.txt"
+assert_missing "$unsupported_target/.ddt"
+assert_missing "$unsupported_target/.claude"
+assert_missing "$unsupported_target/README.md"
+
 printf 'USER CONFIG SENTINEL\n' > "$target/.ddt/config.md"
 printf 'USER PROFILE SENTINEL\n' > "$target/.ddt/profile.md"
 printf 'USER NORMS SENTINEL\n' > "$target/.ddt/norms.md"
@@ -168,46 +252,15 @@ printf 'project data\n' > "$target/.ddt/projects/sample/status.md"
 printf '{ "version": 1, "items": [{"id":"keep"}] }\n' > "$target/.ddt/personal/todo.json"
 printf 'scratch index sentinel\n' > "$target/.ddt/personal/scratch/.index.md"
 
-printf 'STALE SYSTEM CLAUDE\n' > "$target/CLAUDE.md"
-printf 'STALE SYSTEM README\n' > "$target/README.md"
-printf 'STALE COMMAND\n' > "$target/.claude/commands/todo.md"
-printf 'STALE SKILL\n' > "$target/.claude/skills/project-manager/SKILL.md"
-printf 'STALE THINK SKILL\n' > "$target/.claude/skills/think-partner/SKILL.md"
-printf 'STALE TASK SKILL\n' > "$target/.claude/skills/task-manager/SKILL.md"
-printf '#!/usr/bin/env sh\n# stale hook\n' > "$target/.claude/hooks/session-sync.sh"
-printf 'STALE DASHBOARD HTML\n' > "$target/.claude/dashboard/template.html"
-printf 'STALE DASHBOARD JS\n' > "$target/.claude/dashboard/server.js"
+stale_system_files "$target"
+"$BOOTSTRAP" --update "$target" > "$TMP_ROOT/default-update.log"
+assert_user_files_preserved "$target"
+assert_system_files_refreshed "$target"
 
-"$BOOTSTRAP" --update "$target" > "$TMP_ROOT/update.log"
-
-assert_contains "$target/.ddt/config.md" "USER CONFIG SENTINEL"
-assert_contains "$target/.ddt/profile.md" "USER PROFILE SENTINEL"
-assert_contains "$target/.ddt/norms.md" "USER NORMS SENTINEL"
-assert_contains "$target/.ddt/registry.md" "USER REGISTRY SENTINEL"
-assert_contains "$target/.claude/settings.json" '"user"'
-assert_contains "$target/.ddt/personal/todo.json" '"keep"'
-assert_contains "$target/.ddt/personal/scratch/.index.md" "scratch index sentinel"
-assert_file "$target/.ddt/projects/sample/status.md"
-
-assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$target/CLAUDE.md"
-assert_same "$GENERATED_CLAUDE/README.md" "$target/README.md"
-for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
-  command_name=$(basename "$command_template")
-  assert_same "$command_template" "$target/.claude/commands/$command_name"
-done
-assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
-  "$target/.claude/skills/project-manager/SKILL.md"
-assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
-  "$target/.claude/skills/think-partner/SKILL.md"
-assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
-  "$target/.claude/skills/task-manager/SKILL.md"
-assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
-  "$target/.claude/hooks/session-sync.sh"
-assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \
-  "$target/.claude/dashboard/template.html"
-assert_same "$GENERATED_CLAUDE/.claude/dashboard/server.js" \
-  "$target/.claude/dashboard/server.js"
-assert_executable "$target/.claude/hooks/session-sync.sh"
+stale_system_files "$target"
+"$BOOTSTRAP" --update --runtime claude "$target" > "$TMP_ROOT/update.log"
+assert_user_files_preserved "$target"
+assert_system_files_refreshed "$target"
 
 hook_target="$TMP_ROOT/hook workspace with spaces"
 mkdir -p "$hook_target"

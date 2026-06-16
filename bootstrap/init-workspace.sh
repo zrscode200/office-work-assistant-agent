@@ -4,7 +4,7 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap/init-workspace.sh [--update] /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] [--runtime claude] /path/to/target-dir
 
 Stamps a target directory with the office work assistant agent:
   - README.md (workspace guide — structure, commands, conventions)
@@ -26,6 +26,9 @@ Stamps a target directory with the office work assistant agent:
   - .claude/commands/ (slash commands: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, jot, brainstorm, notebook, todo, self-tutorial)
 
 Options:
+  --runtime claude
+              Select the runtime surface to install. Currently supported:
+              claude. If omitted, claude is used.
   --update    Update system files (CLAUDE.md, skills, commands, hooks) in an existing workspace.
               User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, projects/) are never touched.
 
@@ -35,6 +38,7 @@ EOF
 }
 
 UPDATE_MODE=false
+RUNTIME_INPUT="claude"
 TARGET_INPUT=""
 
 # Parse flags and positional args in any order
@@ -47,6 +51,17 @@ while [ $# -gt 0 ]; do
     --update)
       UPDATE_MODE=true
       ;;
+    --runtime)
+      shift
+      if [ $# -eq 0 ]; then
+        echo "Error: --runtime requires a value" >&2
+        exit 1
+      fi
+      RUNTIME_INPUT="$1"
+      ;;
+    --runtime=*)
+      RUNTIME_INPUT="${1#--runtime=}"
+      ;;
     *)
       TARGET_INPUT="$1"
       ;;
@@ -56,6 +71,15 @@ done
 
 TARGET_INPUT="${TARGET_INPUT:-.}"
 
+case "$RUNTIME_INPUT" in
+  claude) ;;
+  *)
+    echo "Error: unsupported runtime: $RUNTIME_INPUT" >&2
+    echo "Supported runtimes: claude" >&2
+    exit 1
+    ;;
+esac
+
 if [ ! -d "$TARGET_INPUT" ]; then
   echo "Error: target directory does not exist: $TARGET_INPUT" >&2
   exit 1
@@ -63,7 +87,7 @@ fi
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-CLAUDE_TEMPLATE_ROOT="$REPO_ROOT/generated/claude"
+RUNTIME_TEMPLATE_ROOT="$REPO_ROOT/generated/$RUNTIME_INPUT"
 TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd)
 
 if [ "$TARGET_DIR" = "$REPO_ROOT" ]; then
@@ -74,33 +98,33 @@ fi
 
 # Validate required generated Claude files
 for file in \
-  "$CLAUDE_TEMPLATE_ROOT/README.md" \
-  "$CLAUDE_TEMPLATE_ROOT/CLAUDE.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/config.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/profile.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/norms.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/registry.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.gitignore" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/todo.json" \
-  "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/template.html" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/server.js" \
-  "$CLAUDE_TEMPLATE_ROOT/.claude/settings.json"; do
+  "$RUNTIME_TEMPLATE_ROOT/README.md" \
+  "$RUNTIME_TEMPLATE_ROOT/CLAUDE.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/config.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/profile.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/norms.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/registry.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.gitignore" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/todo.json" \
+  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/template.html" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/server.js" \
+  "$RUNTIME_TEMPLATE_ROOT/.claude/settings.json"; do
   if [ ! -f "$file" ]; then
     echo "Error: missing generated Claude file: $file" >&2
     exit 1
   fi
 done
 
-if [ ! -d "$CLAUDE_TEMPLATE_ROOT/.claude/commands" ]; then
-  echo "Error: missing generated Claude commands directory: $CLAUDE_TEMPLATE_ROOT/.claude/commands" >&2
+if [ ! -d "$RUNTIME_TEMPLATE_ROOT/.claude/commands" ]; then
+  echo "Error: missing generated Claude commands directory: $RUNTIME_TEMPLATE_ROOT/.claude/commands" >&2
   exit 1
 fi
 
@@ -159,52 +183,52 @@ else
 fi
 
 # README.md
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/README.md" "$TARGET_DIR/README.md" "README.md"
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/README.md" "$TARGET_DIR/README.md" "README.md"
 
 # CLAUDE.md
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
 
 # Skills
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
   ".claude/skills/project-manager/SKILL.md"
 
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
   "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
   ".claude/skills/think-partner/SKILL.md"
 
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
   "$TARGET_DIR/.claude/skills/task-manager/SKILL.md" \
   ".claude/skills/task-manager/SKILL.md"
 
 # Session-sync hook
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
   "$TARGET_DIR/.claude/hooks/session-sync.sh" \
   ".claude/hooks/session-sync.sh"
 chmod +x "$TARGET_DIR/.claude/hooks/session-sync.sh"
 
 # Slash commands
-for cmd in "$CLAUDE_TEMPLATE_ROOT/.claude/commands/"*.md; do
+for cmd in "$RUNTIME_TEMPLATE_ROOT/.claude/commands/"*.md; do
   cmd_name=$(basename "$cmd")
   $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
 done
 
 # Dashboard
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/template.html" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/template.html" \
   "$TARGET_DIR/.claude/dashboard/template.html" \
   ".claude/dashboard/template.html"
 
-$copy_fn "$CLAUDE_TEMPLATE_ROOT/.claude/dashboard/server.js" \
+$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/server.js" \
   "$TARGET_DIR/.claude/dashboard/server.js" \
   ".claude/dashboard/server.js"
 
 # --- User files (never overwritten, even with --update) ---
 
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
 
 # Gitignore (append if .gitignore exists, create if not)
 if [ -e "$TARGET_DIR/.gitignore" ]; then
@@ -219,32 +243,32 @@ if [ -e "$TARGET_DIR/.gitignore" ]; then
     echo "update: added notebook to .gitignore"
   else
     echo "" >> "$TARGET_DIR/.gitignore"
-    cat "$CLAUDE_TEMPLATE_ROOT/.gitignore" >> "$TARGET_DIR/.gitignore"
+    cat "$RUNTIME_TEMPLATE_ROOT/.gitignore" >> "$TARGET_DIR/.gitignore"
     echo "update: appended workspace entries to .gitignore"
   fi
 else
-  cp "$CLAUDE_TEMPLATE_ROOT/.gitignore" "$TARGET_DIR/.gitignore"
+  cp "$RUNTIME_TEMPLATE_ROOT/.gitignore" "$TARGET_DIR/.gitignore"
   echo "create: .gitignore"
 fi
 
 # Placeholder files for empty directories
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
   "$TARGET_DIR/.ddt/projects/.gitkeep" \
   ".ddt/projects/.gitkeep"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
   "$TARGET_DIR/.ddt/personal/notebook/.gitkeep" \
   ".ddt/personal/notebook/.gitkeep"
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
   "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" \
   ".ddt/personal/scratch/.gitkeep"
 
 # Todo list
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/todo.json" \
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/todo.json" \
   "$TARGET_DIR/.ddt/personal/todo.json" \
   ".ddt/personal/todo.json"
 
 # Scratch pad index
-copy_if_missing "$CLAUDE_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
+copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
   "$TARGET_DIR/.ddt/personal/scratch/.index.md" \
   ".ddt/personal/scratch/.index.md"
 
