@@ -1,5 +1,25 @@
 # GitHub Copilot Conversion Plan
 
+## Current Project Status
+
+GitHub Copilot is not a supported runtime in the current multi-runtime
+distribution.
+
+Current supported runtimes:
+
+- Claude Code: default or `--runtime claude`
+- Codex: `--runtime codex`
+- OpenCode: `--runtime opencode`
+
+`bootstrap/init-workspace.sh --runtime copilot` is intentionally unsupported and
+covered by the local smoke harness as an unsupported-runtime no-mutation check.
+
+This document is a candidate migration plan from an earlier research pass. It
+must be refreshed against current official GitHub Copilot documentation before
+any Copilot adapter is designed or implemented. Do not treat the details below
+as validated current behavior, and do not implement them without explicit scope
+re-opening.
+
 ## Goal
 
 Prepare a GitHub Copilot-native version of this bootstrap repo without carrying over Claude-specific structure that Copilot now replaces with its own customization system.
