@@ -15,7 +15,8 @@ The harness validates the current multi-runtime bootstrap:
 - tracked generated personal placeholders that would otherwise be hidden by
   generated workspace `.gitignore` rules
 - dashboard JavaScript syntax for all generated dashboard servers
-- valid runtime config JSON/TOML where applicable
+- valid runtime config JSON where applicable, plus expected Codex TOML skill
+  paths
 - default Claude install and explicit `--runtime claude`
 - explicit `--runtime codex`
 - explicit `--runtime opencode`
