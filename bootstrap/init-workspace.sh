@@ -38,6 +38,7 @@ EOF
 }
 
 UPDATE_MODE=false
+SUPPORTED_RUNTIMES="claude"
 RUNTIME_INPUT="claude"
 TARGET_INPUT=""
 
@@ -75,7 +76,7 @@ case "$RUNTIME_INPUT" in
   claude) ;;
   *)
     echo "Error: unsupported runtime: $RUNTIME_INPUT" >&2
-    echo "Supported runtimes: claude" >&2
+    echo "Supported runtimes: $SUPPORTED_RUNTIMES" >&2
     exit 1
     ;;
 esac
@@ -96,48 +97,49 @@ if [ "$TARGET_DIR" = "$REPO_ROOT" ]; then
   exit 1
 fi
 
-# Validate required generated Claude files
-for file in \
-  "$RUNTIME_TEMPLATE_ROOT/README.md" \
-  "$RUNTIME_TEMPLATE_ROOT/CLAUDE.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/config.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/profile.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/norms.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/registry.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.gitignore" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/todo.json" \
-  "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/template.html" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/server.js" \
-  "$RUNTIME_TEMPLATE_ROOT/.claude/settings.json"; do
-  if [ ! -f "$file" ]; then
-    echo "Error: missing generated Claude file: $file" >&2
-    exit 1
-  fi
-done
-
-if [ ! -d "$RUNTIME_TEMPLATE_ROOT/.claude/commands" ]; then
-  echo "Error: missing generated Claude commands directory: $RUNTIME_TEMPLATE_ROOT/.claude/commands" >&2
+if [ ! -d "$RUNTIME_TEMPLATE_ROOT" ]; then
+  echo "Error: missing generated template for runtime '$RUNTIME_INPUT': $RUNTIME_TEMPLATE_ROOT" >&2
   exit 1
 fi
 
-# Create directory structure
-mkdir -p "$TARGET_DIR/.ddt/projects"
-mkdir -p "$TARGET_DIR/.ddt/personal/scratch"
-mkdir -p "$TARGET_DIR/.claude/commands"
-mkdir -p "$TARGET_DIR/.claude/dashboard"
-mkdir -p "$TARGET_DIR/.ddt/personal/notebook"
-mkdir -p "$TARGET_DIR/.claude/skills/project-manager"
-mkdir -p "$TARGET_DIR/.claude/skills/think-partner"
-mkdir -p "$TARGET_DIR/.claude/skills/task-manager"
-mkdir -p "$TARGET_DIR/.claude/hooks"
+template_files() {
+  (cd "$RUNTIME_TEMPLATE_ROOT" && find . -type f -print | sed 's#^\./##' | sort)
+}
+
+is_user_owned_file() {
+  case "$1" in
+    .ddt/config.md|\
+    .ddt/profile.md|\
+    .ddt/norms.md|\
+    .ddt/registry.md|\
+    .ddt/projects/.gitkeep|\
+    .ddt/personal/notebook/.gitkeep|\
+    .ddt/personal/scratch/.gitkeep|\
+    .ddt/personal/todo.json|\
+    .ddt/personal/scratch/.index.md|\
+    .claude/settings.json)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+ensure_parent_dir() {
+  mkdir -p "$(dirname -- "$1")"
+}
+
+apply_template_mode() {
+  mode_src="$1"
+  mode_dst="$2"
+
+  if [ -x "$mode_src" ]; then
+    chmod 755 "$mode_dst"
+  else
+    chmod 644 "$mode_dst"
+  fi
+}
 
 # Copy a file, skipping if it already exists
 copy_if_missing() {
@@ -150,7 +152,9 @@ copy_if_missing() {
     return
   fi
 
+  ensure_parent_dir "$dst"
   cp "$src" "$dst"
+  apply_template_mode "$src" "$dst"
   echo "create: $label"
 }
 
@@ -159,16 +163,23 @@ copy_and_overwrite() {
   src="$1"
   dst="$2"
   label="$3"
+  tmp="$dst.tmp.$$"
 
+  ensure_parent_dir "$dst"
   if [ -e "$dst" ]; then
-    if cmp -s "$src" "$dst"; then
+    cp "$src" "$tmp"
+    apply_template_mode "$src" "$tmp"
+    if cmp -s "$tmp" "$dst"; then
+      apply_template_mode "$src" "$dst"
+      rm -f "$tmp"
       echo "unchanged: $label"
       return
     fi
-    cp "$src" "$dst"
+    mv "$tmp" "$dst"
     echo "update: $label"
   else
     cp "$src" "$dst"
+    apply_template_mode "$src" "$dst"
     echo "create: $label"
   fi
 }
@@ -182,95 +193,57 @@ else
   copy_fn="copy_if_missing"
 fi
 
-# README.md
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/README.md" "$TARGET_DIR/README.md" "README.md"
+install_gitignore() {
+  src="$RUNTIME_TEMPLATE_ROOT/.gitignore"
 
-# CLAUDE.md
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/CLAUDE.md" "$TARGET_DIR/CLAUDE.md" "CLAUDE.md"
-
-# Skills
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/project-manager/SKILL.md" \
-  "$TARGET_DIR/.claude/skills/project-manager/SKILL.md" \
-  ".claude/skills/project-manager/SKILL.md"
-
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/think-partner/SKILL.md" \
-  "$TARGET_DIR/.claude/skills/think-partner/SKILL.md" \
-  ".claude/skills/think-partner/SKILL.md"
-
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/skills/task-manager/SKILL.md" \
-  "$TARGET_DIR/.claude/skills/task-manager/SKILL.md" \
-  ".claude/skills/task-manager/SKILL.md"
-
-# Session-sync hook
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/hooks/session-sync.sh" \
-  "$TARGET_DIR/.claude/hooks/session-sync.sh" \
-  ".claude/hooks/session-sync.sh"
-chmod +x "$TARGET_DIR/.claude/hooks/session-sync.sh"
-
-# Slash commands
-for cmd in "$RUNTIME_TEMPLATE_ROOT/.claude/commands/"*.md; do
-  cmd_name=$(basename "$cmd")
-  $copy_fn "$cmd" "$TARGET_DIR/.claude/commands/$cmd_name" ".claude/commands/$cmd_name"
-done
-
-# Dashboard
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/template.html" \
-  "$TARGET_DIR/.claude/dashboard/template.html" \
-  ".claude/dashboard/template.html"
-
-$copy_fn "$RUNTIME_TEMPLATE_ROOT/.claude/dashboard/server.js" \
-  "$TARGET_DIR/.claude/dashboard/server.js" \
-  ".claude/dashboard/server.js"
-
-# --- User files (never overwritten, even with --update) ---
-
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/config.md" "$TARGET_DIR/.ddt/config.md" ".ddt/config.md"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/profile.md" "$TARGET_DIR/.ddt/profile.md" ".ddt/profile.md"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/norms.md" "$TARGET_DIR/.ddt/norms.md" ".ddt/norms.md"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/registry.md" "$TARGET_DIR/.ddt/registry.md" ".ddt/registry.md"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.claude/settings.json" "$TARGET_DIR/.claude/settings.json" ".claude/settings.json"
-
-# Gitignore (append if .gitignore exists, create if not)
-if [ -e "$TARGET_DIR/.gitignore" ]; then
-  if grep -q ".ddt/personal/notebook/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
-    echo "skip: .gitignore already contains workspace entries"
-  elif grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
-    # Existing workspace from before notebook feature — add notebook entry
-    tmp_gitignore="$TARGET_DIR/.gitignore.tmp.$$"
-    sed 's|.ddt/personal/scratch/|.ddt/personal/notebook/\
+  if [ -e "$TARGET_DIR/.gitignore" ]; then
+    if grep -q ".ddt/personal/notebook/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
+      echo "skip: .gitignore already contains workspace entries"
+    elif grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
+      # Existing workspace from before notebook feature — add notebook entry.
+      tmp_gitignore="$TARGET_DIR/.gitignore.tmp.$$"
+      sed 's|.ddt/personal/scratch/|.ddt/personal/notebook/\
 .ddt/personal/scratch/|' "$TARGET_DIR/.gitignore" > "$tmp_gitignore"
-    mv "$tmp_gitignore" "$TARGET_DIR/.gitignore"
-    echo "update: added notebook to .gitignore"
+      mv "$tmp_gitignore" "$TARGET_DIR/.gitignore"
+      echo "update: added notebook to .gitignore"
+    else
+      echo "" >> "$TARGET_DIR/.gitignore"
+      cat "$src" >> "$TARGET_DIR/.gitignore"
+      echo "update: appended workspace entries to .gitignore"
+    fi
   else
-    echo "" >> "$TARGET_DIR/.gitignore"
-    cat "$RUNTIME_TEMPLATE_ROOT/.gitignore" >> "$TARGET_DIR/.gitignore"
-    echo "update: appended workspace entries to .gitignore"
+    cp "$src" "$TARGET_DIR/.gitignore"
+    apply_template_mode "$src" "$TARGET_DIR/.gitignore"
+    echo "create: .gitignore"
   fi
-else
-  cp "$RUNTIME_TEMPLATE_ROOT/.gitignore" "$TARGET_DIR/.gitignore"
-  echo "create: .gitignore"
+}
+
+install_template_file() {
+  rel="$1"
+  src="$RUNTIME_TEMPLATE_ROOT/$rel"
+  dst="$TARGET_DIR/$rel"
+
+  if [ "$rel" = ".gitignore" ]; then
+    install_gitignore
+  elif is_user_owned_file "$rel"; then
+    copy_if_missing "$src" "$dst" "$rel"
+  else
+    $copy_fn "$src" "$dst" "$rel"
+  fi
+}
+
+RUNTIME_FILES_TMP="${TMPDIR:-/tmp}/office-work-runtime-files.$$"
+trap 'rm -f "$RUNTIME_FILES_TMP"' EXIT HUP INT TERM
+template_files > "$RUNTIME_FILES_TMP"
+if [ ! -s "$RUNTIME_FILES_TMP" ]; then
+  echo "Error: generated template for runtime '$RUNTIME_INPUT' has no files: $RUNTIME_TEMPLATE_ROOT" >&2
+  exit 1
 fi
 
-# Placeholder files for empty directories
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/projects/.gitkeep" \
-  "$TARGET_DIR/.ddt/projects/.gitkeep" \
-  ".ddt/projects/.gitkeep"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/notebook/.gitkeep" \
-  "$TARGET_DIR/.ddt/personal/notebook/.gitkeep" \
-  ".ddt/personal/notebook/.gitkeep"
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.gitkeep" \
-  "$TARGET_DIR/.ddt/personal/scratch/.gitkeep" \
-  ".ddt/personal/scratch/.gitkeep"
-
-# Todo list
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/todo.json" \
-  "$TARGET_DIR/.ddt/personal/todo.json" \
-  ".ddt/personal/todo.json"
-
-# Scratch pad index
-copy_if_missing "$RUNTIME_TEMPLATE_ROOT/.ddt/personal/scratch/.index.md" \
-  "$TARGET_DIR/.ddt/personal/scratch/.index.md" \
-  ".ddt/personal/scratch/.index.md"
+while IFS= read -r rel; do
+  [ -n "$rel" ] || continue
+  install_template_file "$rel"
+done < "$RUNTIME_FILES_TMP"
 
 # Init git if not already a repo
 if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then

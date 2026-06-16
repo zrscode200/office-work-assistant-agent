@@ -54,18 +54,61 @@ process.stdout.write(settings.hooks.SessionStart[0].hooks[0].command);
 ' "$1"
 }
 
+generated_files() {
+  (cd "$GENERATED_CLAUDE" && find . -type f -print | sed 's#^\./##' | sort)
+}
+
+is_user_owned_generated_file() {
+  case "$1" in
+    .ddt/config.md|\
+    .ddt/profile.md|\
+    .ddt/norms.md|\
+    .ddt/registry.md|\
+    .ddt/projects/.gitkeep|\
+    .ddt/personal/notebook/.gitkeep|\
+    .ddt/personal/scratch/.gitkeep|\
+    .ddt/personal/todo.json|\
+    .ddt/personal/scratch/.index.md|\
+    .claude/settings.json)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+is_preserved_on_update() {
+  case "$1" in
+    .gitignore)
+      return 0
+      ;;
+    *)
+      is_user_owned_generated_file "$1"
+      ;;
+  esac
+}
+
+assert_install_matches_generated() {
+  install_target="$1"
+
+  generated_files | while IFS= read -r rel; do
+    assert_file "$install_target/$rel"
+    assert_same "$GENERATED_CLAUDE/$rel" "$install_target/$rel"
+    if [ -x "$GENERATED_CLAUDE/$rel" ]; then
+      assert_executable "$install_target/$rel"
+    fi
+  done
+}
+
 stale_system_files() {
   update_target="$1"
 
-  printf 'STALE SYSTEM CLAUDE\n' > "$update_target/CLAUDE.md"
-  printf 'STALE SYSTEM README\n' > "$update_target/README.md"
-  printf 'STALE COMMAND\n' > "$update_target/.claude/commands/todo.md"
-  printf 'STALE SKILL\n' > "$update_target/.claude/skills/project-manager/SKILL.md"
-  printf 'STALE THINK SKILL\n' > "$update_target/.claude/skills/think-partner/SKILL.md"
-  printf 'STALE TASK SKILL\n' > "$update_target/.claude/skills/task-manager/SKILL.md"
-  printf '#!/usr/bin/env sh\n# stale hook\n' > "$update_target/.claude/hooks/session-sync.sh"
-  printf 'STALE DASHBOARD HTML\n' > "$update_target/.claude/dashboard/template.html"
-  printf 'STALE DASHBOARD JS\n' > "$update_target/.claude/dashboard/server.js"
+  generated_files | while IFS= read -r rel; do
+    is_preserved_on_update "$rel" && continue
+    printf 'STALE MANAGED FILE: %s\n' "$rel" > "$update_target/$rel"
+    chmod 644 "$update_target/$rel"
+  done
 }
 
 assert_user_files_preserved() {
@@ -78,31 +121,22 @@ assert_user_files_preserved() {
   assert_contains "$update_target/.claude/settings.json" '"user"'
   assert_contains "$update_target/.ddt/personal/todo.json" '"keep"'
   assert_contains "$update_target/.ddt/personal/scratch/.index.md" "scratch index sentinel"
+  assert_contains "$update_target/.ddt/projects/.gitkeep" "projects placeholder sentinel"
+  assert_contains "$update_target/.ddt/personal/notebook/.gitkeep" "notebook placeholder sentinel"
+  assert_contains "$update_target/.ddt/personal/scratch/.gitkeep" "scratch placeholder sentinel"
   assert_file "$update_target/.ddt/projects/sample/status.md"
 }
 
 assert_system_files_refreshed() {
   update_target="$1"
 
-  assert_same "$GENERATED_CLAUDE/CLAUDE.md" "$update_target/CLAUDE.md"
-  assert_same "$GENERATED_CLAUDE/README.md" "$update_target/README.md"
-  for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
-    command_name=$(basename "$command_template")
-    assert_same "$command_template" "$update_target/.claude/commands/$command_name"
+  generated_files | while IFS= read -r rel; do
+    is_preserved_on_update "$rel" && continue
+    assert_same "$GENERATED_CLAUDE/$rel" "$update_target/$rel"
+    if [ -x "$GENERATED_CLAUDE/$rel" ]; then
+      assert_executable "$update_target/$rel"
+    fi
   done
-  assert_same "$GENERATED_CLAUDE/.claude/skills/project-manager/SKILL.md" \
-    "$update_target/.claude/skills/project-manager/SKILL.md"
-  assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
-    "$update_target/.claude/skills/think-partner/SKILL.md"
-  assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
-    "$update_target/.claude/skills/task-manager/SKILL.md"
-  assert_same "$GENERATED_CLAUDE/.claude/hooks/session-sync.sh" \
-    "$update_target/.claude/hooks/session-sync.sh"
-  assert_same "$GENERATED_CLAUDE/.claude/dashboard/template.html" \
-    "$update_target/.claude/dashboard/template.html"
-  assert_same "$GENERATED_CLAUDE/.claude/dashboard/server.js" \
-    "$update_target/.claude/dashboard/server.js"
-  assert_executable "$update_target/.claude/hooks/session-sync.sh"
 }
 
 trap 'rm -rf "$TMP_ROOT"' EXIT HUP INT TERM
@@ -208,6 +242,7 @@ assert_same "$GENERATED_CLAUDE/.claude/skills/think-partner/SKILL.md" \
   "$target/.claude/skills/think-partner/SKILL.md"
 assert_same "$GENERATED_CLAUDE/.claude/skills/task-manager/SKILL.md" \
   "$target/.claude/skills/task-manager/SKILL.md"
+assert_install_matches_generated "$target"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
   "$target/.ddt/personal/todo.json"
 node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf8"));' \
@@ -229,6 +264,7 @@ for command_template in "$GENERATED_CLAUDE/.claude/commands/"*.md; do
   command_name=$(basename "$command_template")
   assert_same "$command_template" "$runtime_target/.claude/commands/$command_name"
 done
+assert_install_matches_generated "$runtime_target"
 
 unsupported_target="$TMP_ROOT/unsupported runtime workspace"
 mkdir -p "$unsupported_target"
@@ -251,6 +287,9 @@ mkdir -p "$target/.ddt/projects/sample"
 printf 'project data\n' > "$target/.ddt/projects/sample/status.md"
 printf '{ "version": 1, "items": [{"id":"keep"}] }\n' > "$target/.ddt/personal/todo.json"
 printf 'scratch index sentinel\n' > "$target/.ddt/personal/scratch/.index.md"
+printf 'projects placeholder sentinel\n' > "$target/.ddt/projects/.gitkeep"
+printf 'notebook placeholder sentinel\n' > "$target/.ddt/personal/notebook/.gitkeep"
+printf 'scratch placeholder sentinel\n' > "$target/.ddt/personal/scratch/.gitkeep"
 
 stale_system_files "$target"
 "$BOOTSTRAP" --update "$target" > "$TMP_ROOT/default-update.log"
