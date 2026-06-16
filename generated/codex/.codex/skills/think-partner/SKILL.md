@@ -16,7 +16,7 @@ When the user shares a thought, read the conversational cues to decide what they
 - "Note to self: ask Sarah about the timeline"
 - "The API rate limit is 500/min, that's going to be a problem"
 
-Capture it using `/jot` mechanics, confirm briefly ("Jotted: <title>"), done.
+Capture it using `jot` reference mechanics, confirm briefly ("Jotted: <title>"), done.
 
 **Exploration** — there's uncertainty, a question, tradeoffs, or an explicit ask to think together.
 - "I'm wondering if we should go with event sourcing or append-only tables..."
@@ -68,10 +68,10 @@ down, or they signal closure ("okay I think I know what to do", "that helps",
 At that point, look at what was captured and suggest promotion only if the
 signal is clear — one suggestion, not a menu:
 
-- **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting → `/notebook`
-- **Decision record** → a choice was made or needs to be locked in with rationale → `/decide`
-- **Plan** → a concrete sequence of actions or milestones became clear → `/project-scoping`
-- **New project** → a scope, goal, and rough outcome are all identifiable → `/new-project`
+- **Notebook** → a developed perspective, synthesis, or analysis emerged that's worth revisiting → `notebook` reference
+- **Decision record** → a choice was made or needs to be locked in with rationale → `decide` reference
+- **Plan** → a concrete sequence of actions or milestones became clear → `project-scoping` reference
+- **New project** → a scope, goal, and rough outcome are all identifiable → `new-project` reference
 
 If none of these fit clearly, don't suggest anything. Scratch pad is the right
 home for thinking that's still forming — not every conversation needs to
@@ -79,7 +79,7 @@ produce a structured artifact.
 
 ## Notebook
 
-Notebook entries (`.ddt/personal/notebook/`) are created only when the user explicitly asks — "write that up as a note", "promote this to the notebook", "summarize that into an entry." Follow `/notebook` for promotion and management mechanics.
+Notebook entries (`.ddt/personal/notebook/`) are created only when the user explicitly asks — "write that up as a note", "promote this to the notebook", "summarize that into an entry." Follow `notebook` reference for promotion and management mechanics.
 
 ## Boundary with project-manager
 

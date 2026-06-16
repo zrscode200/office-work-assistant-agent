@@ -185,7 +185,7 @@ node -e "
 
 ### 1. Add
 
-User invokes `/todo` with a description, or the task-manager skill routes here when the user uses explicit "todo"/"task" language.
+User invokes `todo` reference with a description, or the task-manager skill routes here when the user uses explicit "todo"/"task" language.
 
 **Parse the input.** Extract what you can from the user's message:
 - Description → `what`
@@ -319,13 +319,13 @@ User wants to remove a todo permanently.
 
 ## Contextual Surfacing
 
-When the agent reads todo data outside of `/todo` or the task-manager skill. Controlled by `todo_surfacing` in `.ddt/config.md` (default: `contextual`).
+When the agent reads todo data outside of `todo` reference or the task-manager skill. Controlled by `todo_surfacing` in `.ddt/config.md` (default: `contextual`).
 
 ### Passive mode
-Never read todos unless the user invokes `/todo` or the task-manager skill triggers.
+Never read todos unless the user invokes `todo` reference or the task-manager skill triggers.
 
 ### Contextual mode (default)
-During `/project-status` for a specific project:
+During `project-status` reference for a specific project:
 - Run the project-specific query.
 - If open items exist, append to the status output: "You have N personal todos tagged to this project:" followed by a brief list (what + due).
 - Do NOT surface during brainstorm, exploration, jot, or general conversation.

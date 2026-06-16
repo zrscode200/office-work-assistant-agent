@@ -18,7 +18,7 @@ You help the user manage their personal todo list. Read `.ddt/profile.md` for co
 
 ## Routing
 
-Identify what the user needs and follow `/todo` command mechanics for the actual operation:
+Identify what the user needs and follow `todo` reference command mechanics for the actual operation:
 
 | User intent | Action |
 |---|---|
@@ -43,11 +43,11 @@ This rule is non-negotiable. The keyword requirement prevents ambiguity between 
 ## Principles
 
 - Never create todos without explicit "todo"/"task" language.
-- All read/write operations use `/todo` data access patterns (targeted `node -e` queries, never read full file into context).
+- All read/write operations use `todo` reference data access patterns (targeted `node -e` queries, never read full file into context).
 - Confirm before destructive actions (delete).
 - Keep interactions fast — this is a checklist, not a project plan.
 
 ## Boundary with other skills
 
-- **project-manager**: Plan tasks in `plan.md` are project-scoped work breakdowns managed through `/project-scoping`. Todos are personal action items. A todo can reference a project via tag, but lives in the personal todo list.
+- **project-manager**: Plan tasks in `plan.md` are project-scoped work breakdowns managed through `project-scoping` reference. Todos are personal action items. A todo can reference a project via tag, but lives in the personal todo list.
 - **think-partner**: Jots capture thoughts and ideas. Todos capture actions. The differentiator is not action-vs-thought but whether the user said "todo" or "task." Without that keyword, think-partner handles it.

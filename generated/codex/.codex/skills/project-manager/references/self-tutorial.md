@@ -55,7 +55,7 @@ Read `.ddt/profile.md`. If it's empty or still has placeholder content:
 ### Dependency check
 
 Check if Node.js is available (`node --version`). If missing:
-- Explain it's needed for the `/dashboard` command (the visual project overview)
+- Explain it's needed for the `dashboard` reference command (the visual project overview)
 - Check if a Python venv exists in the workspace; if so, suggest installing Node there
 - Don't block the tutorial — note that the dashboard phase will be conceptual without it
 
@@ -81,12 +81,12 @@ Before diving into the walkthrough, give the user the complete picture. Present:
 
 | Category | Commands |
 |---|---|
-| Project Management | `/new-project`, `/project-status`, `/meeting`, `/decide`, `/project-scoping`, `/project-comment`, `/dashboard`, `/create-project-update`, `/sync` |
-| Thinking | `/jot`, `/brainstorm`, `/notebook` |
-| Todo | `/todo` |
-| Help | `/self-tutorial` (this walkthrough) |
+| Project Management | `new-project` reference, `project-status` reference, `meeting` reference, `decide` reference, `project-scoping` reference, `project-comment` reference, `dashboard` reference, `create-project-update` reference, `sync` reference |
+| Thinking | `jot` reference, `brainstorm` reference, `notebook` reference |
+| Todo | `todo` reference |
+| Help | `self-tutorial` reference (this walkthrough) |
 
-**Key point to emphasize:** "You almost never need to type command references. Just talk about your work naturally and the right skill activates automatically. Slash commands are there when you want to be explicit."
+**Key point to emphasize:** "You almost never need to type command references. Just talk about your work naturally and the right skill activates automatically. Command references are there when you want to be explicit."
 
 **Artifact types the system creates:**
 
@@ -117,7 +117,7 @@ Show an example input — a natural sentence the user might say, using the adapt
 
 > **You'd say:** "I want to start a new project for [objective]. [1-2 sentences of context about why and who's involved]."
 >
-> **What happens:** The project-manager skill detects this and routes to `/new-project`. The assistant would ask a few clarifying questions — scope, stakeholders, where to store it (personal or team) — then create two files:
+> **What happens:** The project-manager skill detects this and routes to `new-project` reference. The assistant would ask a few clarifying questions — scope, stakeholders, where to store it (personal or team) — then create two files:
 
 Show the example `overview.md` with full content — frontmatter and body:
 
@@ -180,7 +180,7 @@ next:
 
 Explain: "Both files land in `.ddt/projects/[project-name]/` for personal projects, or in `[team-repo]/projects/[project-name]/` for team projects. The project also gets registered in `.ddt/registry.md` — that's how the system finds it later."
 
-Mention: "You can also type `/new-project` directly. The command reference does the same thing."
+Mention: "You can also ask for the `new-project` reference directly. The command reference does the same thing."
 
 Ask: **"Any questions about project creation? Ready for the next section?"**
 
@@ -200,7 +200,7 @@ Show example input — something that references the tutorial project:
 
 > **You'd say:** "Update on [project]: [progress summary]. But we're blocked on [blocker] — [owner] is handling it."
 >
-> **What happens:** project-manager skill → `/project-status`
+> **What happens:** project-manager skill → `project-status` reference
 
 Show the updated `status.md` — emphasize the **dual-write pattern**:
 
@@ -218,7 +218,7 @@ Show example input:
 
 > **You'd say:** "Add a note to [project]: [a reminder, question, or observation related to the blocker from the status update]"
 >
-> **What happens:** project-manager skill → `/project-comment`
+> **What happens:** project-manager skill → `project-comment` reference
 
 Show the `comments.md` file:
 
@@ -249,7 +249,7 @@ Show example input — a meeting related to the tutorial project, with 2-3 atten
 
 > **You'd say:** "I just had a meeting with [names] about [topic]. We discussed [points]. We decided [decision]. [Name] is going to [action item] by [date]."
 >
-> **What happens:** project-manager skill → `/meeting`
+> **What happens:** project-manager skill → `meeting` reference
 
 Show the full meeting file with frontmatter and body. Include:
 - Discussion points as concise bullets
@@ -266,7 +266,7 @@ Show example input — either natural language ("we decided to...") or explain t
 
 > **You'd say:** "Document the decision about [topic from the meeting]."
 >
-> **What happens:** project-manager skill → `/decide`
+> **What happens:** project-manager skill → `decide` reference
 
 Show the full decision file with frontmatter and body. Include context, at least 2 options with tradeoffs, the decision, and rationale. Connect it to the meeting.
 
@@ -341,7 +341,7 @@ Show example input — an idea related to the tutorial project:
 
 > **You'd say:** "Jot this down: [an idea, question, or half-formed thought related to the project]"
 >
-> **What happens:** think-partner skill → `/jot`
+> **What happens:** think-partner skill → `jot` reference
 
 Show the scratch file that would be created:
 
@@ -372,9 +372,9 @@ Explain: "This smart-append logic keeps related thoughts together. If the topic 
 
 Explain: "When a scratch entry has grown into something worth developing, you promote it to the notebook. The assistant synthesizes the raw jots into a coherent entry."
 
-> **You'd say:** "Promote that scratch entry to my notebook" or use `/notebook`
+> **You'd say:** "Promote that scratch entry to my notebook" or use `notebook` reference
 >
-> **What happens:** think-partner skill → `/notebook`
+> **What happens:** think-partner skill → `notebook` reference
 
 Show what the notebook entry would look like — a synthesized version of the jots, not a copy-paste:
 
@@ -397,9 +397,9 @@ Explain: "Notebook entries can be tagged to projects via the `projects` field. T
 
 Explain: "When a notebook entry is ready to become real work, you graduate it into a formal artifact. The notebook command suggests the right destination:"
 
-- An insight about a choice → `/decide` → decision record
-- A concrete action plan → `/project-scoping` → plan
-- A new initiative → `/new-project` → project overview
+- An insight about a choice → `decide` reference → decision record
+- A concrete action plan → `project-scoping` reference → plan
+- A new initiative → `new-project` reference → project overview
 
 "The notebook entry is preserved as the thinking trail — marked `graduated` with a pointer to what it became."
 
@@ -421,7 +421,7 @@ Show example input — use the action item from Phase 3's meeting:
 
 > **You'd say:** "Add a todo: [the action item from the meeting] — due [date]"
 >
-> **What happens:** task-manager skill → `/todo`
+> **What happens:** task-manager skill → `todo` reference
 
 Explain the schema briefly: each todo has `what`, `status`, `priority`, `due`, `project`, `visibility`, `subs` (sub-items), `recurs`.
 
@@ -443,8 +443,8 @@ Briefly explain: "Todos can have one level of sub-items. They can also recur —
 ### Surfacing modes
 
 Explain the three modes set in `.ddt/config.md`:
-- **passive** — only shown when you run `/todo`
-- **contextual** (default) — also surfaced during `/project-status` for project-tagged items
+- **passive** — only shown when you run `todo` reference
+- **contextual** (default) — also surfaced during `project-status` reference for project-tagged items
 - **proactive** — adds a summary of open/overdue items at session start
 
 Ask: **"Questions about todos? Ready for the dashboard?"**
@@ -459,9 +459,9 @@ Check if Node.js is available. If yes:
 
 Explain: "The dashboard is a live, local web UI that reads your workspace data on every request."
 
-> **You'd say:** "Open the dashboard" or type `/dashboard`
+> **You'd say:** "Open the dashboard" or ask for the `dashboard` reference
 >
-> **What happens:** project-manager skill → `/dashboard`. A Node.js server starts on a random port and opens in your browser.
+> **What happens:** project-manager skill → `dashboard` reference. A Node.js server starts on a random port and opens in your browser.
 
 If Node.js is available, offer to actually open it: "Want me to open the dashboard so you can see it? It will show your real workspace data — any existing projects, todos, scratch entries."
 
@@ -489,7 +489,7 @@ Check for a Python venv or local environment. Suggest installation:
 - If venv exists: suggest installing Node within the project environment
 - If not: suggest installing Node.js via the official installer, nvm, or their system package manager
 
-"Once Node.js is available, `/dashboard` will work automatically."
+"Once Node.js is available, `dashboard` reference will work automatically."
 
 Ask: **"Questions about the dashboard? Ready for team collaboration?"**
 
@@ -517,19 +517,19 @@ Show an example of what the confirmation prompt looks like:
 
 Explain: "Personal projects skip all of this — files are written directly."
 
-Explain **session sync**: "When you open Codex, a hook automatically pulls all team repos (`git pull --ff-only`) so you start with fresh data."
+Explain **manual sync**: "Codex does not run an automatic workspace sync hook. Use the `sync` reference when you want to pull team repos before reading or writing shared artifacts."
 
-Explain `/sync`: "For manual control — check sync status, pull, commit, or push for each repo."
+Explain `sync` reference: "For manual control — check sync status, pull, commit, or push for each repo."
 
 ### If team repos are NOT configured:
 
 Explain the concept: "Projects can be personal (local only) or team (stored in a shared git repo). Team repos are just regular git repos with a `projects/` folder."
 
 Explain what team repos enable:
-- `/new-project` asks where to create (personal or which team)
+- `new-project` reference asks where to create (personal or which team)
 - The assistant pulls latest before reading or writing team artifacts
 - Every write to a team repo requires your confirmation before push
-- `/dashboard` shows projects across all locations
+- `dashboard` reference shows projects across all locations
 - Personal artifacts (scratch, notebook, todos) never go to team repos
 
 Offer: "Would you like to configure a team repo now? You'll need the clone URL or a local path to an existing repo."
@@ -554,29 +554,29 @@ Present the complete command list with one-line descriptions:
 **Project Management (9 commands):**
 | Command | What it does |
 |---|---|
-| `/new-project` | Create and scaffold a new project (personal or team) |
-| `/project-status` | View or update a project's health, progress, blockers, risks |
-| `/meeting` | Capture a meeting summary with attendees, discussion, action items |
-| `/decide` | Create a structured decision record with context, options, rationale |
-| `/project-scoping` | Collaboratively create or update a project plan |
-| `/project-comment` | Add a quick comment, question, or reminder to a project |
-| `/dashboard` | Open the visual dashboard showing all projects and personal workspace |
-| `/create-project-update` | Draft a status report for stakeholders |
-| `/sync` | Manage team repo sync — pull, commit, push |
+| `new-project` reference | Create and scaffold a new project (personal or team) |
+| `project-status` reference | View or update a project's health, progress, blockers, risks |
+| `meeting` reference | Capture a meeting summary with attendees, discussion, action items |
+| `decide` reference | Create a structured decision record with context, options, rationale |
+| `project-scoping` reference | Collaboratively create or update a project plan |
+| `project-comment` reference | Add a quick comment, question, or reminder to a project |
+| `dashboard` reference | Open the visual dashboard showing all projects and personal workspace |
+| `create-project-update` reference | Draft a status report for stakeholders |
+| `sync` reference | Manage team repo sync — pull, commit, push |
 
 **Thinking (3 commands):**
 | Command | What it does |
 |---|---|
-| `/jot` | Quick-capture a thought to the scratch pad |
-| `/brainstorm` | Interactive thinking session — explore an idea with the assistant |
-| `/notebook` | Browse, promote, and manage scratch pad and notebook entries |
+| `jot` reference | Quick-capture a thought to the scratch pad |
+| `brainstorm` reference | Interactive thinking session — explore an idea with the assistant |
+| `notebook` reference | Browse, promote, and manage scratch pad and notebook entries |
 
 **Todo (1 command):**
 | Command | What it does |
 |---|---|
-| `/todo` | Add, complete, update, review, or delete personal action items |
+| `todo` reference | Add, complete, update, review, or delete personal action items |
 
-Then: "For detailed explanations of how each feature works — thinking layers, frontmatter, project resolution, session sync, and more — see the **README.md** in this workspace."
+Then: "For detailed explanations of how each feature works — thinking layers, frontmatter, project resolution, manual sync, and more — see the **README.md** in this workspace."
 
 ---
 
@@ -587,6 +587,6 @@ Summarize: "That's the full tour. Here's what to remember:"
 1. **Talk naturally** — skills auto-trigger based on what you say. You rarely need command references.
 2. **Everything is files** — meeting notes, decisions, status, comments, plans all live as markdown files in your project folders. Version-controlled and searchable.
 3. **Personal stays personal** — scratch pad, notebook, and todos are gitignored. Team artifacts go through the Shared Write Protocol with your confirmation.
-4. **The dashboard is your overview** — `/dashboard` to see everything at a glance.
+4. **The dashboard is your overview** — `dashboard` reference to see everything at a glance.
 
 "Try it now — describe a project you're working on, or say 'jot this down' with an idea, or ask about anything you want to revisit from the tutorial."

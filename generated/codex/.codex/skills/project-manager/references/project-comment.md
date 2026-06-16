@@ -8,7 +8,7 @@ Add a quick comment to a project's comment thread.
 
 ### 1. Capture immediately
 
-Take whatever the user says and treat it as the comment content. Like `/jot`, speed matters — do NOT over-process or ask clarifying questions about the content itself.
+Take whatever the user says and treat it as the comment content. Like `jot` reference, speed matters — do NOT over-process or ask clarifying questions about the content itself.
 
 ### 2. Resolve the project
 

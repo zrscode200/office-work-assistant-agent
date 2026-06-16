@@ -76,11 +76,72 @@ def render_codex_text(text: str) -> str:
         (".claude/skills", ".codex/skills"),
         (".claude/commands", ".codex/skills/*/references"),
         ("Slash Commands", "Command References"),
+        ("Slash commands", "Command references"),
         ("slash commands", "command references"),
         ("slash command", "command reference"),
+        ("Session sync", "Manual sync"),
+        ("session sync", "manual sync"),
     )
     for old, new in replacements:
         text = text.replace(old, new)
+    text = text.replace(
+        'Explain **manual sync**: "When you open Codex, a hook automatically pulls all team repos '
+        '(`git pull --ff-only`) so you start with fresh data."',
+        'Explain **manual sync**: "Codex does not run an automatic workspace sync hook. Use the '
+        '`sync` reference when you want to pull team repos before reading or writing shared artifacts."',
+    )
+    for command in COMMANDS:
+        name = command.removesuffix(".md")
+        text = text.replace(f"`/{name}`", f"`{name}` reference")
+        text = text.replace(f"type `{name}` reference", f"ask for the `{name}` reference")
+    return text
+
+
+def render_codex_dashboard_server(text: str) -> str:
+    text = text.replace("const { execSync } = require('child_process');\n", "")
+    text = text.replace(".claude/dashboard", ".codex/dashboard")
+    text = text.replace("'.claude', 'dashboard'", "'.codex', 'dashboard'")
+    text = text.replace(
+        """function syncTeamRepos(teamRepos) {
+  const results = [];
+  for (const [name, repoPath] of Object.entries(teamRepos)) {
+    if (!fs.existsSync(path.join(repoPath, '.git'))) {
+      results.push({ repo: name, status: 'error', message: 'Not a git repo' });
+      continue;
+    }
+    try {
+      const output = execSync('git pull --ff-only', {
+        cwd: repoPath, timeout: 15000, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe']
+      });
+      if (/Already up to date/.test(output)) {
+        results.push({ repo: name, status: 'ok' });
+      } else {
+        results.push({ repo: name, status: 'updated' });
+      }
+    } catch {
+      results.push({ repo: name, status: 'error', message: 'Needs manual sync (diverged or conflicts)' });
+    }
+  }
+  return results;
+}
+""",
+        """function syncTeamRepos(teamRepos) {
+  const results = [];
+  for (const [name, repoPath] of Object.entries(teamRepos)) {
+    if (!fs.existsSync(path.join(repoPath, '.git'))) {
+      results.push({ repo: name, status: 'error', message: 'Not a git repo' });
+      continue;
+    }
+    results.push({
+      repo: name,
+      status: 'skipped',
+      message: 'Dashboard is read-only; use the sync workflow to pull latest data.'
+    });
+  }
+  return results;
+}
+""",
+    )
     return text
 
 
@@ -119,12 +180,7 @@ def render_codex(out_root: Path) -> None:
     copy_tree(dashboard_src, dashboard_out)
     server = dashboard_out / "server.js"
     if server.exists():
-        server.write_text(
-            server.read_text(encoding="utf-8")
-            .replace(".claude/dashboard", ".codex/dashboard")
-            .replace("'.claude', 'dashboard'", "'.codex', 'dashboard'"),
-            encoding="utf-8",
-        )
+        server.write_text(render_codex_dashboard_server(server.read_text(encoding="utf-8")), encoding="utf-8")
 
     for skill in SKILLS:
         src = ROOT / "core/skills" / skill

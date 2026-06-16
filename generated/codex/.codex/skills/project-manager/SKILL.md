@@ -13,16 +13,16 @@ Based on what the user needs, identify the action and follow the corresponding c
 
 | User intent | Command to follow |
 |---|---|
-| Wants to create a new project, or explore and define a new project idea | `/new-project` |
-| Describes a meeting or shares notes | `/meeting` |
-| Describes a decision or asks to document one | `/decide` |
-| Discusses progress, blockers, or asks about status | `/project-status` |
-| Needs to plan work, break down tasks, or think through approach | `/project-scoping` |
-| Wants to add a comment, note, or question to a project | `/project-comment` |
-| Needs to communicate project status to others | `/create-project-update` |
-| Wants to see across all projects | `/dashboard` |
-| Wants to sync, pull, or push team repos | `/sync` |
-| Wants to archive or close a completed project | `/project-status` (lifecycle transition) |
+| Wants to create a new project, or explore and define a new project idea | `new-project` reference |
+| Describes a meeting or shares notes | `meeting` reference |
+| Describes a decision or asks to document one | `decide` reference |
+| Discusses progress, blockers, or asks about status | `project-status` reference |
+| Needs to plan work, break down tasks, or think through approach | `project-scoping` reference |
+| Wants to add a comment, note, or question to a project | `project-comment` reference |
+| Needs to communicate project status to others | `create-project-update` reference |
+| Wants to see across all projects | `dashboard` reference |
+| Wants to sync, pull, or push team repos | `sync` reference |
+| Wants to archive or close a completed project | `project-status` reference (lifecycle transition) |
 
 Read the corresponding command file for detailed instructions on how to handle each case. The commands define the behavior — this skill handles routing to the right one.
 
@@ -35,4 +35,4 @@ Read the corresponding command file for detailed instructions on how to handle e
 - Reference `.ddt/norms.md` for team standards.
 - When in doubt about which project something belongs to, ask.
 - Resolve projects via the registry (`.ddt/registry.md`). The registry is the source of truth for project existence and location.
-- Personal action items (todos) are handled by the task-manager skill and `/todo` command — not by project-manager. If the user says "todo" or "task" in the context of personal action items, let task-manager handle it.
+- Personal action items (todos) are handled by the task-manager skill and `todo` reference command — not by project-manager. If the user says "todo" or "task" in the context of personal action items, let task-manager handle it.

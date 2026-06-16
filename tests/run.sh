@@ -236,6 +236,7 @@ for command_template in "$ROOT/core/commands/"*.md; do
 done
 
 assert_file "$GENERATED_CODEX/AGENTS.md"
+assert_file "$GENERATED_CODEX/README.md"
 assert_file "$GENERATED_CODEX/.codex/config.toml"
 assert_file "$GENERATED_CODEX/.gitignore"
 assert_file "$GENERATED_CODEX/.ddt/config.md"
@@ -270,6 +271,15 @@ assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/d
   ".claude/dashboard"
 assert_contains "$GENERATED_CODEX/.codex/dashboard/server.js" "'.codex', 'dashboard'"
 assert_not_contains "$GENERATED_CODEX/.codex/dashboard/server.js" ".claude/dashboard"
+assert_not_contains "$GENERATED_CODEX/.codex/dashboard/server.js" "git pull --ff-only"
+assert_not_contains "$GENERATED_CODEX/.codex/dashboard/server.js" "execSync"
+assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/self-tutorial.md" '`/'
+assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/self-tutorial.md" \
+  "slash command"
+assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/self-tutorial.md" \
+  "hook automatically pulls"
+assert_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/self-tutorial.md" \
+  "Codex does not run an automatic workspace sync hook"
 for shared_file in \
   .gitignore \
   .ddt/config.md \
@@ -375,6 +385,7 @@ mkdir -p "$codex_target"
 "$BOOTSTRAP" --runtime codex "$codex_target" > "$TMP_ROOT/codex-bootstrap.log"
 
 assert_file "$codex_target/AGENTS.md"
+assert_file "$codex_target/README.md"
 assert_file "$codex_target/.codex/config.toml"
 assert_file "$codex_target/.codex/skills/project-manager/SKILL.md"
 assert_file "$codex_target/.codex/skills/think-partner/SKILL.md"

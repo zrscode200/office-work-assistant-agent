@@ -4,7 +4,6 @@
 const http = require('http');
 const fs   = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const WORKSPACE    = process.cwd();
 const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 min
@@ -572,18 +571,11 @@ function syncTeamRepos(teamRepos) {
       results.push({ repo: name, status: 'error', message: 'Not a git repo' });
       continue;
     }
-    try {
-      const output = execSync('git pull --ff-only', {
-        cwd: repoPath, timeout: 15000, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe']
-      });
-      if (/Already up to date/.test(output)) {
-        results.push({ repo: name, status: 'ok' });
-      } else {
-        results.push({ repo: name, status: 'updated' });
-      }
-    } catch {
-      results.push({ repo: name, status: 'error', message: 'Needs manual sync (diverged or conflicts)' });
-    }
+    results.push({
+      repo: name,
+      status: 'skipped',
+      message: 'Dashboard is read-only; use the sync workflow to pull latest data.'
+    });
   }
   return results;
 }

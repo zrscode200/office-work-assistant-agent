@@ -22,7 +22,7 @@ Explicit entry point for exploration. The user has asked to think something thro
 
 ### 3. Explore
 
-Think with the user following the think-partner skill's exploration approach. Capture ideas to scratch pad as they surface using `/jot` mechanics.
+Think with the user following the think-partner skill's exploration approach. Capture ideas to scratch pad as they surface using `jot` reference mechanics.
 
 ### 4. At a natural pause
 

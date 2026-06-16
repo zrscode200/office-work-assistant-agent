@@ -34,5 +34,5 @@ Capture a meeting summary.
    - [ ] Item — owner — deadline
    ```
 5. If the project is in a team repo, complete the Shared Write Protocol (show changes, confirm, commit, push).
-6. If significant decisions were made, suggest creating a decision record with `/decide`.
-7. If action items affect project status or plan, mention that `/project-status` can be updated.
+6. If significant decisions were made, suggest creating a decision record with `decide` reference.
+7. If action items affect project status or plan, mention that `project-status` reference can be updated.
