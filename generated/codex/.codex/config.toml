@@ -1,0 +1,13 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
+[[skills.config]]
+path = "./skills/project-manager"
+enabled = true
+
+[[skills.config]]
+path = "./skills/think-partner"
+enabled = true
+
+[[skills.config]]
+path = "./skills/task-manager"
+enabled = true

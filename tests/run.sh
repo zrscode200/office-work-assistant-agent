@@ -4,6 +4,7 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 BOOTSTRAP="$ROOT/bootstrap/init-workspace.sh"
 GENERATED_CLAUDE="$ROOT/generated/claude"
+GENERATED_CODEX="$ROOT/generated/codex"
 TMP_ROOT="${TMPDIR:-/tmp}/office-work-assistant-agent-test-$$"
 
 fail() {
@@ -56,6 +57,22 @@ process.stdout.write(settings.hooks.SessionStart[0].hooks[0].command);
 
 generated_files() {
   (cd "$GENERATED_CLAUDE" && find . -type f -print | sed 's#^\./##' | sort)
+}
+
+codex_command_reference() {
+  command_name="$1"
+
+  case "$command_name" in
+    brainstorm.md|jot.md|notebook.md)
+      printf '%s\n' "$GENERATED_CODEX/.codex/skills/think-partner/references/$command_name"
+      ;;
+    todo.md)
+      printf '%s\n' "$GENERATED_CODEX/.codex/skills/task-manager/references/$command_name"
+      ;;
+    *)
+      printf '%s\n' "$GENERATED_CODEX/.codex/skills/project-manager/references/$command_name"
+      ;;
+  esac
 }
 
 is_user_owned_generated_file() {
@@ -182,6 +199,59 @@ node -e 'const fs=require("fs"); JSON.parse(fs.readFileSync(process.argv[1],"utf
 for command_template in "$ROOT/core/commands/"*.md; do
   command_name=$(basename "$command_template")
   assert_file "$ROOT/generated/claude/.claude/commands/$command_name"
+done
+
+assert_file "$GENERATED_CODEX/AGENTS.md"
+assert_file "$GENERATED_CODEX/.codex/config.toml"
+assert_file "$GENERATED_CODEX/.gitignore"
+assert_file "$GENERATED_CODEX/.ddt/config.md"
+assert_file "$GENERATED_CODEX/.ddt/profile.md"
+assert_file "$GENERATED_CODEX/.ddt/norms.md"
+assert_file "$GENERATED_CODEX/.ddt/registry.md"
+assert_file "$GENERATED_CODEX/.ddt/projects/.gitkeep"
+assert_file "$GENERATED_CODEX/.ddt/personal/notebook/.gitkeep"
+assert_file "$GENERATED_CODEX/.ddt/personal/scratch/.gitkeep"
+assert_file "$GENERATED_CODEX/.ddt/personal/scratch/.index.md"
+assert_file "$GENERATED_CODEX/.ddt/personal/todo.json"
+assert_tracked "generated/codex/.ddt/personal/notebook/.gitkeep"
+assert_tracked "generated/codex/.ddt/personal/scratch/.gitkeep"
+assert_tracked "generated/codex/.ddt/personal/scratch/.index.md"
+assert_tracked "generated/codex/.ddt/personal/todo.json"
+assert_file "$GENERATED_CODEX/.codex/skills/project-manager/SKILL.md"
+assert_file "$GENERATED_CODEX/.codex/skills/think-partner/SKILL.md"
+assert_file "$GENERATED_CODEX/.codex/skills/task-manager/SKILL.md"
+assert_file "$GENERATED_CODEX/.codex/dashboard/template.html"
+assert_file "$GENERATED_CODEX/.codex/dashboard/server.js"
+assert_missing "$GENERATED_CODEX/.claude"
+assert_missing "$GENERATED_CODEX/CLAUDE.md"
+node --check "$GENERATED_CODEX/.codex/dashboard/server.js"
+assert_contains "$GENERATED_CODEX/.codex/config.toml" "./skills/project-manager"
+assert_contains "$GENERATED_CODEX/.codex/config.toml" "./skills/think-partner"
+assert_contains "$GENERATED_CODEX/.codex/config.toml" "./skills/task-manager"
+assert_contains "$GENERATED_CODEX/.codex/skills/project-manager/SKILL.md" "AGENTS.md"
+assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/SKILL.md" "CLAUDE.md"
+assert_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/dashboard.md" \
+  ".codex/dashboard/server.js"
+assert_not_contains "$GENERATED_CODEX/.codex/skills/project-manager/references/dashboard.md" \
+  ".claude/dashboard"
+assert_contains "$GENERATED_CODEX/.codex/dashboard/server.js" "'.codex', 'dashboard'"
+assert_not_contains "$GENERATED_CODEX/.codex/dashboard/server.js" ".claude/dashboard"
+for shared_file in \
+  .gitignore \
+  .ddt/config.md \
+  .ddt/profile.md \
+  .ddt/norms.md \
+  .ddt/registry.md \
+  .ddt/projects/.gitkeep \
+  .ddt/personal/notebook/.gitkeep \
+  .ddt/personal/scratch/.gitkeep \
+  .ddt/personal/scratch/.index.md \
+  .ddt/personal/todo.json; do
+  assert_same "$GENERATED_CLAUDE/$shared_file" "$GENERATED_CODEX/$shared_file"
+done
+for command_template in "$ROOT/core/commands/"*.md; do
+  command_name=$(basename "$command_template")
+  assert_file "$(codex_command_reference "$command_name")"
 done
 
 target="$TMP_ROOT/work assistant workspace"

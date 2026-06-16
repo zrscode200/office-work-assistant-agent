@@ -11,13 +11,29 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIMES = ("claude",)
+RUNTIMES = ("claude", "codex")
 COMMANDS = tuple(sorted(path.name for path in (ROOT / "core/commands").glob("*.md")))
 SKILLS = (
     "project-manager/SKILL.md",
     "task-manager/SKILL.md",
     "think-partner/SKILL.md",
 )
+CODEX_COMMAND_SKILL = {
+    "brainstorm.md": "think-partner",
+    "create-project-update.md": "project-manager",
+    "dashboard.md": "project-manager",
+    "decide.md": "project-manager",
+    "jot.md": "think-partner",
+    "meeting.md": "project-manager",
+    "new-project.md": "project-manager",
+    "notebook.md": "think-partner",
+    "project-comment.md": "project-manager",
+    "project-scoping.md": "project-manager",
+    "project-status.md": "project-manager",
+    "self-tutorial.md": "project-manager",
+    "sync.md": "project-manager",
+    "todo.md": "task-manager",
+}
 
 PLACEHOLDERS = {
     ".ddt/projects/.gitkeep": "",
@@ -51,6 +67,23 @@ def write(path: Path, text: str, mode: int = 0o644) -> None:
     os.chmod(path, mode)
 
 
+def render_codex_text(text: str) -> str:
+    replacements = (
+        ("CLAUDE.md", "AGENTS.md"),
+        ("Claude Code", "Codex"),
+        (".claude/dashboard", ".codex/dashboard"),
+        (".claude/settings.json", ".codex/config.toml"),
+        (".claude/skills", ".codex/skills"),
+        (".claude/commands", ".codex/skills/*/references"),
+        ("Slash Commands", "Command References"),
+        ("slash commands", "command references"),
+        ("slash command", "command reference"),
+    )
+    for old, new in replacements:
+        text = text.replace(old, new)
+    return text
+
+
 def render_claude(out_root: Path) -> None:
     out = out_root / "claude"
     if out.exists():
@@ -73,9 +106,46 @@ def render_claude(out_root: Path) -> None:
         os.chmod(hook, 0o755)
 
 
+def render_codex(out_root: Path) -> None:
+    out = out_root / "codex"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+
+    copy_tree(ROOT / "core/shared", out)
+    copy_tree(ROOT / "adapters/codex", out)
+    dashboard_src = ROOT / "adapters/claude/.claude/dashboard"
+    dashboard_out = out / ".codex/dashboard"
+    copy_tree(dashboard_src, dashboard_out)
+    server = dashboard_out / "server.js"
+    if server.exists():
+        server.write_text(
+            server.read_text(encoding="utf-8")
+            .replace(".claude/dashboard", ".codex/dashboard")
+            .replace("'.claude', 'dashboard'", "'.codex', 'dashboard'"),
+            encoding="utf-8",
+        )
+
+    for skill in SKILLS:
+        src = ROOT / "core/skills" / skill
+        write(out / ".codex/skills" / skill, render_codex_text(src.read_text(encoding="utf-8")))
+
+    for command in COMMANDS:
+        owner = CODEX_COMMAND_SKILL[command]
+        src = ROOT / "core/commands" / command
+        write(
+            out / ".codex/skills" / owner / "references" / command,
+            render_codex_text(src.read_text(encoding="utf-8")),
+        )
+
+    for rel, text in PLACEHOLDERS.items():
+        write(out / rel, text)
+
+
 def render_all(out_root: Path) -> None:
     out_root.mkdir(parents=True, exist_ok=True)
     render_claude(out_root)
+    render_codex(out_root)
 
 
 def compare_dirs(left: Path, right: Path) -> list[str]:
