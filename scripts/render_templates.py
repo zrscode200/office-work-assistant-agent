@@ -49,7 +49,10 @@ def render_all(out_root: Path) -> None:
                 name = COPILOT_SKILLS[skill.name]
                 dest = out / ".github/skills" / name
                 copy_tree(skill, dest)
-                text = (dest / "SKILL.md").read_text()
+                # Native adapter guidance may specialize a common skill while
+                # the renderer still owns its complete command-reference index.
+                override = ROOT / "adapters" / runtime / dest.relative_to(out) / "SKILL.md"
+                text = (override if override.is_file() else dest / "SKILL.md").read_text()
                 text = text.replace(f"name: {skill.name}\n", f"name: {name}\n")
                 text = text.replace("the root operating manual", "`.ddt/runtime/ASSISTANT.md`")
                 references = [command for command in sorted((ROOT / "core/commands").glob("*.md"))
@@ -64,6 +67,9 @@ def render_all(out_root: Path) -> None:
             text = command.read_text()
             if runtime == "copilot":
                 dest = out / ".github/skills" / COPILOT_SKILLS[owner] / "references" / command.name
+                override = ROOT / "adapters" / runtime / dest.relative_to(out)
+                if override.is_file():
+                    text = override.read_text()
                 text = text.replace("the workspace operating manual", "`.ddt/runtime/ASSISTANT.md`")
             elif runtime == "codex":
                 dest = out / ".codex/skills" / owner / "references" / command.name

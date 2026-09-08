@@ -4,13 +4,34 @@ Projects, notes, and linked work use the same shared runtime as the other assist
 
 ## Start
 
-Set your name and autonomy mode in `.ddt/config.md`. Add useful context in `.ddt/profile.md` and team conventions in `.ddt/norms.md`. From this workspace, start an installed, authenticated GitHub Copilot CLI:
+From the root of this stamped workspace, start an installed, authenticated GitHub Copilot CLI:
 
 ```sh
 copilot --agent=office-work-assistant
 ```
 
+You can take the tour immediately. The assistant can help set your name before saving real work and explain the current autonomy setting. Personal profile and team norms are optional.
+
 You can also run `copilot`, then use `/agent` to choose `office-work-assistant`. Normal chat can discover the office skills too. The named agent is useful when your repository already has its own coding instructions.
+
+## New here? Start with a guided tour
+
+Tell the assistant:
+
+> I'm new here. Help me get started.
+
+It will explain projects, notes, and follow-ups one small step at a time. The quick tour uses an example without saving it; you can switch to a real task, skip a topic, or stop whenever you like. Setup help covers your name, how much the assistant may do on its own, and optional team access. You can use the workspace privately without Jira or a team repository.
+
+For a more specific start:
+
+- “Give me a quick tour without saving anything.”
+- “Help me set up my name, then capture this note privately: …”
+- “Show me what stays private and what my teammates can see.”
+- “Continue the tutorial from where we left off.”
+
+The tutorial lives in the existing `office-projects` skill. If your usual instructions do not pick it up, say “Use /office-projects and its self-tutorial to help me get started,” or select the `office-work-assistant` agent. It starts when you ask; ordinary work does not trigger a welcome questionnaire. No extra onboarding documents are created.
+
+## Everyday requests
 
 Try these prompts:
 

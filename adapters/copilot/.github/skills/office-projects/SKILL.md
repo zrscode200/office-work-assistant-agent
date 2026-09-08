@@ -8,17 +8,3 @@ Use projects, notes, and linked work together. Resolve scope, read current recor
 For “I'm new,” “help me get started,” or a request to learn the workspace, read `references/self-tutorial.md` and guide the user at their pace. Answer a narrow help question directly. Do not start a tour during an ordinary project request or infer that an empty workspace means the user needs one.
 
 Read `.ddt/runtime/ASSISTANT.md` and `.ddt/runtime/WORKFLOWS.md` before writes. Follow configured autonomy and existing user authority; use expected revisions and stable IDs. Preserve legacy originals and report partial multi-record saves. References in this skill are optional shortcuts into this same protocol.
-
-All workspace paths above are relative to the workspace root. Read the relevant reference when needed:
-
-- [catch-up](references/catch-up.md)
-- [create-project-update](references/create-project-update.md)
-- [dashboard](references/dashboard.md)
-- [decide](references/decide.md)
-- [meeting](references/meeting.md)
-- [new-project](references/new-project.md)
-- [project-comment](references/project-comment.md)
-- [project-scoping](references/project-scoping.md)
-- [project-status](references/project-status.md)
-- [self-tutorial](references/self-tutorial.md)
-- [sync](references/sync.md)

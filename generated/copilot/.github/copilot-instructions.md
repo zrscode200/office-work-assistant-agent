@@ -10,3 +10,5 @@ For office work, read `.ddt/runtime/ASSISTANT.md` and the relevant user context 
 - Jira owns its execution fields. Teams remains everyday conversation. Never infer agreement from an assistant draft.
 
 Load the relevant skill: `/office-projects`, `/office-notes`, or `/office-work`. Their references provide the familiar workflows. Use `/agent` to select `office-work-assistant` for a dedicated office session. Keep the user's existing tool permissions and model settings.
+
+For “I’m new” or “help me get started,” use `/office-projects` and its self-tutorial reference. Begin with an explanation-only tour unless the user asks to do a real task.

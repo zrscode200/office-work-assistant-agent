@@ -13,11 +13,13 @@ Use native CLI discovery while retaining the common project/notes/work model:
 | `.github/skills/office-projects/SKILL.md` | Project context, meetings, decisions, briefings, catch-up, dashboard, sync | Toolkit-managed |
 | `.github/skills/office-notes/SKILL.md` | Capture and develop notes; explore thinking | Toolkit-managed |
 | `.github/skills/office-work/SKILL.md` | Local follow-ups and Jira references | Toolkit-managed |
-| Each skill's `references/` | Relevant common workflow shortcuts | Generated from core commands |
+| Each skill's `references/` | Relevant workflow shortcuts, including guided onboarding | Core commands with matching Copilot-native adapter overrides |
 | `.ddt/runtime/ASSISTANT.md` | Complete common assistant behavior | Generated from core/manual.md; loaded when needed |
 | `.ddt/runtime/WORKFLOWS.md`, `ddt.js`, dashboard assets | Shared command/data/UI runtime | Same canonical core/runtime files as other adapters |
 
 Only the compact repository instructions are automatically loaded by this adapter. The custom agent and skills explicitly read the full manual when used. The instruction seed stays small and points to managed guidance, so an update can preserve user edits while refreshing detailed behavior. Skills reference the relevant workflow files; there is no second implementation of capture, task completion, Git publication, or Jira refresh.
+
+The guided tutorial is a Copilot-specific override in `adapters/copilot/.github/skills/office-projects/references/self-tutorial.md`. Its skill, named agent, instruction seed and README route onboarding intent there; the full walkthrough stays on demand. The tour is conversational by default and can switch to an authorized real task, without creating demo records or onboarding artifacts. The renderer selects a matching native adapter `SKILL.md` or command reference when present, otherwise uses core, and generates the complete reference index. Other runtimes retain their common tutorial.
 
 The namespaced skills avoid competing with generic project-manager/task-manager skills in existing workspaces. The named office agent provides a direct entry point even when a pre-existing repository instruction file is preserved. It does not define a model, MCP service, delegation workflow, or new permission grants.
 

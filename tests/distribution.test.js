@@ -89,3 +89,31 @@ test('installed Copilot distribution runs the shared CLI for capture, developmen
  run('work-save',{id:work.id,expected:1,author:'Fixture',fields:{status:'done'}});
  const brief=run('brief',{project:'atlas'});assert.equal(brief.notes.length,1);assert.equal(brief.notes[0].body,'Developed');assert.equal(brief.work[0].id,work.id);assert.equal(brief.work[0].status,'done');
 });
+
+
+test('Copilot native onboarding overrides reach fresh and upgraded workspaces with common fallbacks',t=>{
+ const target=scratch(t);
+ const tutorial='.github/skills/office-projects/references/self-tutorial.md';
+ const skill='.github/skills/office-projects/SKILL.md';
+ const expectedTutorial=fs.readFileSync(path.join(root,'adapters/copilot',tutorial),'utf8');
+ const expectedSkill=fs.readFileSync(path.join(root,'adapters/copilot',skill),'utf8');
+ install(target,'copilot');
+ assert.equal(fs.readFileSync(path.join(target,tutorial),'utf8'),expectedTutorial);
+ assert.ok(fs.readFileSync(path.join(target,skill),'utf8').startsWith(expectedSkill));
+ // Simulate upgrading an older Copilot stamp with a personalized instruction seed.
+ const instructions=path.join(target,'.github/copilot-instructions.md');write(instructions,'MY EXISTING INSTRUCTIONS');
+ write(path.join(target,tutorial),fs.readFileSync(path.join(root,'core/commands/self-tutorial.md')));
+ write(path.join(target,skill),'OLD SKILL');install(target,'copilot',true);
+ assert.equal(fs.readFileSync(instructions,'utf8'),'MY EXISTING INSTRUCTIONS');
+ assert.equal(fs.readFileSync(path.join(target,tutorial),'utf8'),expectedTutorial);
+ assert.ok(fs.readFileSync(path.join(target,skill),'utf8').startsWith(expectedSkill));
+ // Every other common reference still comes from core; the override is Copilot-only.
+ for(const command of files(path.join(root,'core/commands')).filter(x=>x!=='self-tutorial.md')){
+  const rel=files(path.join(target,'.github/skills')).find(x=>x.endsWith('/references/'+command));
+  assert.equal(fs.readFileSync(path.join(target,'.github/skills',rel),'utf8'),fs.readFileSync(path.join(root,'core/commands',command),'utf8').replaceAll('the workspace operating manual','`.ddt/runtime/ASSISTANT.md`'));
+ }
+ for(const runtime of runtimes.filter(x=>x!=='copilot')){
+  const dir=path.join(root,'generated',runtime);const rel=files(dir).find(x=>x.endsWith('/self-tutorial.md'));
+  assert.deepEqual(fs.readFileSync(path.join(dir,rel)),fs.readFileSync(path.join(root,'core/commands/self-tutorial.md')));
+ }
+});

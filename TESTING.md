@@ -18,3 +18,21 @@ Before accepting a change, run the full suite and independently review the combi
 Distribution fixtures additionally verify native `.github` skill/agent placement, name/frontmatter agreement, reference resolution, the concise instruction entry point, and byte-identical shared runtime/manual. They exercise the installed Node CLI for a project, stable note, and linked follow-up. Existing `AGENTS.md`, `CLAUDE.md`, Copilot repository instructions, and unrelated customizations remain byte-for-byte intact through install/update.
 
 Native verification is separate: launch an installed/authenticated Copilot CLI in a disposable installed workspace, inspect `/instructions`, `/skills list`, `/skills info office-projects`, and `/agent`, then exercise capture/develop/brief on synthetic content. Never replace this with a claim that fixture parsing proves Copilot discovery. In this implementation environment the installed CLI failed at startup with `SecItemCopyMatching -50`, so native discovery and model-backed execution remain unverified; no credentials or permissions were changed to bypass it.
+
+### Copilot tutorial conversation checks
+
+The renderer supports Copilot-native skill/reference overrides with common fallback. Distribution checks verify those exact tutorial/skill assets reach fresh and updated workspaces, while unrelated customization remains intact. File and installer checks do not establish the assistant's conversational behavior.
+
+On a working authenticated Copilot CLI, use disposable content and review these scenarios. These model-driven scenarios have not been executed in this environment:
+
+| Scenario | Expected behavior |
+| --- | --- |
+| Fresh workspace: “I'm new. Give me a tour without saving.” | Discover the tutorial through the agent or office-projects skill, explain one step at a time, mark examples unsaved, perform no record/config writes, team scan, network requests, or server startup. |
+| Existing workspace with custom instructions and records: “Help me get started.” | Managed agent/skill still offers the tour; preserve the instruction file and existing records; avoid inventorying personal/team contents just for examples. |
+| “Set my name to Maya and save this note privately: Access instructions need work.” | Preserve other config, use the supplied name/content, save one private note through the helper, read it back, and report actual scope. Follow configured autonomy and existing authority without repeated confirmation for covered writes. |
+| “Add this detail to that note” or “Track a follow-up” | Develop the returned note ID in place or save the requested work item; do not create a duplicate notebook entry, mandatory project, or invented commitment. |
+| “Explain sharing and Jira; do not connect anything.” | Explain private links, local versus published team context, source audience, Jira ownership/snapshot time and Teams conversations; no external calls or permission changes. |
+| “Skip this,” “Stop,” or “Continue the tutorial” | Respect pacing and known context; no persisted onboarding marker/checklist. With missing history, ask where to continue instead of scanning all records. |
+| Ordinary “Brief me on Atlas,” missing owner, or missing Node/team access | Ordinary request stays ordinary; owner is not required for explanation; real writes need actual attribution. Explain missing prerequisites and retain conversational help without installs or credential prompts. |
+
+After upgrade, repeat discovery with a preserved custom `.github/copilot-instructions.md`, `/skills reload`, and a fresh named-agent session. A guided tour is not a standalone `/self-tutorial` Copilot command.
