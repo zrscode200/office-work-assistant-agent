@@ -140,3 +140,48 @@ test('dashboard request handlers keep reads inert and require same origin/sessio
  assert.equal((await post(input,{'X-DDT-Token':token})).status,200);assert.equal((await post(input,{'X-DDT-Token':token})).status,400);assert.equal((await store.run('work'))[0].revision,2);
  const js=(await request('/app.js')).text;assert.equal(js.includes('innerHTML'),false);assert.ok(js.includes('textContent'));
 });
+
+test('successive scoped publications update tracking state and reach the second clone',async t=>{
+ const {one,two}=await teamFixture(t);await project(one,'team');const paths=['projects/atlas/project.json'];
+ assert.equal((await one.run('publish',await publishRequest(one,paths))).published,true);
+ assert.equal((await one.run('sync-status',{scope:'team'})).ahead,0);
+ await one.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Maya',fields:{context:'Second update'}});
+ assert.equal((await one.run('publish',await publishRequest(one,paths))).published,true);
+ await two.run('sync-pull',{scope:'team'});assert.equal((await two.run('project',{scope:'team',project:'atlas'})).project.context,'Second update');
+});
+
+test('legacy adoption preserves in-progress state and its original recurs/subs payload',async t=>{
+ const {root,store}=fixture(t);write(path.join(root,'.ddt/personal/todo.json'),{version:1,items:[{id:'t1',what:'Follow up',status:'in-progress',recurs:'weekly',subs:[{id:'t1.1',what:'Prepare',status:'done'}]}]});
+ const source=(await store.run('work'))[0];const adopted=await store.run('work-adopt',{id:source.id,expected_source:source.revision,author:'Maya'});
+ assert.equal(adopted.status,'in-progress');assert.equal(adopted.legacy_original.recurs,'weekly');assert.equal(adopted.legacy_original.subs[0].status,'done');
+});
+
+test('explicit Jira refresh recovers from an invalid cache even with a future update timestamp',async t=>{
+ const {root,store}=jiraFixture(t,async()=>jiraResponse());const w=await jiraWork(store);const snapshot=await store.run('jira-refresh',{id:w.id});
+ const dir=path.join(root,'.ddt/personal/cache/jira');write(path.join(dir,fs.readdirSync(dir)[0]),{...snapshot,key:'OTHER-99',jira_updated_at:'2099-01-01T00:00:00Z'});
+ const recovered=await store.run('jira-refresh',{id:w.id});assert.equal(recovered.key,'ATLAS-1');
+});
+
+test('missing or personal synchronization scope never invokes Git',async t=>{
+ const vm=require('node:vm');const {root}=fixture(t);let gitCalls=0;const sandbox={module:{exports:{}},exports:{},console,process,Buffer,URL,AbortSignal,require:name=>name==='node:child_process'?{execFileSync(){gitCalls++;throw Error('Unexpected Git');}}:require(name)};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../core/runtime/ddt.js'),'utf8'),sandbox);
+ const store=sandbox.module.exports.createWorkspace(root);
+ for(const scope of [undefined,'','personal','unknown'])for(const command of ['sync-status','sync-pull','publish-preview','publish','sync-push'])await assert.rejects(store.run(command,{scope,confirm:true}),/configured team scope/);
+ assert.equal(gitCalls,0);
+});
+
+test('explicit scoped publication ignores configured default branch/tag push sets',async t=>{
+ const {a,remote,one}=await teamFixture(t);git(a,'branch','unrelated');git(a,'config','remote.origin.push','refs/heads/unrelated:refs/heads/unrelated');git(a,'config','push.followTags','true');git(a,'tag','-a','private-tag','-m','Do not publish');
+ await project(one,'team');const result=await one.run('publish',await publishRequest(one,['projects/atlas/project.json']));assert.equal(result.published,true);
+ assert.equal(git(remote,'for-each-ref','--format=%(refname)'),'refs/heads/main');
+});
+
+test('two teammates making divergent changes retain both versions and reject the second push',async t=>{
+ const {one,two}=await teamFixture(t);const paths=['projects/atlas/project.json'];await project(one,'team');await one.run('publish',await publishRequest(one,paths));await two.run('sync-pull',{scope:'team'});
+ await one.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Maya',fields:{context:'Maya decision'}});
+ await two.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Theo',fields:{context:'Theo proposal'}});
+ assert.equal((await one.run('publish',await publishRequest(one,paths))).published,true);
+ const second=await two.run('publish',await publishRequest(two,paths));assert.equal(second.published,false);assert.ok(second.committed);
+ assert.equal((await one.run('project',{scope:'team',project:'atlas'})).project.context,'Maya decision');assert.equal((await two.run('project',{scope:'team',project:'atlas'})).project.context,'Theo proposal');
+ await assert.rejects(two.run('sync-pull',{scope:'team'}),/Pull failed/);
+});

@@ -330,7 +330,7 @@ function createWorkspace(workspace, options = {}) {
     const id = 'adopted-' + hash(legacy.legacy_source).slice(0,24);
     const file = entityFile('work', input, id);
     if (fs.existsSync(file)) return recordView(file, 'work', 'personal');
-    return mutate(file, 0, input.author, () => ({ id, title: legacy.title, provider: 'local', status: legacy.legacy_source.includes('todo-complete.json') || ['done','completed'].includes(legacy.original.status) ? 'done' : 'open', owner: input.author, due: legacy.original.due || null, sources: [], links: [], legacy_source: legacy.legacy_source, legacy_revision: legacy.revision, legacy_original: legacy.original }));
+    return mutate(file, 0, input.author, () => ({ id, title: legacy.title, provider: 'local', status: legacy.legacy_source.includes('todo-complete.json') || ['done','completed'].includes(legacy.original.status) ? 'done' : legacy.original.status === 'in-progress' ? 'in-progress' : 'open', owner: input.author, due: legacy.original.due || null, sources: [], links: [], legacy_source: legacy.legacy_source, legacy_revision: legacy.revision, legacy_original: legacy.original }));
   }
   function validateSnapshot(snapshot, item) {
     if (snapshot.site !== item.jira.site || snapshot.key !== item.jira.key || typeof snapshot.title !== 'string' || typeof snapshot.status !== 'string' || !Number.isFinite(Date.parse(snapshot.fetched_at))) fail('Invalid Jira snapshot provenance');
@@ -368,18 +368,22 @@ function createWorkspace(workspace, options = {}) {
     validateSnapshot(snapshot, item);
     if (fs.existsSync(file)) {
       let previous;
-      try { previous = readJSON(file); validateSnapshot(previous,item); } catch {}
+      try { previous = readJSON(file); validateSnapshot(previous,item); } catch { previous = null; }
       if (previous && Date.parse(previous.jira_updated_at) > Date.parse(snapshot.jira_updated_at)) fail('Jira response is older than the saved snapshot; previous snapshot retained');
     }
     atomicWrite(file, JSON.stringify(snapshot, null, 2) + '\n');
     return snapshot;
     } finally { fs.closeSync(fd); fs.unlinkSync(file + '.ddt-lock'); }
   }
+  function requireTeamScope(scope) {
+    if (typeof scope !== 'string' || scope === 'personal' || !Object.hasOwn(config().teams,scope)) fail('Select a configured team scope for synchronization');
+  }
   function git(scope, args, opts = {}) {
+    requireTeamScope(scope);
     return execFileSync('git', ['-C', scopeRoot(scope), ...args], { encoding: 'utf8', timeout: 30000, stdio: ['pipe','pipe','pipe'], ...opts }).trim();
   }
   function gitStatus(scope) {
-    if (scope === 'personal') fail('Select a team scope for synchronization');
+    requireTeamScope(scope);
     try {
       const head = git(scope, ['rev-parse','HEAD']);
       let upstream = null, ahead = null, behind = null;
@@ -400,6 +404,8 @@ function createWorkspace(workspace, options = {}) {
       const ref = git(scope,['config','--get',`branch.${branch}.merge`]);
       const urls = git(scope,['remote','get-url','--push','--all',remote]).split('\n');
       if (!branch || remote === '.' || urls.length !== 1 || !ref.startsWith('refs/heads/')) return null;
+      // The outgoing range must describe the same repository being published to.
+      if (git(scope,['remote','get-url',remote]) !== urls[0]) return null;
       return {url:urls[0],ref};
     } catch { return null; }
   }
@@ -424,7 +430,12 @@ function createWorkspace(workspace, options = {}) {
     if (!state.destination || state.destination.url !== input.destination?.url || state.destination.ref !== input.destination?.ref) fail('Publication destination missing or changed; review the preview');
   }
   function pushCommit(input, commit) {
-    try { git(input.scope,['push','--no-follow-tags','--porcelain','--',input.destination.url,`${commit}:${input.destination.ref}`]); }
+    // Revalidate the configured endpoint, then use the named remote so Git also
+    // updates its tracking ref. The explicit refspec overrides default push sets.
+    const state = gitStatus(input.scope);
+    checkDestination(input,state);
+    const remote = git(input.scope,['config','--get',`branch.${state.branch}.remote`]);
+    try { git(input.scope,['push','--no-follow-tags','--porcelain','--',remote,`${commit}:${input.destination.ref}`]); }
     catch { return {committed:commit,published:false,error:'Push failed; local commit retained. Review it and retry with sync-push; never force push.'}; }
     return {committed:commit,published:true,destination:input.destination};
   }
