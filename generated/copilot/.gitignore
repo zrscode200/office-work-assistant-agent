@@ -1,0 +1,9 @@
+# Office Work Assistant private workspace and transient writes
+.ddt/personal/
+.ddt/projects/
+*.ddt-lock
+*.ddt-tmp
+.DS_Store
+*.swp
+*.swo
+*~

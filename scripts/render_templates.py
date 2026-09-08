@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render the same data runtime and workflows into three assistant surfaces."""
+"""Render the same data runtime and workflows into supported assistant surfaces."""
 from __future__ import annotations
 import argparse
 import filecmp
@@ -11,7 +11,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIMES = ("claude", "codex", "opencode")
+RUNTIMES = ("claude", "codex", "opencode", "copilot")
+COPILOT_SKILLS = {"project-manager": "office-projects", "think-partner": "office-notes", "task-manager": "office-work"}
 COMMAND_OWNER = {"jot": "think-partner", "notebook": "think-partner", "brainstorm": "think-partner", "todo": "task-manager", "jira": "task-manager"}
 
 
@@ -37,20 +38,43 @@ def render_all(out_root: Path) -> None:
         copy_tree(ROOT / "adapters" / runtime, out)
         copy_tree(ROOT / "core/runtime", out / ".ddt/runtime")
         manual = "CLAUDE.md" if runtime == "claude" else "AGENTS.md"
-        write(out / manual, (ROOT / "core/manual.md").read_text() + "\n" + (ROOT / "adapters" / runtime / manual).read_text())
-        for skill in (ROOT / "core/skills").iterdir():
-            copy_tree(skill, out / f".{runtime}/skills" / skill.name)
+        if runtime == "copilot":
+            # Keep always-loaded instructions small. Both the skills and the
+            # named agent explicitly load this shared manual when needed.
+            write(out / ".ddt/runtime/ASSISTANT.md", (ROOT / "core/manual.md").read_text())
+        else:
+            write(out / manual, (ROOT / "core/manual.md").read_text() + "\n" + (ROOT / "adapters" / runtime / manual).read_text())
+        for skill in sorted((ROOT / "core/skills").iterdir()):
+            if runtime == "copilot":
+                name = COPILOT_SKILLS[skill.name]
+                dest = out / ".github/skills" / name
+                copy_tree(skill, dest)
+                text = (dest / "SKILL.md").read_text()
+                text = text.replace(f"name: {skill.name}\n", f"name: {name}\n")
+                text = text.replace("the root operating manual", "`.ddt/runtime/ASSISTANT.md`")
+                references = [command for command in sorted((ROOT / "core/commands").glob("*.md"))
+                              if COMMAND_OWNER.get(command.stem, "project-manager") == skill.name]
+                text += "\nAll workspace paths above are relative to the workspace root. Read the relevant reference when needed:\n\n"
+                text += "".join(f"- [{command.stem}](references/{command.name})\n" for command in references)
+                write(dest / "SKILL.md", text)
+            else:
+                copy_tree(skill, out / f".{runtime}/skills" / skill.name)
         for command in sorted((ROOT / "core/commands").glob("*.md")):
-            if runtime == "codex":
-                owner = COMMAND_OWNER.get(command.stem, "project-manager")
+            owner = COMMAND_OWNER.get(command.stem, "project-manager")
+            text = command.read_text()
+            if runtime == "copilot":
+                dest = out / ".github/skills" / COPILOT_SKILLS[owner] / "references" / command.name
+                text = text.replace("the workspace operating manual", "`.ddt/runtime/ASSISTANT.md`")
+            elif runtime == "codex":
                 dest = out / ".codex/skills" / owner / "references" / command.name
             else:
                 dest = out / f".{runtime}/commands" / command.name
-            write(dest, command.read_text())
+            write(dest, text)
         for folder in (".ddt/projects", ".ddt/personal/notes", ".ddt/personal/work"):
             write(out / folder / ".gitkeep", "")
         # Retain the old server entry point for existing bookmarks/workflows.
-        write(out / f".{runtime}/dashboard/server.js", "#!/usr/bin/env node\nrequire('../../.ddt/runtime/server').start(process.cwd());\n")
+        if runtime != "copilot":
+            write(out / f".{runtime}/dashboard/server.js", "#!/usr/bin/env node\nrequire('../../.ddt/runtime/server').start(process.cwd());\n")
 
 
 def compare_dirs(left: Path, right: Path) -> list[str]:

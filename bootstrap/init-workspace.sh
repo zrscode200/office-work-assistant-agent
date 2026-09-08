@@ -4,10 +4,10 @@ set -eu
 usage() {
   cat <<'EOF'
 Usage:
-  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode] /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode|copilot] /path/to/target-dir
 
 Installs the selected assistant surface and shared runtime:
-  - Root operating manual and README
+  - Operating manual and README (Copilot loads its manual from .ddt/runtime/)
   - .ddt/config.md, profile.md, norms.md (user-owned)
   - .ddt/projects/ and .ddt/personal/notes|work/ (private records)
   - .ddt/runtime/ (shared helper, workflows, and local dashboard; Node.js 18+)
@@ -15,12 +15,13 @@ Installs the selected assistant surface and shared runtime:
 Legacy workspace data remains in place on update.
 
 Options:
-  --runtime claude|codex|opencode
+  --runtime claude|codex|opencode|copilot
               Select the runtime surface to install. Currently supported:
-              claude, codex, opencode. If omitted, claude is used.
+              claude, codex, opencode, copilot. If omitted, claude is used.
   --update    Update system files for the selected runtime in an existing workspace.
               User files (.ddt/config.md, profile.md, norms.md, registry.md,
-              .claude/settings.json, .codex/config.toml, opencode.json, projects/) are never touched.
+              .claude/settings.json, .codex/config.toml, opencode.json,
+              .github/copilot-instructions.md, projects/) are never touched.
 
 If no path is given, the current directory is used.
 Existing files are never overwritten unless --update is specified.
@@ -28,7 +29,7 @@ EOF
 }
 
 UPDATE_MODE=false
-SUPPORTED_RUNTIMES="claude codex opencode"
+SUPPORTED_RUNTIMES="claude codex opencode copilot"
 RUNTIME_INPUT="claude"
 TARGET_INPUT=""
 
@@ -63,7 +64,7 @@ done
 TARGET_INPUT="${TARGET_INPUT:-.}"
 
 case "$RUNTIME_INPUT" in
-  claude|codex|opencode) ;;
+  claude|codex|opencode|copilot) ;;
   *)
     echo "Error: unsupported runtime: $RUNTIME_INPUT" >&2
     echo "Supported runtimes: $SUPPORTED_RUNTIMES" >&2
@@ -108,6 +109,7 @@ is_user_owned_file() {
     .ddt/personal/scratch/.gitkeep|\
     .ddt/personal/todo.json|\
     .ddt/personal/scratch/.index.md|\
+    .github/copilot-instructions.md|\
     .claude/settings.json|\
     .codex/config.toml|\
     opencode.json)
@@ -263,4 +265,8 @@ else
   echo "Setup complete for $RUNTIME_INPUT. Set your name in .ddt/config.md and open your assistant here."
   echo "Try capturing a note, starting a project, or tracking a follow-up. Add team clone paths when ready."
   echo "Dashboard: node .ddt/runtime/server.js (Node.js 18+; no packages required)."
+  if [ "$RUNTIME_INPUT" = "copilot" ]; then
+    echo "Copilot CLI: run copilot --agent=office-work-assistant from the workspace."
+    echo "Existing Copilot repository instructions are preserved; check /instructions and /skills list."
+  fi
 fi

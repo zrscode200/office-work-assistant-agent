@@ -1,6 +1,6 @@
 # Office Work Assistant
 
-A portable assistant workspace for understanding projects, developing notes, and coordinating work through shared context. Install it into a working folder for Claude Code, Codex, or OpenCode.
+A portable assistant workspace for understanding projects, developing notes, and coordinating work through shared context. Install it into a working folder for Claude Code, Codex, OpenCode, or GitHub Copilot CLI.
 
 The first team version uses three core records:
 
@@ -17,7 +17,7 @@ Requires Git and Node.js 18+. Python 3 is needed only to regenerate or test this
 ```sh
 mkdir -p /path/to/workspace
 ./bootstrap/init-workspace.sh --runtime codex /path/to/workspace
-# or --runtime claude / --runtime opencode
+# or --runtime claude / --runtime opencode / --runtime copilot
 ```
 
 Set your name and autonomy mode in `.ddt/config.md`, then open your assistant in that workspace. Try “capture this idea,” “start a project,” “track this follow-up,” or “prepare a project briefing.” Existing commands remain convenient shortcuts into the same workflow.
@@ -29,6 +29,14 @@ node .ddt/runtime/server.js
 ```
 
 Open the dashboard’s printed loopback URL for projects, notebook, work, and changes. It reads the same records and can complete/reopen local follow-ups. Capture, reconciliation, sharing, and Jira refresh remain assistant workflows.
+
+## Copilot CLI
+
+Install with `./bootstrap/init-workspace.sh --runtime copilot /path/to/workspace`, then run `copilot --agent=office-work-assistant` from that workspace. Copilot must already be installed and authenticated.
+
+This adapter uses a short `.github/copilot-instructions.md`, three native skills (`office-projects`, `office-notes`, `office-work`), and one optional custom agent. Detailed guidance is loaded as needed from the common runtime manual and skill references. Existing repository instructions are preserved on update; no global configuration, permission grants, or model settings are installed.
+
+See [Copilot CLI guide](adapters/copilot/README.md) for discovery checks, examples, permissions, and upgrades. [Adapter design](docs/github-copilot-conversion-plan.md) documents the verified CLI surface and validation limits.
 
 ## Team use
 
@@ -52,7 +60,7 @@ Legacy scratch, notebook, todos, and specialized project documents remain readab
 
 ## Development
 
-`core/runtime/` owns storage, CLI, dashboard, and the shared workflow protocol. `core/manual.md`, `core/commands/`, and `core/skills/` define assistant behavior. `adapters/` adds runtime discovery/configuration; `generated/` contains the installable output for all three runtimes.
+`core/runtime/` owns storage, CLI, dashboard, and the shared workflow protocol. `core/manual.md`, `core/commands/`, and `core/skills/` define assistant behavior. `adapters/` adds runtime discovery/configuration; `generated/` contains the installable output for all four runtimes.
 
 ```sh
 python3 scripts/render_templates.py
