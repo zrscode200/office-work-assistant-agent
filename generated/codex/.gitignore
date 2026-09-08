@@ -1,11 +1,8 @@
-# Office Work Assistant Agent - workspace entries
-.ddt/personal/notebook/
-.ddt/personal/scratch/
-.ddt/personal/todo.json
-.ddt/personal/todo-complete.json
-.ddt/personal/dashboard.html
-.ddt/personal/.dashboard.pid
-.ddt/personal/.dashboard.port
+# Office Work Assistant private workspace and transient writes
+.ddt/personal/
+.ddt/projects/
+*.ddt-lock
+*.ddt-tmp
 .DS_Store
 *.swp
 *.swo

@@ -1,284 +1,62 @@
-# office-work-assistant-agent
+# Office Work Assistant
 
-A portable bootstrap toolkit that turns any directory into a work assistant
-workspace for Claude Code, Codex, or OpenCode.
+A portable assistant workspace for understanding projects, developing notes, and coordinating work through shared context. Install it into a working folder for Claude Code, Codex, or OpenCode.
 
-This is a bootstrap repository, not an application. It provides shared sources,
-runtime adapters, checked-in generated outputs, and a setup script that copies a
-selected generated runtime surface into a target directory. The stamped
-workspace helps you document, track, plan, and think through work.
+The first team version uses three core records:
 
-Workspace artifacts live in a `.ddt/` directory: document, decide, track.
+- **Projects:** purpose, scope, current understanding, health, and source references.
+- **Notes:** quick capture, developed thinking, evidence, and decision rationale in one stable note.
+- **Work:** lightweight local follow-ups or links to Jira issues. Completion updates the same local record; Jira owns its execution fields.
 
-## Supported Runtimes
+Briefings, project views, meeting preparation, and handovers assemble those records. Everyday conversation stays in MS Teams. The workspace works standalone and does not require Jira or a team server.
 
-| Runtime | Install flag | Generated output | Primary surfaces |
-|---------|--------------|------------------|------------------|
-| Claude Code | default or `--runtime claude` | `generated/claude` | `CLAUDE.md`, `.claude/commands`, `.claude/skills`, `.claude/hooks`, `.claude/dashboard`, `.claude/settings.json` |
-| Codex | `--runtime codex` | `generated/codex` | `AGENTS.md`, `.codex/config.toml`, `.codex/skills`, command references, `.codex/dashboard` |
-| OpenCode | `--runtime opencode` | `generated/opencode` | `AGENTS.md`, `opencode.json`, `.opencode/commands`, `.opencode/skills`, `.opencode/dashboard` |
+## Install
 
-If `--runtime` is omitted, the installer uses Claude Code for backward
-compatibility.
-
-GitHub Copilot is not currently supported. The planning note in
-`docs/github-copilot-conversion-plan.md` records prior thinking, but Copilot
-implementation remains deferred until current official docs are checked and the
-scope is explicitly reopened.
-
-## How It Works
-
-Canonical behavior lives under `core/`, with runtime-specific files under
-`adapters/`. `scripts/render_templates.py` renders those sources into checked-in
-runtime directories under `generated/`. `bootstrap/init-workspace.sh` installs
-from the selected generated directory into a target workspace.
-
-The shared `.ddt/` workspace model is runtime-neutral. Runtime adapters provide
-the native instruction, command, skill, config, hook, and dashboard surfaces for
-each harness.
-
-The assistant helps with:
-
-- **Document** - meeting summaries, decision records, project context.
-- **Track** - project status, blockers, risks, action items.
-- **Plan** - task breakdowns, milestones, dependencies.
-- **Think** - scratch-pad capture, brainstorming, and notebook development.
-- **Todo** - personal action-item management.
-
-## What You'll Need
-
-Prerequisites:
-
-- `git`
-- a POSIX shell such as `sh`, `bash`, or `zsh`
-- `node` for the local dashboard checks and dashboard server
-- at least one target runtime: Claude Code, Codex, or OpenCode
-
-Repos involved:
-
-| Repo | Purpose | Required? |
-|------|---------|-----------|
-| This repo | Source of generated workspace outputs. Clone it, run the bootstrap script, and later pull updates from it. | Yes |
-| Your workspace | The directory you bootstrap and open with the selected runtime. The script initializes git if needed. | Yes |
-| Team repo(s) | Plain git repos with `projects/` folders for shared project artifacts. | Only for team collaboration |
-
-After bootstrapping, your workspace has no runtime dependency on this repo.
-Generated files are copied into the target directory.
-
-## Quick Setup
+Requires Git and Node.js 18+. Python 3 is needed only to regenerate or test this toolkit. No package installation is required.
 
 ```sh
-# 1. Clone this repo one time.
-git clone <this-repo-url> office-work-assistant-agent
-
-# 2. Bootstrap your workspace. Defaults to Claude Code.
-./office-work-assistant-agent/bootstrap/init-workspace.sh /path/to/your-workspace
-
-# Or choose a runtime explicitly.
-./office-work-assistant-agent/bootstrap/init-workspace.sh --runtime codex /path/to/your-workspace
-./office-work-assistant-agent/bootstrap/init-workspace.sh --runtime opencode /path/to/your-workspace
-
-# 3. Open the selected runtime in the workspace.
-cd /path/to/your-workspace
+mkdir -p /path/to/workspace
+./bootstrap/init-workspace.sh --runtime codex /path/to/workspace
+# or --runtime claude / --runtime opencode
 ```
 
-Open Claude Code, Codex, or OpenCode from the target workspace directory,
-matching the runtime you installed.
-
-To update an existing workspace while preserving user data:
+Set your name and autonomy mode in `.ddt/config.md`, then open your assistant in that workspace. Try “capture this idea,” “start a project,” “track this follow-up,” or “prepare a project briefing.” Existing commands remain convenient shortcuts into the same workflow.
 
 ```sh
-./office-work-assistant-agent/bootstrap/init-workspace.sh --update --runtime codex /path/to/your-workspace
+cd /path/to/workspace
+node .ddt/runtime/ddt.js overview
+node .ddt/runtime/server.js
 ```
 
-Use the same runtime that was installed in that workspace. On update, the
-installer refreshes managed generated files and preserves user-owned files:
+Open the dashboard’s printed loopback URL for projects, notebook, work, and changes. It reads the same records and can complete/reopen local follow-ups. Capture, reconciliation, sharing, and Jira refresh remain assistant workflows.
 
-- `.ddt/config.md`
-- `.ddt/profile.md`
-- `.ddt/norms.md`
-- `.ddt/registry.md`
-- `.ddt/projects/`
-- `.ddt/personal/todo.json`
-- `.ddt/personal/scratch/.index.md`
-- `.ddt/personal` placeholders
-- `.claude/settings.json`
-- `.codex/config.toml`
-- `opencode.json`
+## Team use
 
-## Installed Files
+Each teammate has a personal workspace and a separate local clone of the shared Git repository. Add the clone under `## Team Repos` in `.ddt/config.md`, for example `product: /absolute/path/to/product-context`.
 
-Every runtime installs shared workspace files:
+Team records live under `projects/<slug>/`; private notes, projects, work, Jira connections, and snapshots stay in the personal workspace. A private note or follow-up can link to a team project without being shared. Repository permissions control access; author names provide attribution only.
 
-- `README.md` - workspace guide
-- `.gitignore` - ignores personal scratch/notebook content
-- `.ddt/config.md` - workspace settings, autonomy mode, team repo config
-- `.ddt/profile.md` - user profile template
-- `.ddt/norms.md` - team working principles
-- `.ddt/registry.md` - project registry
-- `.ddt/projects/` - personal project artifacts
-- `.ddt/personal/notebook/` - private notebook
-- `.ddt/personal/scratch/` - private scratch pad
-- `.ddt/personal/todo.json` - personal todo list
+Shared edits use expected revisions. Pull explicitly before contributing. Review exact file contents and destination before publishing with the helper; publication rejects stale content, existing staged work, or unrelated outgoing commits. Git handles cross-clone synchronization; people still reconcile conflicting meaning. Shared records are visible locally before publication, and the helper reports whether a push actually succeeded.
 
-Runtime-specific files:
+Jira support links issues and explicitly refreshes selected fields into a private cache. It supports a configured HTTPS API base and REST version 2/3 with an organization-approved bearer token supplied by an environment variable. It does not implement an OAuth consent service. No tenant credentials are bundled; live access must be configured for your organization. See [WORKFLOWS.md](core/runtime/WORKFLOWS.md) for exact commands and connection setup.
 
-| Runtime | Installed files |
-|---------|-----------------|
-| Claude Code | `CLAUDE.md`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/session-sync.sh`, `.claude/dashboard/`, `.claude/settings.json` |
-| Codex | `AGENTS.md`, `.codex/config.toml`, `.codex/skills/`, command reference files under skills, `.codex/dashboard/` |
-| OpenCode | `AGENTS.md`, `opencode.json`, `.opencode/commands/`, `.opencode/skills/`, `.opencode/dashboard/` |
+## Upgrade and legacy data
 
-## Team Collaboration
-
-Projects can be personal or team-scoped. Personal project artifacts live under
-the workspace `.ddt/projects/` directory. Team projects live in configured team
-repos under their `projects/` folders.
-
-To add a team repo:
-
-1. Clone the team's shared repo.
-2. Add it to the Team Repos section in `.ddt/config.md`.
-3. Use the work assistant normally; project resolution uses `.ddt/registry.md`.
-
-When writing team artifacts, the assistant must pull first, write, show the
-change, and ask before committing or pushing. Personal artifacts do not use that
-git ceremony.
-
-Scratch pad entries, notebook entries, and todos are always personal and
-gitignored.
-
-## Commands And Skills
-
-The shared behavior provides project management, thinking, and todo workflows.
-Runtime surfaces differ:
-
-- Claude Code exposes slash commands under `.claude/commands`.
-- Codex exposes skills under `.codex/skills` and command behavior as skill
-  reference files.
-- OpenCode exposes commands under `.opencode/commands` and skills under
-  `.opencode/skills`.
-
-Common workflows:
-
-| Workflow | Purpose |
-|----------|---------|
-| `new-project` | Scaffold a new project |
-| `project-status` | View or update project health, progress, blockers, risks |
-| `meeting` | Capture a meeting summary |
-| `decide` | Create a decision record |
-| `project-scoping` | Create or update a project plan |
-| `project-comment` | Add a quick project comment |
-| `dashboard` | Open the local project dashboard |
-| `create-project-update` | Draft a stakeholder update |
-| `sync` | Sync team repos explicitly |
-| `jot`, `brainstorm`, `notebook` | Capture and develop ideas |
-| `todo` | Manage personal action items |
-| `self-tutorial` | Walk through the workspace features |
-
-## Workspace Structure
-
-Claude target:
-
-```text
-your-workspace/
-  README.md
-  CLAUDE.md
-  .ddt/
-  .claude/
-    commands/
-    skills/
-    hooks/
-    dashboard/
-    settings.json
+```sh
+./bootstrap/init-workspace.sh --update --runtime codex /path/to/workspace
 ```
 
-Codex target:
+The updater refreshes managed instructions/helpers, preserves customized workspace/runtime configuration and all existing records, and reconciles each required ignore rule. It does not remove already tracked private files from Git history; check existing workspace sharing before distribution.
 
-```text
-your-workspace/
-  README.md
-  AGENTS.md
-  .ddt/
-  .codex/
-    config.toml
-    skills/
-    dashboard/
-```
+Legacy scratch, notebook, todos, and specialized project documents remain readable. Explicit adoption creates V1 records while preserving originals. Do not keep editing both copies; changed original notes reappear for reconciliation. Legacy recurrence/subtasks remain in the retained original payload and are not scheduled by V1. New projects do not generate the old document set.
 
-OpenCode target:
+## Development
 
-```text
-your-workspace/
-  README.md
-  AGENTS.md
-  opencode.json
-  .ddt/
-  .opencode/
-    commands/
-    skills/
-    dashboard/
-```
-
-Team repos are separate git repos configured in `.ddt/config.md`:
-
-```text
-/path/to/team-shared/
-  projects/
-    <project-name>/
-      overview.md
-      status.md
-      plan.md
-      decisions/
-      meetings/
-      updates/
-```
-
-## Repository Contents
-
-```text
-office-work-assistant-agent/
-  README.md
-  TESTING.md
-  bootstrap/
-    init-workspace.sh                  # runtime-aware installer
-  core/
-    shared/                            # runtime-neutral .ddt files and .gitignore
-    commands/                          # canonical work-assistant commands
-    skills/                            # canonical work-assistant skills
-  adapters/
-    claude/                            # Claude root docs, settings, hook, dashboard
-    codex/                             # Codex root docs and config
-    opencode/                          # OpenCode root docs and config
-  generated/
-    claude/                            # checked-in installer source for Claude
-    codex/                             # checked-in installer source for Codex
-    opencode/                          # checked-in installer source for OpenCode
-  scripts/
-    render_templates.py                # renders generated outputs and checks freshness
-  templates/                           # legacy Claude transition tree, not installer source
-  tests/
-    run.sh                             # local smoke and generated-parity checks
-```
-
-When changing workspace behavior, edit `core/` or the relevant runtime adapter,
-then run:
+`core/runtime/` owns storage, CLI, dashboard, and the shared workflow protocol. `core/manual.md`, `core/commands/`, and `core/skills/` define assistant behavior. `adapters/` adds runtime discovery/configuration; `generated/` contains the installable output for all three runtimes.
 
 ```sh
 python3 scripts/render_templates.py
 ./tests/run.sh
 ```
 
-`bootstrap/init-workspace.sh` installs from `generated/<runtime>`. Direct edits
-to `templates/` are legacy-only and do not change installed output.
-
-## Design Principles
-
-- **Natural language first** - describe what you need; skills and commands
-  handle routing.
-- **Artifact-driven** - meeting notes, decisions, plans, and status are files.
-- **Project-centric** - project artifacts stay grouped by project.
-- **Thinking-friendly** - rough ideas can be captured and developed over time.
-- **Team-aware** - shared projects live in team repos; personal work stays local.
-- **Runtime-native** - each runtime uses its own discovery surface.
-- **Non-destructive** - update mode preserves user-owned workspace data.
+See [TESTING.md](TESTING.md) for verification boundaries. The old `templates/` and `design-concepts/` directories are historical references, not installer inputs. Source work for this redesign is on `updates-and-multiplayer`.

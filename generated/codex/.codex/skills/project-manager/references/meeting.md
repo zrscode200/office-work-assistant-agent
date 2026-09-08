@@ -1,38 +1,7 @@
 ---
-description: Capture a meeting summary for a project
+description: "Capture meeting context"
 ---
 
-Capture a meeting summary.
+Use one note for useful meeting context and actual agreements. Reconcile project context and requested local/Jira-linked work from that source. Prepare meetings with brief. Do not require a meeting-file workflow or manufacture tasks from every discussion.
 
-## Instructions
-
-1. Identify which project this meeting relates to. Resolve the project using the Project Resolution Protocol. If unclear, ask.
-2. Ask for (or extract from the user's message):
-   - Date (default to today if not specified)
-   - Attendees
-   - Purpose / topic
-   - What was discussed
-3. If the project is in a team repo, follow the **Shared Write Protocol** in AGENTS.md (pull first).
-4. Create `<project-root>/meetings/YYYY-MM-DD-<topic>.md` with YAML frontmatter and a markdown body:
-
-   ```markdown
-   ---
-   date: YYYY-MM-DD
-   attendees: [<names>]
-   purpose: <one line>
-   ---
-
-   # <Topic>
-
-   ## Discussion
-   - Key points as bullets (concise, not a transcript)
-
-   ## Decisions
-   - Any decisions made (with brief rationale)
-
-   ## Action Items
-   - [ ] Item — owner — deadline
-   ```
-5. If the project is in a team repo, complete the Shared Write Protocol (show changes, confirm, commit, push).
-6. If significant decisions were made, suggest creating a decision record with `decide` reference.
-7. If action items affect project status or plan, mention that `project-status` reference can be updated.
+Read the workspace operating manual and `.ddt/runtime/WORKFLOWS.md`. Use its shared helper and revision/privacy rules. These commands are convenience entry points; the user can express the same intent naturally.

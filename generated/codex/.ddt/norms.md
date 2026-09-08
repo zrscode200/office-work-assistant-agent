@@ -1,18 +1,10 @@
-# Team Norms
+# Working principles
 
-Working principles that guide how this team operates. The assistant references these when producing artifacts.
+Customize these to fit your team.
 
-## Principles
-
-<!-- Add your team's working principles below. Examples: -->
-
-### Decisions are documented
-Every significant decision has a written record with context, options, and rationale. "We decided in a meeting" is not sufficient without a record.
-
-### Action items have owners and deadlines
-An action item without an owner will not get done. An action item without a deadline will not get done on time.
-
-### Status is visible
-Project status should be updated regularly and accessible to stakeholders without requiring a meeting.
-
-<!-- Add, remove, or modify principles to match your team's values. -->
+- Keep one authoritative home for each fact. Project views and briefs cite it.
+- Make agreements understandable: preserve useful context and rationale in the relevant note.
+- Give follow-ups an owner and date when known; do not invent either to satisfy a template.
+- Keep current understanding useful to the next person reading the project.
+- Distinguish proposals, agreements, and unanswered questions.
+- Share selected context intentionally. Personal thinking stays private until explicitly shared.

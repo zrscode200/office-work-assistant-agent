@@ -6,21 +6,13 @@ usage() {
 Usage:
   bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode] /path/to/target-dir
 
-Stamps a target directory with the office work assistant agent:
-  - README.md (workspace guide — structure, commands, conventions)
-  - Runtime operating manual (CLAUDE.md for Claude, AGENTS.md for Codex/OpenCode)
-  - .ddt/config.md (workspace settings and autonomy mode)
-  - .ddt/profile.md (user profile template — role, team, context)
-  - .ddt/norms.md (team working principles)
-  - .ddt/registry.md (project registry — tracks all known projects)
-  - .ddt/projects/ (where project artifacts live)
-  - .ddt/personal/notebook/ (private notebook for ideas and brainstorms, gitignored)
-  - .ddt/personal/scratch/ (quick-capture scratch pad with index, gitignored)
-  - Runtime skills (Claude .claude/skills, Codex .codex/skills, OpenCode .opencode/skills)
-  - .ddt/personal/todo.json (personal todo list, gitignored)
-  - Runtime dashboard assets (Claude .claude/dashboard, Codex .codex/dashboard, OpenCode .opencode/dashboard)
-  - Runtime user config (.claude/settings.json, .codex/config.toml, or opencode.json — never overwritten on update)
-  - Runtime command/reference files
+Installs the selected assistant surface and shared runtime:
+  - Root operating manual and README
+  - .ddt/config.md, profile.md, norms.md (user-owned)
+  - .ddt/projects/ and .ddt/personal/notes|work/ (private records)
+  - .ddt/runtime/ (shared helper, workflows, and local dashboard; Node.js 18+)
+  - Runtime skills, command/reference shortcuts, and user config
+Legacy workspace data remains in place on update.
 
 Options:
   --runtime claude|codex|opencode
@@ -110,7 +102,8 @@ is_user_owned_file() {
     .ddt/profile.md|\
     .ddt/norms.md|\
     .ddt/registry.md|\
-    .ddt/projects/.gitkeep|\
+    .ddt/projects/*|\
+    .ddt/personal/*|\
     .ddt/personal/notebook/.gitkeep|\
     .ddt/personal/scratch/.gitkeep|\
     .ddt/personal/todo.json|\
@@ -195,27 +188,34 @@ fi
 
 install_gitignore() {
   src="$RUNTIME_TEMPLATE_ROOT/.gitignore"
-
-  if [ -e "$TARGET_DIR/.gitignore" ]; then
-    if grep -q ".ddt/personal/notebook/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
-      echo "skip: .gitignore already contains workspace entries"
-    elif grep -q ".ddt/personal/scratch/" "$TARGET_DIR/.gitignore" 2>/dev/null; then
-      # Existing workspace from before notebook feature — add notebook entry.
-      tmp_gitignore="$TARGET_DIR/.gitignore.tmp.$$"
-      sed 's|.ddt/personal/scratch/|.ddt/personal/notebook/\
-.ddt/personal/scratch/|' "$TARGET_DIR/.gitignore" > "$tmp_gitignore"
-      mv "$tmp_gitignore" "$TARGET_DIR/.gitignore"
-      echo "update: added notebook to .gitignore"
-    else
-      echo "" >> "$TARGET_DIR/.gitignore"
-      cat "$src" >> "$TARGET_DIR/.gitignore"
-      echo "update: appended workspace entries to .gitignore"
-    fi
-  else
+  if [ ! -e "$TARGET_DIR/.gitignore" ]; then
     cp "$src" "$TARGET_DIR/.gitignore"
     apply_template_mode "$src" "$TARGET_DIR/.gitignore"
-    echo "create: .gitignore"
+  else
+    # Reconcile every rule, including upgrades that already ignore notebook.
+    while IFS= read -r rule; do
+      case "$rule" in ''|'#'*) continue ;; esac
+      if ! grep -Fqx -- "$rule" "$TARGET_DIR/.gitignore"; then
+        printf '\n%s\n' "$rule" >> "$TARGET_DIR/.gitignore"
+      fi
+    done < "$src"
   fi
+}
+
+# Check all destinations before any copy. Do not follow a user symlink outside
+# the selected workspace, including links at directory or dangling file leaves.
+check_destination() {
+  relative="$1"
+  current="$TARGET_DIR"
+  while [ -n "$relative" ]; do
+    component="${relative%%/*}"
+    current="$current/$component"
+    if [ -L "$current" ]; then
+      echo "Error: managed destination is a symlink: $current" >&2
+      exit 1
+    fi
+    case "$relative" in */*) relative="${relative#*/}" ;; *) relative="" ;; esac
+  done
 }
 
 install_template_file() {
@@ -242,6 +242,11 @@ fi
 
 while IFS= read -r rel; do
   [ -n "$rel" ] || continue
+  check_destination "$rel"
+done < "$RUNTIME_FILES_TMP"
+
+while IFS= read -r rel; do
+  [ -n "$rel" ] || continue
   install_template_file "$rel"
 done < "$RUNTIME_FILES_TMP"
 
@@ -252,47 +257,10 @@ if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 if [ "$UPDATE_MODE" = true ]; then
-  cat <<'EOF'
-
-Update complete. System files for the selected runtime have been refreshed.
-User files (.ddt/config.md, profile.md, norms.md, registry.md, .claude/settings.json, .codex/config.toml, opencode.json, projects/, scratch/.index.md, todo.json) were not touched.
-EOF
+  echo "Update complete. Managed helpers/instructions refreshed; user configuration and existing records retained."
+  echo "Legacy records remain readable. Review .ddt/runtime/WORKFLOWS.md before explicit adoption."
 else
-  if [ "$RUNTIME_INPUT" = "codex" ]; then
-    cat <<'EOF'
-
-Setup complete. Next steps:
-- Fill in .ddt/profile.md with your role, team, and context
-- Review .ddt/norms.md and customize your team's working principles
-- Edit .ddt/config.md to set your name and autonomy mode
-- Open Codex in the workspace directory
-- Try: "new project: <name>" or use the project-manager skill references for common workflows
-- Available workflows: new-project, project-status, meeting, decide, project-scoping, project-comment, dashboard, create-project-update, sync, jot, brainstorm, notebook, todo, self-tutorial
-- For team collaboration: add team repos to the Team Repos section in .ddt/config.md
-EOF
-  elif [ "$RUNTIME_INPUT" = "opencode" ]; then
-    cat <<'EOF'
-
-Setup complete. Next steps:
-- Fill in .ddt/profile.md with your role, team, and context
-- Review .ddt/norms.md and customize your team's working principles
-- Edit .ddt/config.md to set your name and autonomy mode
-- Open OpenCode in the workspace directory
-- Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /project-comment, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo, /self-tutorial
-- For team collaboration: add team repos to the Team Repos section in .ddt/config.md
-EOF
-  else
-    cat <<'EOF'
-
-Setup complete. Next steps:
-- Fill in .ddt/profile.md with your role, team, and context
-- Review .ddt/norms.md and customize your team's working principles
-- Edit .ddt/config.md to set your name and autonomy mode
-- Open Claude Code in the workspace directory
-- Try: "new project: <name>" or use /new-project to scaffold your first project
-- Available commands: /new-project, /project-status, /meeting, /decide, /project-scoping, /project-comment, /dashboard, /create-project-update, /sync, /jot, /brainstorm, /notebook, /todo, /self-tutorial
-- For team collaboration: add team repos to the Team Repos section in .ddt/config.md
-EOF
-  fi
+  echo "Setup complete for $RUNTIME_INPUT. Set your name in .ddt/config.md and open your assistant here."
+  echo "Try capturing a note, starting a project, or tracking a follow-up. Add team clone paths when ready."
+  echo "Dashboard: node .ddt/runtime/server.js (Node.js 18+; no packages required)."
 fi

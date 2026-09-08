@@ -4,19 +4,18 @@
 
 mode: gated
 
-Options:
-- supervised: agent pauses before creating/modifying artifacts, asks for confirmation
-- gated: agent works autonomously on artifact creation, pauses for cross-project changes or deletions
-- autonomous: agent runs freely, pauses only for ambiguity
+- supervised: show proposed record writes first.
+- gated: clear in-scope local edits proceed; cross-project changes need authority.
+- autonomous: clear local edits proceed; resolve ambiguity before consequential changes.
+Existing explicit authority persists. Sharing/publication requires appropriate authority in every mode.
 
 ## Todo Surfacing
 
 todo_surfacing: contextual
 
-Options:
-- passive: only show todos when /todo is invoked
-- contextual: also surface project-tagged todos during /project-status
-- proactive: also show summary at session start (overdue, due today)
+- passive: show work when requested.
+- contextual: include relevant follow-ups while discussing a project.
+- proactive: also show local follow-up counts at Claude session start.
 
 ## Workspace
 
@@ -25,10 +24,7 @@ created: [date]
 
 ## Team Repos
 
-<!-- Add team repos below. Each line: name: /absolute/path/to/local/clone
-     Example:
-       design-team: /Users/yourname/repos/design-shared
-       platform: /Users/yourname/repos/platform-shared
-     Names should be lowercase kebab-case.
-     Each repo should be a plain git repo with a projects/ folder at the root.
-     When no repos are listed, all projects are personal. -->
+<!-- One team per line, no indentation: team-name: /absolute/path/to/local/clone
+Team clones must be separate from this personal workspace and contain projects/.
+Repository access controls team membership; author metadata provides attribution.
+No configuration is needed for standalone personal use. -->

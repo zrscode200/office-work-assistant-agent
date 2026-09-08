@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Project context</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body>
+<header><div><span class="eyebrow">OFFICE WORK ASSISTANT</span><h1>Project context</h1></div><button id="refresh">Refresh local view</button></header>
+<main>
+  <div class="toolbar"><label>View<select id="view"><option value="projects">Projects</option><option value="notes">Notebook</option><option value="work">Work</option><option value="changes">Changes</option></select></label><label>Project<select id="project"><option value="">All projects and personal work</option></select></label><label id="since-label" hidden>Since<input id="since" type="date"></label><label>Your name<input id="author" autocomplete="name" placeholder="For completion attribution"></label></div>
+  <p id="status" role="status" aria-live="polite"></p>
+  <div id="warnings"></div>
+  <section id="content" aria-label="Workspace records"></section>
+</main>
+<footer>Shared context comes from your local team checkouts. Use the assistant to pull, capture, reconcile, or publish selected changes. Jira snapshots show when they were fetched.</footer>
+</body></html>
