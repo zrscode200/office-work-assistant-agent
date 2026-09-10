@@ -5,3 +5,8 @@
 *.swp
 *.swo
 *~
+
+# Toolkit transient writes
+*.ddt-lock
+*.ddt-tmp
+*.tmp.*

@@ -137,3 +137,34 @@ test('every runtime renders the manual token, Codex skills index their reference
  assert.deepEqual(references.sort(),files(path.join(root,'core/commands')).sort());
  assert.equal(fs.readFileSync(path.join(codex,'.codex/config.toml'),'utf8').includes('[[skills.config]]'),false);
 });
+
+test('update keeps pre-existing root files, backs up legacy ones, reports drift and orphans, and detects the runtime',t=>{
+ const target=scratch(t);write(path.join(target,'README.md'),'MY README\n');write(path.join(target,'CLAUDE.md'),'MY RULES\n');
+ let out=install(target,'claude');assert.match(out,/kept: README.md/);assert.match(out,/initialized git repository/);
+ out=install(target,'claude',true);assert.match(out,/kept: README.md/);assert.equal(fs.readFileSync(path.join(target,'README.md'),'utf8'),'MY README\n');assert.equal(fs.readFileSync(path.join(target,'CLAUDE.md'),'utf8'),'MY RULES\n');
+ const manifest=fs.readFileSync(path.join(target,'.ddt/runtime/manifest.claude.txt'),'utf8');assert.match(manifest,/^kept README.md$/m);assert.match(manifest,/^managed .ddt\/runtime\/ddt.js$/m);assert.match(manifest,/^runtime claude$/m);assert.match(manifest,/^toolkit_version \d/m);
+ assert.equal(fs.readdirSync(target).some(f=>f.includes('before-update')),false);
+ const legacy=scratch(t);install(legacy,'claude');fs.unlinkSync(path.join(legacy,'.ddt/runtime/manifest.claude.txt'));
+ write(path.join(legacy,'README.md'),'OLD TOOLKIT README\n');write(path.join(legacy,'.claude/dashboard/template.html'),'<old>');
+ write(path.join(legacy,'.claude/settings.json'),JSON.stringify({hooks:{SessionStart:[{matcher:'',hooks:[{type:'command',command:'sh $CLAUDE_PROJECT_DIR/.claude/hooks/session-sync.sh'}]}]}}));
+ out=install(legacy,'claude',true);
+ assert.match(out,/backup: README.md/);assert.match(out,/orphan: .claude\/dashboard\/template.html/);assert.match(out,/differs: .claude\/settings.json/);assert.match(out,/unquoted path/);
+ const backup=fs.readdirSync(legacy).find(f=>f.startsWith('README.md.before-update-'));assert.ok(backup);assert.equal(fs.readFileSync(path.join(legacy,backup),'utf8'),'OLD TOOLKIT README\n');
+ assert.deepEqual(fs.readFileSync(path.join(legacy,'README.md')),fs.readFileSync(path.join(root,'generated/claude/README.md')));assert.ok(fs.existsSync(path.join(legacy,'.claude/dashboard/template.html')));
+ out=execFileSync('sh',[installer,'--update',legacy],{encoding:'utf8',stdio:['ignore','pipe','pipe']});assert.match(out,/updating installed runtime 'claude'/);
+ install(legacy,'copilot');assert.throws(()=>execFileSync('sh',[installer,'--update',legacy],{stdio:['ignore','pipe','pipe']}),/several runtimes/);
+ const empty=scratch(t);assert.throws(()=>execFileSync('sh',[installer,'--update',empty],{stdio:['ignore','pipe','pipe']}),/no manifest/);
+});
+
+test('installer rejects unknown flags and extra targets, honors --no-git, guards the toolkit tree, and reconciles CRLF and negated ignore rules',t=>{
+ const base=scratch(t);const target=path.join(base,'t');fs.mkdirSync(target);
+ assert.throws(()=>execFileSync('sh',[installer,'--updat','--runtime','claude',target],{stdio:['ignore','pipe','pipe']}),/unknown option/);
+ assert.throws(()=>execFileSync('sh',[installer,'--runtime','claude',target,base],{stdio:['ignore','pipe','pipe']}),/only one target/);
+ assert.deepEqual(fs.readdirSync(target),[]);
+ assert.throws(()=>install(path.join(root,'tests'),'claude'),/toolkit repository/);assert.equal(fs.existsSync(path.join(root,'tests/.ddt')),false);
+ write(path.join(target,'.gitignore'),'custom\r\n.ddt/personal/\r\n!.ddt/projects/\r\n');
+ const out=execFileSync('sh',[installer,'--no-git','--runtime','copilot',target],{encoding:'utf8',stdio:['ignore','pipe','pipe']});
+ assert.equal(fs.existsSync(path.join(target,'.git')),false);assert.match(out,/negates '.ddt\/projects\/'/);
+ const ignores=fs.readFileSync(path.join(target,'.gitignore'),'utf8');assert.equal(ignores.split(/\r?\n/).filter(l=>l==='.ddt/personal/').length,1);assert.equal(/^\.ddt\/projects\/$/m.test(ignores),false);assert.ok(ignores.split(/\r?\n/).includes('*.ddt-lock'));
+ execFileSync('sh',[installer,'--no-git','--runtime','copilot',target],{stdio:['ignore','pipe','pipe']});assert.equal(fs.readFileSync(path.join(target,'.gitignore'),'utf8'),ignores);
+});

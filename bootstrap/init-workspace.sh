@@ -2,38 +2,46 @@
 set -eu
 
 usage() {
-  cat <<'EOF'
+  cat <<'USAGE'
 Usage:
-  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode|copilot] /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode|copilot] [--no-git] /path/to/target-dir
 
 Installs the selected assistant surface and shared runtime:
   - Operating manual and README (Copilot loads its manual from .ddt/runtime/)
-  - .ddt/config.md, profile.md, norms.md (user-owned)
-  - .ddt/projects/ and .ddt/personal/notes|work/ (private records)
+  - .ddt/config.md, profile.md, norms.md (user-owned; seeded only when missing)
+  - .ddt/projects/ and .ddt/personal/notes|work/ (private records; never touched)
   - .ddt/runtime/ (shared helper, workflows, and local dashboard; Node.js 18+)
   - Runtime skills, command/reference shortcuts, and user config
-Legacy workspace data remains in place on update.
+  - .ddt/runtime/manifest.<runtime>.txt recording which files the toolkit manages
+
+Fresh install: existing files are never overwritten. A pre-existing README.md,
+CLAUDE.md or AGENTS.md is kept and recorded as yours. The target becomes a Git
+repository unless it already is one or --no-git is given.
+
+--update refreshes the files the manifest records as toolkit-managed and keeps
+files recorded as yours. User-owned files (.ddt/config.md, profile.md, norms.md,
+.claude/settings.json, .codex/config.toml, opencode.json,
+.github/copilot-instructions.md, projects and personal records) are never
+touched; a notice is printed when one differs from the current toolkit version.
+A workspace installed before manifests existed gets its root README.md,
+CLAUDE.md or AGENTS.md backed up as <file>.before-update-<timestamp> before
+they are refreshed. Files an older version managed but this version no longer
+ships are reported, never deleted. Without --runtime, --update detects the
+installed runtime from the manifest.
 
 Options:
-  --runtime claude|codex|opencode|copilot
-              Select the runtime surface to install. Currently supported:
-              claude, codex, opencode, copilot. If omitted, claude is used.
-  --update    Update system files for the selected runtime in an existing workspace.
-              User files (.ddt/config.md, profile.md, norms.md, registry.md,
-              .claude/settings.json, .codex/config.toml, opencode.json,
-              .github/copilot-instructions.md, projects/) are never touched.
-
-If no path is given, the current directory is used.
-Existing files are never overwritten unless --update is specified.
-EOF
+  --runtime claude|codex|opencode|copilot   Runtime surface (fresh install default: claude)
+  --update                                  Update an existing workspace
+  --no-git                                  Do not initialize a Git repository
+USAGE
 }
 
 UPDATE_MODE=false
+NO_GIT=false
 SUPPORTED_RUNTIMES="claude codex opencode copilot"
-RUNTIME_INPUT="claude"
+RUNTIME_INPUT=""
 TARGET_INPUT=""
 
-# Parse flags and positional args in any order
 while [ $# -gt 0 ]; do
   case "$1" in
     -h|--help)
@@ -42,6 +50,9 @@ while [ $# -gt 0 ]; do
       ;;
     --update)
       UPDATE_MODE=true
+      ;;
+    --no-git)
+      NO_GIT=true
       ;;
     --runtime)
       shift
@@ -54,7 +65,16 @@ while [ $# -gt 0 ]; do
     --runtime=*)
       RUNTIME_INPUT="${1#--runtime=}"
       ;;
+    -*)
+      echo "Error: unknown option: $1" >&2
+      echo "Run with --help for usage." >&2
+      exit 1
+      ;;
     *)
+      if [ -n "$TARGET_INPUT" ]; then
+        echo "Error: only one target directory is allowed (got '$TARGET_INPUT' and '$1')" >&2
+        exit 1
+      fi
       TARGET_INPUT="$1"
       ;;
   esac
@@ -62,6 +82,52 @@ while [ $# -gt 0 ]; do
 done
 
 TARGET_INPUT="${TARGET_INPUT:-.}"
+
+if [ ! -d "$TARGET_INPUT" ]; then
+  echo "Error: target directory does not exist: $TARGET_INPUT" >&2
+  exit 1
+fi
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd)
+TOOLKIT_VERSION=$(cat "$REPO_ROOT/VERSION" 2>/dev/null || echo unknown)
+STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+
+case "$TARGET_DIR" in
+  "$REPO_ROOT"|"$REPO_ROOT"/*)
+    echo "Error: refusing to bootstrap inside the toolkit repository: $TARGET_DIR" >&2
+    echo "Use a separate target directory." >&2
+    exit 1
+    ;;
+esac
+
+detect_runtimes() {
+  for manifest in "$TARGET_DIR"/.ddt/runtime/manifest.*.txt; do
+    [ -f "$manifest" ] || continue
+    name="${manifest##*/manifest.}"
+    echo "${name%.txt}"
+  done
+}
+
+if [ -z "$RUNTIME_INPUT" ]; then
+  if [ "$UPDATE_MODE" = true ]; then
+    detected=$(detect_runtimes)
+    count=$(printf '%s\n' "$detected" | grep -c . || true)
+    if [ "$count" -eq 1 ]; then
+      RUNTIME_INPUT="$detected"
+      echo "notice: updating installed runtime '$RUNTIME_INPUT' (from manifest)"
+    elif [ "$count" -gt 1 ]; then
+      echo "Error: several runtimes are installed ($(printf '%s' "$detected" | tr '\n' ' ')); pass --runtime" >&2
+      exit 1
+    else
+      echo "Error: no manifest found in $TARGET_DIR; pass --runtime for this workspace" >&2
+      exit 1
+    fi
+  else
+    RUNTIME_INPUT="claude"
+  fi
+fi
 
 case "$RUNTIME_INPUT" in
   claude|codex|opencode|copilot) ;;
@@ -72,26 +138,21 @@ case "$RUNTIME_INPUT" in
     ;;
 esac
 
-if [ ! -d "$TARGET_INPUT" ]; then
-  echo "Error: target directory does not exist: $TARGET_INPUT" >&2
-  exit 1
-fi
-
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
 RUNTIME_TEMPLATE_ROOT="$REPO_ROOT/generated/$RUNTIME_INPUT"
-TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd)
-
-if [ "$TARGET_DIR" = "$REPO_ROOT" ]; then
-  echo "Error: refusing to bootstrap the toolkit repository itself: $REPO_ROOT" >&2
-  echo "Use a separate target directory." >&2
-  exit 1
-fi
-
 if [ ! -d "$RUNTIME_TEMPLATE_ROOT" ]; then
   echo "Error: missing generated template for runtime '$RUNTIME_INPUT': $RUNTIME_TEMPLATE_ROOT" >&2
   exit 1
 fi
+
+MANIFEST_REL=".ddt/runtime/manifest.$RUNTIME_INPUT.txt"
+OLD_MANIFEST="$TARGET_DIR/$MANIFEST_REL"
+HAVE_MANIFEST=false
+if [ -f "$OLD_MANIFEST" ] && grep -q '^managed \|^kept ' "$OLD_MANIFEST" 2>/dev/null; then
+  HAVE_MANIFEST=true
+fi
+
+# Files an earlier toolkit version managed. Reported for workspaces without a manifest.
+LEGACY_ORPHANS=".claude/dashboard/template.html .ddt/registry.md .claude/commands/status.md .claude/commands/plan.md .claude/commands/update.md"
 
 template_files() {
   (cd "$RUNTIME_TEMPLATE_ROOT" && find . -type f -print | sed 's#^\./##' | sort)
@@ -102,13 +163,8 @@ is_user_owned_file() {
     .ddt/config.md|\
     .ddt/profile.md|\
     .ddt/norms.md|\
-    .ddt/registry.md|\
     .ddt/projects/*|\
     .ddt/personal/*|\
-    .ddt/personal/notebook/.gitkeep|\
-    .ddt/personal/scratch/.gitkeep|\
-    .ddt/personal/todo.json|\
-    .ddt/personal/scratch/.index.md|\
     .github/copilot-instructions.md|\
     .claude/settings.json|\
     .codex/config.toml|\
@@ -119,6 +175,17 @@ is_user_owned_file() {
       return 1
       ;;
   esac
+}
+
+is_root_doc() {
+  case "$1" in
+    README.md|CLAUDE.md|AGENTS.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+manifest_has() {
+  [ "$HAVE_MANIFEST" = true ] && grep -Fqx -- "$1 $2" "$OLD_MANIFEST"
 }
 
 ensure_parent_dir() {
@@ -136,24 +203,16 @@ apply_template_mode() {
   fi
 }
 
-# Copy a file, skipping if it already exists
-copy_if_missing() {
+copy_new() {
   src="$1"
   dst="$2"
   label="$3"
-
-  if [ -e "$dst" ]; then
-    echo "skip: $label already exists"
-    return
-  fi
-
   ensure_parent_dir "$dst"
   cp "$src" "$dst"
   apply_template_mode "$src" "$dst"
   echo "create: $label"
 }
 
-# Copy a file, overwriting if it exists (for --update mode)
 copy_and_overwrite() {
   src="$1"
   dst="$2"
@@ -173,35 +232,51 @@ copy_and_overwrite() {
     mv "$tmp" "$dst"
     echo "update: $label"
   else
-    cp "$src" "$dst"
-    apply_template_mode "$src" "$dst"
-    echo "create: $label"
+    copy_new "$src" "$dst" "$label"
   fi
 }
 
-# --- System files (updated with --update) ---
-
-if [ "$UPDATE_MODE" = true ]; then
-  echo "=== Update mode: refreshing system files ==="
-  copy_fn="copy_and_overwrite"
-else
-  copy_fn="copy_if_missing"
+RUNTIME_FILES_TMP="${TMPDIR:-/tmp}/office-work-runtime-files.$$"
+NEW_MANIFEST_TMP="${TMPDIR:-/tmp}/office-work-manifest.$$"
+NORMALIZED_IGNORE_TMP="${TMPDIR:-/tmp}/office-work-gitignore.$$"
+trap 'rm -f "$RUNTIME_FILES_TMP" "$NEW_MANIFEST_TMP" "$NORMALIZED_IGNORE_TMP"' EXIT HUP INT TERM
+template_files > "$RUNTIME_FILES_TMP"
+: > "$NEW_MANIFEST_TMP"
+if [ ! -s "$RUNTIME_FILES_TMP" ]; then
+  echo "Error: generated template for runtime '$RUNTIME_INPUT' has no files: $RUNTIME_TEMPLATE_ROOT" >&2
+  exit 1
 fi
+
+record() {
+  echo "$1 $2" >> "$NEW_MANIFEST_TMP"
+}
 
 install_gitignore() {
   src="$RUNTIME_TEMPLATE_ROOT/.gitignore"
-  if [ ! -e "$TARGET_DIR/.gitignore" ]; then
-    cp "$src" "$TARGET_DIR/.gitignore"
-    apply_template_mode "$src" "$TARGET_DIR/.gitignore"
-  else
-    # Reconcile every rule, including upgrades that already ignore notebook.
-    while IFS= read -r rule; do
-      case "$rule" in ''|'#'*) continue ;; esac
-      if ! grep -Fqx -- "$rule" "$TARGET_DIR/.gitignore"; then
-        printf '\n%s\n' "$rule" >> "$TARGET_DIR/.gitignore"
-      fi
-    done < "$src"
+  dst="$TARGET_DIR/.gitignore"
+  if [ ! -e "$dst" ]; then
+    copy_new "$src" "$dst" ".gitignore"
+    return
   fi
+  # Match rules against a CR-stripped copy so Windows line endings do not
+  # cause duplicates; never override a rule the user negated on purpose.
+  tr -d '\r' < "$dst" > "$NORMALIZED_IGNORE_TMP"
+  while IFS= read -r rule || [ -n "$rule" ]; do
+    case "$rule" in ''|'#'*) continue ;; esac
+    if grep -Fqx -- "$rule" "$NORMALIZED_IGNORE_TMP"; then
+      continue
+    fi
+    if grep -Fqx -- "!$rule" "$NORMALIZED_IGNORE_TMP"; then
+      echo "notice: .gitignore negates '$rule'; the toolkit rule was not added, so files under it may be committed"
+      continue
+    fi
+    if [ -s "$dst" ] && [ "$(tail -c 1 "$dst" | wc -l | tr -d ' ')" -eq 0 ]; then
+      printf '\n' >> "$dst"
+    fi
+    printf '%s\n' "$rule" >> "$dst"
+    printf '%s\n' "$rule" >> "$NORMALIZED_IGNORE_TMP"
+    echo "update: .gitignore (+$rule)"
+  done < "$src"
 }
 
 # Check all destinations before any copy. Do not follow a user symlink outside
@@ -227,19 +302,58 @@ install_template_file() {
 
   if [ "$rel" = ".gitignore" ]; then
     install_gitignore
-  elif is_user_owned_file "$rel"; then
-    copy_if_missing "$src" "$dst" "$rel"
+    return
+  fi
+
+  if is_user_owned_file "$rel"; then
+    if [ -e "$dst" ]; then
+      if cmp -s "$src" "$dst"; then
+        echo "unchanged: $rel (user-owned)"
+      else
+        echo "differs: $rel is user-owned and differs from the toolkit version; compare with generated/$RUNTIME_INPUT/$rel and merge what you want"
+      fi
+    else
+      copy_new "$src" "$dst" "$rel"
+    fi
+    return
+  fi
+
+  if [ "$UPDATE_MODE" = true ]; then
+    if manifest_has kept "$rel"; then
+      echo "kept: $rel (yours; not toolkit-managed)"
+      record kept "$rel"
+      return
+    fi
+    if [ -e "$dst" ] && [ "$HAVE_MANIFEST" = true ] && ! manifest_has managed "$rel"; then
+      echo "kept: $rel (pre-existing and not recorded as toolkit-managed; compare with generated/$RUNTIME_INPUT/$rel)"
+      record kept "$rel"
+      return
+    fi
+    if [ -e "$dst" ] && [ "$HAVE_MANIFEST" = false ] && is_root_doc "$rel" && ! cmp -s "$src" "$dst"; then
+      cp -p "$dst" "$dst.before-update-$STAMP"
+      echo "backup: $rel saved as $rel.before-update-$STAMP (no manifest; refreshing the toolkit version)"
+    fi
+    copy_and_overwrite "$src" "$dst" "$rel"
+    record managed "$rel"
+    return
+  fi
+
+  if [ -e "$dst" ]; then
+    if manifest_has managed "$rel" || { [ "$HAVE_MANIFEST" = false ] && ! is_root_doc "$rel"; }; then
+      echo "skip: $rel already exists (toolkit-managed)"
+      record managed "$rel"
+    else
+      echo "kept: $rel already exists (yours; updates will leave it alone)"
+      record kept "$rel"
+    fi
   else
-    $copy_fn "$src" "$dst" "$rel"
+    copy_new "$src" "$dst" "$rel"
+    record managed "$rel"
   fi
 }
 
-RUNTIME_FILES_TMP="${TMPDIR:-/tmp}/office-work-runtime-files.$$"
-trap 'rm -f "$RUNTIME_FILES_TMP"' EXIT HUP INT TERM
-template_files > "$RUNTIME_FILES_TMP"
-if [ ! -s "$RUNTIME_FILES_TMP" ]; then
-  echo "Error: generated template for runtime '$RUNTIME_INPUT' has no files: $RUNTIME_TEMPLATE_ROOT" >&2
-  exit 1
+if [ "$UPDATE_MODE" = true ]; then
+  echo "=== Update mode: refreshing toolkit-managed files for $RUNTIME_INPUT ==="
 fi
 
 while IFS= read -r rel; do
@@ -252,17 +366,45 @@ while IFS= read -r rel; do
   install_template_file "$rel"
 done < "$RUNTIME_FILES_TMP"
 
-# Init git if not already a repo
-if ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+# Report files an older version managed that this version no longer ships.
+if [ "$HAVE_MANIFEST" = true ]; then
+  grep '^managed ' "$OLD_MANIFEST" | while IFS= read -r line; do
+    old_rel="${line#managed }"
+    if ! grep -Fqx -- "$old_rel" "$RUNTIME_FILES_TMP" && [ -e "$TARGET_DIR/$old_rel" ]; then
+      echo "orphan: $old_rel is no longer part of the toolkit; remove it manually if unused"
+    fi
+  done
+else
+  for old_rel in $LEGACY_ORPHANS; do
+    if [ -e "$TARGET_DIR/$old_rel" ]; then
+      echo "orphan: $old_rel is no longer part of the toolkit; remove it manually if unused"
+    fi
+  done
+fi
+
+if [ "$RUNTIME_INPUT" = "claude" ] && [ -f "$TARGET_DIR/.claude/settings.json" ] && grep -q 'sh \$CLAUDE_PROJECT_DIR/\.claude/hooks/session-sync\.sh' "$TARGET_DIR/.claude/settings.json"; then
+  echo "warning: .claude/settings.json runs the session hook with an unquoted path; it fails when the workspace path contains spaces. Change the command to: sh \"\$CLAUDE_PROJECT_DIR/.claude/hooks/session-sync.sh\""
+fi
+
+mkdir -p "$(dirname -- "$OLD_MANIFEST")"
+{
+  echo "# Office Work Assistant install manifest. 'managed' files are refreshed by --update; 'kept' files are yours."
+  echo "toolkit_version $TOOLKIT_VERSION"
+  echo "runtime $RUNTIME_INPUT"
+  echo "installed_at $STAMP"
+  sort -u "$NEW_MANIFEST_TMP"
+} > "$OLD_MANIFEST"
+
+if [ "$NO_GIT" = false ] && ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   git -C "$TARGET_DIR" init
-  echo "create: initialized git repository"
+  echo "create: initialized git repository in $TARGET_DIR (use --no-git to skip)"
 fi
 
 if [ "$UPDATE_MODE" = true ]; then
-  echo "Update complete. Managed helpers/instructions refreshed; user configuration and existing records retained."
+  echo "Update complete. Toolkit-managed files refreshed; user configuration, kept files and existing records retained."
   echo "Legacy records remain readable. Review .ddt/runtime/WORKFLOWS.md before explicit adoption."
 else
-  echo "Setup complete for $RUNTIME_INPUT. Set your name in .ddt/config.md and open your assistant here."
+  echo "Setup complete for $RUNTIME_INPUT (toolkit $TOOLKIT_VERSION). Set your name in .ddt/config.md and open your assistant here."
   echo "Try capturing a note, starting a project, or tracking a follow-up. Add team clone paths when ready."
   echo "Dashboard: node .ddt/runtime/server.js (Node.js 18+; no packages required)."
   if [ "$RUNTIME_INPUT" = "copilot" ]; then
