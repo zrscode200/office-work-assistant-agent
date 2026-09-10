@@ -98,7 +98,7 @@ test('Jira concurrent refresh is rejected and later stale server response cannot
 });
 
 async function teamFixture(t){const root=scratch();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));const remote=path.join(root,'remote.git'),a=path.join(root,'a'),b=path.join(root,'b');fs.mkdirSync(remote);git(remote,'init','--bare');fs.mkdirSync(a);git(a,'init','-b','main');write(path.join(a,'README.md'),'Team fixture\n');git(a,'add','.');git(a,'commit','-m','Init');git(a,'remote','add','origin',remote);git(a,'push','-u','origin','main');git(remote,'symbolic-ref','HEAD','refs/heads/main');git(root,'clone',remote,b);
- const stores=[];for(const [i,team]of[a,b].entries()){const personal=path.join(root,'person'+i);fs.mkdirSync(personal);write(path.join(personal,'.ddt/config.md'),`## Team Repos\nteam: ${team}\n`);stores.push(createWorkspace(personal));git(team,'config','user.name','Fixture');git(team,'config','user.email','fixture@example.invalid');}return {root,a,b,remote,one:stores[0],two:stores[1]};}
+ const stores=[];for(const [i,team]of[a,b].entries()){const personal=path.join(root,'person'+i);fs.mkdirSync(personal);write(path.join(personal,'.ddt/config.md'),`## Team Repos\nteam: ${team}\n`);stores.push(createWorkspace(personal,{env:{GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1'}}));git(team,'config','user.name','Fixture');git(team,'config','user.email','fixture@example.invalid');}return {root,a,b,remote,one:stores[0],two:stores[1]};}
 async function publishRequest(store,paths){const preview=await store.run('publish-preview',{scope:'team',paths});return {scope:'team',paths,expected_head:preview.head,destination:preview.destination,expected_files:Object.fromEntries(preview.files.map(f=>[f.path,f.digest])),confirm:true,message:'Share project context'};}
 
 test('two clones share scoped project context; private/unrelated work is retained locally; stale content and staged work rejected',async t=>{
@@ -184,4 +184,111 @@ test('two teammates making divergent changes retain both versions and reject the
  const second=await two.run('publish',await publishRequest(two,paths));assert.equal(second.published,false);assert.ok(second.committed);
  assert.equal((await one.run('project',{scope:'team',project:'atlas'})).project.context,'Maya decision');assert.equal((await two.run('project',{scope:'team',project:'atlas'})).project.context,'Theo proposal');
  await assert.rejects(two.run('sync-pull',{scope:'team'}),/Pull failed/);
+});
+
+test('author defaults to the configured owner and placeholders are rejected',async t=>{
+ const {root,store}=fixture(t);
+ await assert.rejects(store.run('note-save',{expected:0,fields:{title:'x',body:'y'}}),/author is required/);
+ write(path.join(root,'.ddt/config.md'),'owner: [your name]\n');
+ await assert.rejects(store.run('note-save',{expected:0,fields:{title:'x',body:'y'}}),/author is required/);
+ await assert.rejects(store.run('note-save',{expected:0,author:'[your name]',fields:{title:'x',body:'y'}}),/placeholder/);
+ write(path.join(root,'.ddt/config.md'),'owner: Maya Chen\n');
+ const n=await store.run('note-save',{expected:0,fields:{title:'x',body:'y'}});assert.equal(n.created_by,'Maya Chen');
+});
+
+test('team-wide listing, linked private context, brief audiences, search and summary reads',async t=>{
+ const {root,store}=fixture(t);const team=scratch();t.after(()=>fs.rmSync(team,{recursive:true,force:true}));
+ write(path.join(root,'.ddt/config.md'),`owner: Maya\n## Team Repos\nteam: ${team}\n`);git(team,'init');
+ await project(store,'team','atlas');await project(store,'team','beacon');
+ const tn=await note(store,{title:'Launch plan',body:'Vendor contract ready'},{scope:'team',project:'atlas'});await note(store,{body:'Beacon note'},{scope:'team',project:'beacon'});
+ const pn=await note(store,{title:'My Atlas worry',body:'Private thought about vendor',links:[{scope:'team',project:'atlas'}]});
+ const pw=await work(store,{title:'Chase vendor',links:[{scope:'team',project:'atlas'}]});
+ git(team,'add','.');git(team,'commit','-m','Fixture');
+ assert.equal((await store.run('notes',{scope:'team'})).length,2);assert.equal((await store.run('work',{scope:'team'})).length,0);
+ const view=await store.run('project',{scope:'team',project:'atlas'});
+ assert.deepEqual(view.notes.map(n=>n.id),[tn.id]);assert.deepEqual(view.linked_private.notes.map(n=>n.id),[pn.id]);assert.deepEqual(view.linked_private.work.map(w=>w.id),[pw.id]);
+ const teamBrief=await store.run('brief',{scope:'team',project:'atlas'});assert.equal(JSON.stringify(teamBrief).includes('Private thought'),false);assert.ok(teamBrief.linked_private_excluded);
+ const mine=await store.run('brief',{scope:'team',project:'atlas',audience:'personal'});assert.equal(mine.linked_private.notes[0].id,pn.id);
+ await assert.rejects(store.run('brief',{scope:'team',project:'atlas',audience:'public'}),/audience/);
+ const found=await store.run('search',{query:'VENDOR'});assert.deepEqual(found.results.map(r=>r.id).sort(),[pn.id,tn.id,pw.id].sort());assert.ok(found.results.every(r=>!('body' in r)&&typeof r.snippet==='string'));
+ assert.equal((await store.run('note',{scope:'team',project:'atlas',id:tn.id})).body,'Vendor contract ready');assert.equal((await store.run('work-item',{id:pw.id})).title,'Chase vendor');
+ const summary=await store.run('project',{scope:'team',project:'atlas',summary:true});assert.equal(summary.notes[0].body,undefined);assert.equal(summary.notes[0].body_preview,'Vendor contract ready');
+});
+
+test('malformed records are isolated with warnings, file names own identity, and dead-writer locks recover',async t=>{
+ const {root,store}=fixture(t);await project(store);const w=await work(store,{},{project:'atlas'});
+ write(path.join(root,'.ddt/projects/atlas/notes/README.md'),'# Not a record');
+ const view=await store.run('overview');assert.equal(view.work.filter(x=>x.id===w.id).length,1);
+ const bad=view.notes.find(n=>n.malformed);assert.ok(bad);assert.ok(view.warnings.some(x=>x.storage===bad.storage));
+ assert.equal((await store.run('project',{project:'atlas'})).work.length,1);
+ const dir=path.join(root,'.ddt/projects/atlas/work');fs.copyFileSync(path.join(dir,w.id+'.json'),path.join(dir,'copy-of-work.json'));
+ const copy=(await store.run('work',{project:'atlas'})).find(x=>x.id==='copy-of-work');assert.equal(copy.id_mismatch,w.id);
+ const saved=await store.run('work-save',{project:'atlas',id:'copy-of-work',expected:1,author:'Maya',fields:{title:'Forked'}});assert.equal(saved.id,'copy-of-work');
+ assert.equal(JSON.parse(fs.readFileSync(path.join(dir,w.id+'.json'),'utf8')).title,'Follow up');
+ write(path.join(dir,w.id+'.json.ddt-lock'),JSON.stringify({pid:2147483000,at:'2000-01-01T00:00:00Z'}));
+ assert.equal((await store.run('work-save',{project:'atlas',id:w.id,expected:1,author:'Maya',fields:{status:'done'}})).status,'done');
+ write(path.join(dir,w.id+'.json.ddt-lock'),JSON.stringify({pid:process.pid,at:new Date().toISOString()}));
+ await assert.rejects(store.run('work-save',{project:'atlas',id:w.id,expected:2,author:'Maya',fields:{status:'open'}}),/busy/);fs.unlinkSync(path.join(dir,w.id+'.json.ddt-lock'));
+});
+
+test('legacy adoption validates fields, keys todos by id, and drift can be acknowledged',async t=>{
+ const {root,store}=fixture(t);const todo=path.join(root,'.ddt/personal/todo.json');write(todo,{items:[{id:'a',what:'First',due:'Friday'},{id:'b',what:'',status:'open'}]});
+ let items=(await store.run('work')).filter(w=>w.legacy);const a=items.find(w=>w.original.id==='a'),b=items.find(w=>w.original.id==='b');
+ const adoptedA=await store.run('work-adopt',{id:a.id,expected_source:a.revision,author:'Maya'});assert.equal(adoptedA.due,null);assert.equal(adoptedA.legacy_original.due,'Friday');
+ const adoptedB=await store.run('work-adopt',{id:b.id,expected_source:b.revision,author:'Maya'});assert.match(adoptedB.title,/Legacy follow-up b/);
+ assert.equal((await store.run('work-save',{id:adoptedA.id,expected:1,author:'Maya',fields:{status:'done'}})).status,'done');
+ write(todo,{items:[{id:'b',what:'',status:'open'},{id:'a',what:'First',due:'Friday'},{id:'c',what:'Third'}]});
+ items=(await store.run('work')).filter(w=>w.legacy);assert.deepEqual(items.map(w=>w.original.id),['c']);
+ const source=path.join(root,'.ddt/personal/scratch/idea.md');write(source,'# Idea\nOriginal');
+ const old=(await store.run('notes')).find(n=>n.legacy);const adopted=await store.run('note-adopt',{id:old.id,expected_source:old.revision,author:'Maya'});
+ write(source,'# Idea\nChanged');const drifted=(await store.run('notes')).find(n=>n.adoption_drift);assert.ok(drifted);
+ const ack=await store.run('note-adopt',{id:drifted.id,expected_source:drifted.revision,acknowledge_drift:true,expected:1,author:'Maya'});assert.equal(ack.id,adopted.id);assert.equal(ack.revision,2);
+ assert.equal((await store.run('notes')).some(n=>n.adoption_drift),false);
+});
+
+test('catch-up reports pulled teammate changes; pull tolerates untracked files',async t=>{
+ const {b,one,two}=await teamFixture(t);await project(one,'team');const paths=['projects/atlas/project.json'];
+ await one.run('publish',await publishRequest(one,paths));await two.run('sync-pull',{scope:'team'});
+ await one.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Maya',fields:{context:'Authored earlier'}});await one.run('publish',await publishRequest(one,paths));
+ await new Promise(r=>setTimeout(r,1100));const since=new Date().toISOString();await new Promise(r=>setTimeout(r,1100));
+ assert.equal((await two.run('catch-up',{since})).changes.length,0);
+ write(path.join(b,'unpublished.txt'),'draft');await two.run('sync-pull',{scope:'team'});
+ const pulled=(await two.run('catch-up',{since})).changes;assert.equal(pulled.length,1);assert.deepEqual(pulled[0].change,{authored:false,arrived:true,jira_refreshed:false});
+});
+
+test('Jira refresh appears in catch-up; basic auth and default site are supported',async t=>{
+ let seen;const {root,store}=jiraFixture(t,async(url,options)=>{seen=options.headers.Authorization;return jiraResponse('Done','2026-09-09T00:00:00Z');});
+ write(path.join(root,'.ddt/personal/jira.json'),{default_site:'https://example.atlassian.net/',sites:[{site:'https://example.atlassian.net',auth:'basic',email:'maya@example.invalid',token_env:'OFFICE_V1_FIXTURE_TOKEN'}]});
+ const w=await work(store,{provider:'jira',jira:{key:'ATLAS-1'}});assert.equal(w.jira.site,'https://example.atlassian.net');
+ await new Promise(r=>setTimeout(r,20));const since=new Date().toISOString();await new Promise(r=>setTimeout(r,20));
+ await store.run('jira-refresh',{id:w.id});assert.equal(seen,'Basic '+Buffer.from('maya@example.invalid:fixture-not-a-secret').toString('base64'));
+ const changes=(await store.run('catch-up',{since})).changes;assert.equal(changes.length,1);assert.equal(changes[0].change.jira_refreshed,true);
+ assert.equal((await store.run('work-save',{id:w.id,expected:1,author:'Maya',fields:{jira:{site:'https://example.atlassian.net/',key:'ATLAS-1'}}})).revision,2);
+});
+
+test('sync-fetch and sync-rebase recover from a rejected publish with record-level merging',async t=>{
+ const {one,two}=await teamFixture(t);await project(one,'team');const n=await note(one,{title:'Shared',body:'Base'},{scope:'team',project:'atlas'});
+ const notePath=`projects/atlas/notes/${n.id}.md`;await one.run('publish',await publishRequest(one,['projects/atlas/project.json',notePath]));await two.run('sync-pull',{scope:'team'});
+ await one.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Maya',fields:{context:'Maya context'}});await one.run('publish',await publishRequest(one,['projects/atlas/project.json']));
+ await two.run('note-save',{scope:'team',project:'atlas',id:n.id,expected:1,author:'Theo',fields:{body:'Theo body'}});
+ const rejected=await two.run('publish',await publishRequest(two,[notePath]));assert.equal(rejected.published,false);assert.match(rejected.error,/sync-fetch/);
+ const fetched=await two.run('sync-fetch',{scope:'team'});assert.equal(fetched.ahead,1);assert.equal(fetched.behind,1);const destination=fetched.destination;
+ const rebased=await two.run('sync-rebase',{scope:'team',expected_commit:rejected.committed,destination,confirm:true});assert.equal(rebased.rebased,true);assert.equal(rebased.behind,0);assert.equal(rebased.ahead,1);
+ assert.equal((await two.run('sync-push',{scope:'team',expected_commit:rebased.head,destination,confirm:true})).published,true);
+ await one.run('sync-pull',{scope:'team'});const merged=await one.run('project',{scope:'team',project:'atlas'});assert.equal(merged.project.context,'Maya context');assert.equal(merged.notes[0].body,'Theo body');
+ await one.run('note-save',{scope:'team',project:'atlas',id:n.id,expected:2,author:'Maya',fields:{state:'agreed'}});await one.run('publish',await publishRequest(one,[notePath]));
+ await two.run('note-save',{scope:'team',project:'atlas',id:n.id,expected:2,author:'Theo',fields:{body:'Theo again'}});
+ const again=await two.run('publish',await publishRequest(two,[notePath]));assert.equal(again.published,false);await two.run('sync-fetch',{scope:'team'});
+ const fieldMerge=await two.run('sync-rebase',{scope:'team',expected_commit:again.committed,destination,confirm:true});assert.equal(fieldMerge.rebased,true);
+ const local=await two.run('note',{scope:'team',project:'atlas',id:n.id});assert.equal(local.state,'agreed');assert.equal(local.body,'Theo again');assert.equal(local.revision,4);assert.equal(local.history.length,4);
+ await two.run('sync-push',{scope:'team',expected_commit:fieldMerge.head,destination,confirm:true});await one.run('sync-pull',{scope:'team'});
+ await one.run('note-save',{scope:'team',project:'atlas',id:n.id,expected:4,author:'Maya',fields:{body:'Maya final'}});await one.run('publish',await publishRequest(one,[notePath]));
+ await two.run('note-save',{scope:'team',project:'atlas',id:n.id,expected:4,author:'Theo',fields:{body:'Theo final'}});
+ const third=await two.run('publish',await publishRequest(two,[notePath]));await two.run('sync-fetch',{scope:'team'});
+ const conflict=await two.run('sync-rebase',{scope:'team',expected_commit:third.committed,destination,confirm:true});
+ assert.equal(conflict.rebased,false);assert.deepEqual(conflict.unresolved[0].conflicts,['body']);assert.equal(conflict.unresolved[0].id,n.id);assert.equal(conflict.unresolved[0].upstream.body,'Maya final');assert.equal(conflict.unresolved[0].local.body,'Theo final');
+ assert.equal((await two.run('sync-status',{scope:'team'})).head,third.committed);
+ const resolved=await two.run('sync-rebase',{scope:'team',expected_commit:third.committed,destination,confirm:true,resolution:{[notePath]:{body:{value:'Agreed final'}}}});
+ assert.equal(resolved.rebased,true);const final=await two.run('note',{scope:'team',project:'atlas',id:n.id});assert.equal(final.body,'Agreed final');assert.equal(final.revision,6);
+ assert.equal((await two.run('sync-push',{scope:'team',expected_commit:resolved.head,destination,confirm:true})).published,true);
 });

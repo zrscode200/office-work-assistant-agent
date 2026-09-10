@@ -18,6 +18,7 @@ function sourceList(record) {
 }
 function card(record) {
   const el=node('article',undefined,'record');
+  if(record.malformed){el.append(node('h2',record.title||record.id),node('p',`Malformed record at ${record.storage}: ${record.error}. Other records are unaffected; repair or remove it with your assistant.`,'error'));return el;}
   const row=node('div',undefined,'row');row.append(node('h2',record.title||record.id));
   row.append(node('span',record.legacy?'Legacy source':record.provider==='jira'?'Jira':record.state||record.health||record.status||record.kind,'badge'));el.append(row);
   el.append(node('div',`${record.scope}${record.project?' / '+record.project:''} · ${record.updated_by||record.created_by||'Original source'} · ${record.updated_at||''}${record.legacy?'':' · revision '+record.revision}`,'meta'));
@@ -27,7 +28,8 @@ function card(record) {
     if(record.context)el.append(node('h3','Current understanding'),node('div',record.context,'body'));
     const notes=snapshot.notes.filter(n=>projectKey(n)===projectKey(record));
     const work=snapshot.work.filter(w=>projectKey(w)===projectKey(record));
-    el.append(node('p',`${notes.length} notes · ${work.filter(w=>w.status!=='done').length} linked work items`,'meta'));
+    const openWork=w=>w.provider==='jira'?!/^(done|closed|resolved)$/i.test(w.snapshot?.status||''):w.status!=='done';
+    el.append(node('p',`${notes.length} notes · ${work.filter(openWork).length} open work items`,'meta'));
     const open=node('button','Read project notes');open.addEventListener('click',()=>{$('project').value=projectKey(record);$('view').value='notes';render();});el.append(open);
   }
   if(record.kind==='note')el.append(details('Read note',record.body||''));
@@ -76,6 +78,7 @@ async function load(){
 }
 const initial=new URL(location.href).searchParams.get('view');if(views.has(initial))$('view').value=initial;
 $('since').value=new Date(Date.now()-7*86400000).toISOString().slice(0,10);
+try{const saved=localStorage.getItem('ddt-author');if(saved)$('author').value=saved;$('author').addEventListener('change',()=>{try{localStorage.setItem('ddt-author',$('author').value.trim());}catch{}});}catch{}
 for(const id of ['view','project','since'])$(id).addEventListener('change',render);
 $('refresh').addEventListener('click',()=>load().catch(e=>{$('status').textContent=e.message;}));
 (async()=>{token=(await(await fetch('/api/session')).json()).token;await load();})().catch(e=>{$('status').textContent=e.message;});

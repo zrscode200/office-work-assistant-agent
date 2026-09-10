@@ -9,7 +9,7 @@ const { createWorkspace } = require('./ddt');
 function createServer(workspace = process.cwd()) {
   const store = createWorkspace(workspace);
   const token = crypto.randomBytes(32).toString('hex');
-  const readCommands = new Set(['overview','projects','project','notes','work','brief','catch-up','sync-status']);
+  const readCommands = new Set(['overview','projects','project','notes','note','work','work-item','search','brief','catch-up','sync-status']);
   const server = http.createServer(async (req,res) => {
     const origin = `http://127.0.0.1:${server.address().port}`;
     const headers = {
@@ -34,10 +34,10 @@ function createServer(workspace = process.cwd()) {
         return send(200,{ok:true,result:await store.run(command,input)});
       }
       if (req.method === 'POST' && url.pathname === '/api/work') {
-        if (req.headers['x-ddt-token'] !== token || req.headers['content-type'] !== 'application/json') return send(403,{error:'Session token and JSON required'});
-        let body = '';
-        for await (const chunk of req) { body += chunk; if (body.length > 65536) return send(413,{error:'Request too large'}); }
-        const input = JSON.parse(body);
+        if (req.headers['x-ddt-token'] !== token || !String(req.headers['content-type'] || '').toLowerCase().startsWith('application/json')) return send(403,{error:'Session token and application/json body required'});
+        const chunks = []; let size = 0;
+        for await (const chunk of req) { const part = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), 'utf8'); size += part.length; if (size > 65536) return send(413,{error:'Request too large'}); chunks.push(part); }
+        const input = JSON.parse(Buffer.concat(chunks).toString('utf8'));
         // The dashboard can only change local completion state. Capture/edit/publish stay in the assistant workflow.
         if (!input.fields || Object.keys(input.fields).length !== 1 || !['open','done'].includes(input.fields.status)) return send(400,{error:'Only completion/undo is available here'});
         const existing = (await store.run('work',input)).find(item => item.id === input.id);
