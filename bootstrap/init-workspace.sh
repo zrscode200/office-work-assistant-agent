@@ -88,9 +88,10 @@ if [ ! -d "$TARGET_INPUT" ]; then
   exit 1
 fi
 
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
-TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd)
+# Physical paths, so a symlink alias cannot slip past the toolkit-tree guard.
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd -P)
+TARGET_DIR=$(CDPATH= cd -- "$TARGET_INPUT" && pwd -P)
 TOOLKIT_VERSION=$(cat "$REPO_ROOT/VERSION" 2>/dev/null || echo unknown)
 STAMP=$(date -u +%Y%m%dT%H%M%SZ)
 
@@ -147,7 +148,7 @@ fi
 MANIFEST_REL=".ddt/runtime/manifest.$RUNTIME_INPUT.txt"
 OLD_MANIFEST="$TARGET_DIR/$MANIFEST_REL"
 HAVE_MANIFEST=false
-if [ -f "$OLD_MANIFEST" ] && grep -q '^managed \|^kept ' "$OLD_MANIFEST" 2>/dev/null; then
+if [ -f "$OLD_MANIFEST" ] && grep -Eq '^(managed|kept) ' "$OLD_MANIFEST" 2>/dev/null; then
   HAVE_MANIFEST=true
 fi
 
@@ -184,8 +185,31 @@ is_root_doc() {
   esac
 }
 
+# Runtime configuration the toolkit seeds once; personal config/profile/norms are
+# expected to diverge and never produce a notice.
+is_runtime_config() {
+  case "$1" in
+    .claude/settings.json|.codex/config.toml|opencode.json|.github/copilot-instructions.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 manifest_has() {
   [ "$HAVE_MANIFEST" = true ] && grep -Fqx -- "$1 $2" "$OLD_MANIFEST"
+}
+
+# Another runtime installed in the same workspace may own a shared file such as README.md.
+other_runtime_managing() {
+  for other in "$TARGET_DIR"/.ddt/runtime/manifest.*.txt; do
+    [ -f "$other" ] || continue
+    [ "$other" = "$OLD_MANIFEST" ] && continue
+    if grep -Fqx -- "managed $1" "$other"; then
+      name="${other##*/manifest.}"
+      echo "${name%.txt}"
+      return 0
+    fi
+  done
+  return 1
 }
 
 ensure_parent_dir() {
@@ -309,12 +333,19 @@ install_template_file() {
     if [ -e "$dst" ]; then
       if cmp -s "$src" "$dst"; then
         echo "unchanged: $rel (user-owned)"
-      else
+      elif is_runtime_config "$rel"; then
         echo "differs: $rel is user-owned and differs from the toolkit version; compare with generated/$RUNTIME_INPUT/$rel and merge what you want"
+      else
+        echo "unchanged: $rel (user-owned; yours to edit)"
       fi
     else
       copy_new "$src" "$dst" "$rel"
     fi
+    return
+  fi
+
+  if [ -e "$dst" ] && owner=$(other_runtime_managing "$rel"); then
+    echo "shared: $rel is managed by the $owner install in this workspace; left unchanged (the $RUNTIME_INPUT version is at generated/$RUNTIME_INPUT/$rel)"
     return
   fi
 
@@ -339,7 +370,10 @@ install_template_file() {
   fi
 
   if [ -e "$dst" ]; then
-    if manifest_has managed "$rel" || { [ "$HAVE_MANIFEST" = false ] && ! is_root_doc "$rel"; }; then
+    # Without a manifest, only a file identical to the template is known to be
+    # the toolkit's; anything else is recorded as yours. Use --update to refresh
+    # an older toolkit-installed workspace.
+    if manifest_has managed "$rel" || { [ "$HAVE_MANIFEST" = false ] && cmp -s "$src" "$dst"; }; then
       echo "skip: $rel already exists (toolkit-managed)"
       record managed "$rel"
     else

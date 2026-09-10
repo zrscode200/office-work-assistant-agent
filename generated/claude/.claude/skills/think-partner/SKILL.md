@@ -5,4 +5,4 @@ description: "Explore ideas and capture or develop notes without a promotion pip
 
 Help the user think. Quick capture and developed thinking use the same stable note. Distinguish possibilities from agreements, and keep private notes private even when linked to shared projects.
 
-Read `CLAUDE.md` and `.ddt/runtime/WORKFLOWS.md` before writes. Follow configured autonomy and existing user authority; use expected revisions and stable IDs. Preserve legacy originals and report partial multi-record saves. References in this skill or runtime command directory are optional shortcuts into this same protocol.
+Read `CLAUDE.md` and `.ddt/runtime/WORKFLOWS.md` before writes. Follow configured autonomy and existing user authority; use expected revisions and stable IDs. Preserve legacy originals and report partial multi-record saves. The references or commands installed for this runtime are optional shortcuts into this same protocol.

@@ -139,9 +139,11 @@ test('every runtime renders the manual token, Codex skills index their reference
 });
 
 test('update keeps pre-existing root files, backs up legacy ones, reports drift and orphans, and detects the runtime',t=>{
- const target=scratch(t);write(path.join(target,'README.md'),'MY README\n');write(path.join(target,'CLAUDE.md'),'MY RULES\n');
- let out=install(target,'claude');assert.match(out,/kept: README.md/);assert.match(out,/initialized git repository/);
- out=install(target,'claude',true);assert.match(out,/kept: README.md/);assert.equal(fs.readFileSync(path.join(target,'README.md'),'utf8'),'MY README\n');assert.equal(fs.readFileSync(path.join(target,'CLAUDE.md'),'utf8'),'MY RULES\n');
+ const target=scratch(t);write(path.join(target,'README.md'),'MY README\n');write(path.join(target,'CLAUDE.md'),'MY RULES\n');write(path.join(target,'.claude/commands/todo.md'),'MINE\n');
+ let out=install(target,'claude');assert.match(out,/kept: README.md/);assert.match(out,/kept: .claude\/commands\/todo.md/);assert.match(out,/initialized git repository/);
+ write(path.join(target,'.ddt/config.md'),'owner: Maya\n');
+ out=install(target,'claude',true);assert.match(out,/kept: README.md/);assert.equal(fs.readFileSync(path.join(target,'README.md'),'utf8'),'MY README\n');assert.equal(fs.readFileSync(path.join(target,'CLAUDE.md'),'utf8'),'MY RULES\n');assert.equal(fs.readFileSync(path.join(target,'.claude/commands/todo.md'),'utf8'),'MINE\n');
+ assert.equal(/differs: .ddt\/config.md/.test(out),false);
  const manifest=fs.readFileSync(path.join(target,'.ddt/runtime/manifest.claude.txt'),'utf8');assert.match(manifest,/^kept README.md$/m);assert.match(manifest,/^managed .ddt\/runtime\/ddt.js$/m);assert.match(manifest,/^runtime claude$/m);assert.match(manifest,/^toolkit_version \d/m);
  assert.equal(fs.readdirSync(target).some(f=>f.includes('before-update')),false);
  const legacy=scratch(t);install(legacy,'claude');fs.unlinkSync(path.join(legacy,'.ddt/runtime/manifest.claude.txt'));
@@ -152,7 +154,8 @@ test('update keeps pre-existing root files, backs up legacy ones, reports drift 
  const backup=fs.readdirSync(legacy).find(f=>f.startsWith('README.md.before-update-'));assert.ok(backup);assert.equal(fs.readFileSync(path.join(legacy,backup),'utf8'),'OLD TOOLKIT README\n');
  assert.deepEqual(fs.readFileSync(path.join(legacy,'README.md')),fs.readFileSync(path.join(root,'generated/claude/README.md')));assert.ok(fs.existsSync(path.join(legacy,'.claude/dashboard/template.html')));
  out=execFileSync('sh',[installer,'--update',legacy],{encoding:'utf8',stdio:['ignore','pipe','pipe']});assert.match(out,/updating installed runtime 'claude'/);
- install(legacy,'copilot');assert.throws(()=>execFileSync('sh',[installer,'--update',legacy],{stdio:['ignore','pipe','pipe']}),/several runtimes/);
+ out=install(legacy,'copilot');assert.match(out,/shared: README.md is managed by the claude install/);assert.deepEqual(fs.readFileSync(path.join(legacy,'README.md')),fs.readFileSync(path.join(root,'generated/claude/README.md')));assert.equal(/^(managed|kept) README.md$/m.test(fs.readFileSync(path.join(legacy,'.ddt/runtime/manifest.copilot.txt'),'utf8')),false);
+ assert.throws(()=>execFileSync('sh',[installer,'--update',legacy],{stdio:['ignore','pipe','pipe']}),/several runtimes/);
  const empty=scratch(t);assert.throws(()=>execFileSync('sh',[installer,'--update',empty],{stdio:['ignore','pipe','pipe']}),/no manifest/);
 });
 

@@ -12,6 +12,13 @@ const slugPattern = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const idPattern = /^[a-z0-9][a-z0-9-]{0,99}$/;
 const placeholderPattern = /^\[.*\]$/;
 const META_FIELDS = new Set(['schema_version', 'revision', 'created_at', 'created_by', 'updated_at', 'updated_by', 'history']);
+// Fields that name what a record is; a merge never lets a choice change them.
+const IDENTITY_FIELDS = { note: ['id', 'legacy_source'], work: ['id', 'provider', 'jira', 'legacy_source'], project: [] };
+const HEALTH = ['unknown', 'on-track', 'at-risk', 'blocked'];
+const PROJECT_STATUS = ['active', 'completed', 'archived'];
+const NOTE_STATES = ['note', 'proposal', 'agreed'];
+const WORK_STATUS = ['open', 'in-progress', 'done'];
+const STALE_LOCK_MS = 10 * 60 * 1000;
 const COMMANDS = ['overview', 'projects', 'project', 'project-save', 'project-adopt', 'notes', 'note', 'note-save', 'note-adopt', 'work', 'work-item', 'work-save', 'work-adopt', 'jira-refresh', 'search', 'brief', 'catch-up', 'sync-status', 'sync-fetch', 'sync-pull', 'sync-rebase', 'publish-preview', 'publish', 'sync-push'];
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const fail = message => { throw new Error(message); };
@@ -25,7 +32,7 @@ const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 const validDue = due => typeof due === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(due) && !Number.isNaN(Date.parse(due)) && new Date(due).toISOString().slice(0, 10) === due;
 const fileId = file => path.basename(file).replace(/\.(md|json)$/, '');
 // Git messages can carry remote URLs; never echo embedded credentials.
-const redact = value => String(value || '').replace(/:\/\/[^/@\s]+@/g, '://***@').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 2).join(' ').slice(0, 300);
+const redact = value => String(value || '').replace(/:\/\/[^/@\s]+@/g, '://***@').replace(/([?&](?:access_token|token|password|private_token)=)[^&\s]+/gi, '$1***').split('\n').map(l => l.trim()).filter(Boolean).slice(0, 2).join(' ').slice(0, 300);
 
 function safePath(root, ...parts) {
   const base = fs.realpathSync(root);
@@ -94,10 +101,14 @@ function acquireLock(lock, busyMessage) {
       return fd;
     } catch (e) {
       if (e.code !== 'EEXIST') throw e;
-      let owner = null;
-      try { owner = JSON.parse(fs.readFileSync(lock, 'utf8')); } catch {}
-      if (attempt === 0 && owner && Number.isInteger(owner.pid) && owner.pid !== process.pid && !alive(owner.pid)) {
-        try { fs.unlinkSync(lock); } catch {}
+      let owner = null, stale = false;
+      try { owner = JSON.parse(fs.readFileSync(lock, 'utf8')); } catch { owner = null; }
+      if (owner && Number.isInteger(owner.pid)) stale = owner.pid !== process.pid && !alive(owner.pid);
+      else { try { stale = Date.now() - fs.statSync(lock).mtimeMs > STALE_LOCK_MS; } catch { stale = false; } } // Older versions wrote empty locks.
+      if (attempt === 0 && stale) {
+        // Rename first so two writers cannot both remove a freshly recreated lock.
+        const moved = lock + '.stale.' + crypto.randomUUID();
+        try { fs.renameSync(lock, moved); fs.unlinkSync(moved); } catch {}
         continue;
       }
       const age = owner?.at && Number.isFinite(Date.parse(owner.at)) ? `${Math.max(0, Math.round((Date.now() - Date.parse(owner.at)) / 1000))}s old` : 'unknown age';
@@ -148,12 +159,17 @@ function validateSources(sources, scope) {
 
 // Three-way merge of one record: fields changed only locally win, fields changed
 // only upstream win, fields changed on both sides need an explicit choice.
-function mergeRecords(base, upstream, local, choices = {}) {
-  if (!base || !upstream || !local) return { ok: false, conflicts: ['record exists on only one side'] };
-  const keys = new Set([...Object.keys(base), ...Object.keys(upstream), ...Object.keys(local)].filter(k => !META_FIELDS.has(k)));
+function mergeRecords(base, upstream, local, choices = {}, identity = []) {
+  if (!upstream || !local) return { ok: false, conflicts: ['record exists on only one side'] };
+  const common = base || {}; // Both sides created the record: every differing field needs a choice.
+  const keys = new Set([...Object.keys(common), ...Object.keys(upstream), ...Object.keys(local)].filter(k => !META_FIELDS.has(k)));
   const merged = { ...upstream }, conflicts = [];
   for (const key of keys) {
-    const localChanged = !same(local[key], base[key]), upstreamChanged = !same(upstream[key], base[key]);
+    if (identity.includes(key)) {
+      if (!same(local[key], upstream[key])) conflicts.push(`${key} (identity; cannot be chosen)`);
+      continue;
+    }
+    const localChanged = !same(local[key], common[key]), upstreamChanged = !same(upstream[key], common[key]);
     if (localChanged && upstreamChanged && !same(local[key], upstream[key])) {
       const choice = choices[key];
       if (choice === 'local') merged[key] = local[key];
@@ -163,12 +179,13 @@ function mergeRecords(base, upstream, local, choices = {}) {
     } else if (localChanged) merged[key] = local[key];
   }
   if (conflicts.length) return { ok: false, conflicts };
-  const added = (local.history || []).slice((base.history || []).length);
+  const added = (local.history || []).slice((common.history || []).length);
   const entries = added.length ? added : [{ revision: 0, at: local.updated_at || now(), author: local.updated_by || 'unknown' }];
   merged.history = [...(upstream.history || []), ...entries.map((h, i) => ({ ...h, revision: upstream.revision + i + 1 }))];
   merged.revision = upstream.revision + entries.length;
-  merged.updated_at = local.updated_at || now();
-  merged.updated_by = local.updated_by || upstream.updated_by;
+  const later = (local.updated_at || '') >= (upstream.updated_at || '') ? local : upstream;
+  merged.updated_at = later.updated_at || now();
+  merged.updated_by = later.updated_by || upstream.updated_by || local.updated_by;
   return { ok: true, record: merged };
 }
 
@@ -260,13 +277,21 @@ function createWorkspace(workspace, options = {}) {
           const folder = projectDir(scope, name);
           if (!fs.statSync(folder).isDirectory()) continue;
           const file = projectFile(scope, name);
-          result.push(fs.existsSync(file) ? recordView(file, 'project', scope, name) : { kind: 'project', id: name, title: name, scope, project: name, legacy: true });
+          result.push(fs.existsSync(file) ? projectRecord(file, scope, name, warnings) : { kind: 'project', id: name, title: name, scope, project: name, legacy: true });
         } catch (e) { warnings.push({ scope, project: name, error: e.message }); }
       }
     }
     return { projects: result, warnings };
   }
-  function teamProjects(scope) { return projects().projects.filter(p => p.scope === scope); }
+  function projectRecord(file, scope, name, warnings) {
+    try { return recordView(file, 'project', scope, name); }
+    catch (e) {
+      const storage = path.relative(scopeRoot(scope), file);
+      if (warnings) warnings.push({ scope, project: name, kind: 'project', storage, error: e.message });
+      return { kind: 'project', id: name, title: name, scope, project: name, storage, malformed: true, error: e.message };
+    }
+  }
+  function teamProjects(scope) { scopeRoot(scope); return projects().projects.filter(p => p.scope === scope); }
   function legacyNotes(scope, project) {
     const sources = project ? ['overview.md', 'status.md', 'plan.md', 'comments.md', 'meetings', 'decisions', 'updates'] : ['.ddt/personal/scratch', '.ddt/personal/notebook'];
     const base = project ? projectDir(scope, project) : root;
@@ -312,9 +337,15 @@ function createWorkspace(workspace, options = {}) {
       return { ...w, snapshot, snapshot_error, execution_owner: 'jira' };
     });
   }
-  function legacyWork(includeAdopted = false) {
-    const current = listRecords('work', 'personal');
-    const adopted = new Set(current.map(w => w.legacy_source));
+  function legacyWork(includeAdopted = false, current = listRecords('work', 'personal')) {
+    const adopted = new Set(), adoptedIds = new Set();
+    for (const w of current) {
+      if (!w.legacy_source) continue;
+      adopted.add(w.legacy_source);
+      // Records adopted by an older version carry index keys; the id still identifies the todo.
+      const m = String(w.legacy_source).match(/^(.*)#(?:\d+|id):(.+)$/);
+      if (m && m[2] !== 'undefined' && m[2] !== 'null') adoptedIds.add(`${m[1]}|${m[2]}`);
+    }
     const result = [];
     for (const rel of ['.ddt/personal/todo.json', '.ddt/personal/todo-complete.json']) {
       const file = safePath(root, rel);
@@ -329,7 +360,8 @@ function createWorkspace(workspace, options = {}) {
         // does not re-key adopted items; older index keys still count as adopted.
         const indexed = `${rel}#${index}:${item.id}`;
         const source = item.id !== undefined && item.id !== null && counts.get(String(item.id)) === 1 ? `${rel}#id:${item.id}` : indexed;
-        if (includeAdopted || !(adopted.has(source) || adopted.has(indexed))) result.push({ ...item, id: 'legacy-' + hash(source).slice(0, 24), title: item.what, scope: 'personal', project: null, kind: 'work', legacy: true, legacy_source: source, revision: hash(JSON.stringify(item)), original: item });
+        const byId = item.id !== undefined && item.id !== null && adoptedIds.has(`${rel}|${item.id}`);
+        if (includeAdopted || !(adopted.has(source) || adopted.has(indexed) || byId)) result.push({ ...item, id: 'legacy-' + hash(source).slice(0, 24), title: item.what, scope: 'personal', project: null, kind: 'work', legacy: true, legacy_source: source, revision: hash(JSON.stringify(item)), original: item });
       });
     }
     return result;
@@ -339,7 +371,8 @@ function createWorkspace(workspace, options = {}) {
     const include = scope => !options.scopes || options.scopes.includes(scope);
     const allNotes = [], allWork = [];
     if (include('personal')) {
-      for (const [kind, read] of [['notes', () => notes()], ['work', () => workItems()], ['legacy-work', () => legacyWork()]]) {
+      let personalWork = [];
+      for (const [kind, read] of [['notes', () => notes()], ['work', () => (personalWork = workItems())], ['legacy-work', () => legacyWork(false, personalWork)]]) {
         try { (kind === 'notes' ? allNotes : allWork).push(...read()); }
         catch (e) { result.warnings.push({ scope: 'personal', kind, error: e.message }); }
       }
@@ -357,6 +390,45 @@ function createWorkspace(workspace, options = {}) {
     return { ...rest, ...(typeof body === 'string' ? { body_preview: body.slice(0, 160) } : {}) };
   };
   const maybeSummary = (input, records) => input.summary ? records.map(summarize) : records;
+  // Invariants every stored record must satisfy, whether it comes from a save or a merge.
+  function checkProject(scope, data) {
+    for (const key of ['title', 'purpose', 'scope_description', 'context']) text(data[key], key, key !== 'title');
+    if (!HEALTH.includes(data.health)) fail('Invalid health');
+    if (!PROJECT_STATUS.includes(data.status)) fail('Invalid project status');
+    data.sources = validateSources(data.sources, scope);
+    return data;
+  }
+  function checkEntity(kind, scope, data) {
+    text(data.title, 'title');
+    data.sources = validateSources(data.sources, scope);
+    if (!Array.isArray(data.links) || data.links.some(l => !object(l) || !slugPattern.test(l.project || '') || !(l.scope === 'personal' || slugPattern.test(l.scope || '')))) fail('Invalid project links');
+    if (scope !== 'personal' && data.links.some(l => l.scope !== scope)) fail('Shared links must stay in their team scope');
+    data.links = data.links.map(l => ({ scope: l.scope, project: l.project }));
+    if (kind === 'note') {
+      text(data.body, 'body', true);
+      if (!NOTE_STATES.includes(data.state)) fail('Invalid note state');
+      return data;
+    }
+    if (!['local', 'jira'].includes(data.provider)) fail('Invalid work provider');
+    if (data.provider === 'jira') {
+      if (!object(data.jira)) fail('Invalid Jira reference');
+      const site = data.jira.site || jiraConnections()?.default_site;
+      if (!site) fail('Jira site required: pass jira.site or set default_site in .ddt/personal/jira.json');
+      if (!/^[A-Z][A-Z0-9_]*-\d+$/.test(data.jira.key || '')) fail('Invalid Jira reference');
+      let url;
+      try { url = new URL(site); } catch { fail('Jira site must be an HTTPS URL without credentials/query'); }
+      if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) fail('Jira site must be an HTTPS URL without credentials/query');
+      data.jira = { site: url.href.replace(/\/$/, ''), key: data.jira.key };
+      delete data.status; delete data.owner; delete data.due;
+    } else {
+      if (data.jira) fail('Local work cannot contain Jira execution data');
+      if (!WORK_STATUS.includes(data.status)) fail('Invalid work status');
+      text(data.owner, 'owner', true);
+      if (data.due !== null && !validDue(data.due)) fail('Invalid due date');
+    }
+    return data;
+  }
+  function checkRecord(kind, scope, data) { return kind === 'project' ? checkProject(scope, data) : checkEntity(kind, scope, data); }
   function saveProject(input) {
     const scope = input.scope || 'personal';
     const file = projectFile(scope, input.project);
@@ -366,12 +438,7 @@ function createWorkspace(workspace, options = {}) {
       if (!object(fields)) fail('fields must be an object');
       const allowed = ['title', 'purpose', 'scope_description', 'context', 'health', 'status', 'sources'];
       for (const key of Object.keys(fields)) if (!allowed.includes(key)) fail(`Unsupported project field: ${key}`);
-      const data = { id: old?.id || crypto.randomUUID(), title: input.project, purpose: '', scope_description: '', context: '', health: 'unknown', status: 'active', sources: [], ...old, ...fields };
-      for (const key of ['title', 'purpose', 'scope_description', 'context']) text(data[key], key, key !== 'title');
-      if (!['unknown', 'on-track', 'at-risk', 'blocked'].includes(data.health)) fail('Invalid health');
-      if (!['active', 'completed', 'archived'].includes(data.status)) fail('Invalid project status');
-      data.sources = validateSources(data.sources, scope);
-      return data;
+      return checkProject(scope, { id: old?.id || crypto.randomUUID(), title: input.project, purpose: '', scope_description: '', context: '', health: 'unknown', status: 'active', sources: [], ...old, ...fields });
     });
   }
   function saveEntity(kind, input) {
@@ -386,37 +453,12 @@ function createWorkspace(workspace, options = {}) {
       const data = kind === 'note'
         ? { title: '', body: '', links: [], sources: [], state: 'note', ...old, ...fields, id }
         : { title: '', provider: 'local', status: 'open', owner: '', due: null, sources: [], links: [], ...old, ...fields, id };
-      text(data.title, 'title');
-      data.sources = validateSources(data.sources, scope);
-      if (!Array.isArray(data.links) || data.links.some(l => !object(l) || !slugPattern.test(l.project || '') || !(l.scope === 'personal' || slugPattern.test(l.scope || '')))) fail('Invalid project links');
-      if (scope !== 'personal' && data.links.some(l => l.scope !== scope)) fail('Shared links must stay in their team scope');
-      data.links = data.links.map(l => ({ scope: l.scope, project: l.project }));
-      if (kind === 'note') {
-        text(data.body, 'body', true);
-        if (!['note', 'proposal', 'agreed'].includes(data.state)) fail('Invalid note state');
-      } else {
-        if (!['local', 'jira'].includes(data.provider)) fail('Invalid work provider');
+      if (kind === 'work') {
         if (old && data.provider !== old.provider) fail('Provider identity cannot change; create a separate reference');
-        if (data.provider === 'jira') {
-          if (Object.keys(fields).some(k => ['status', 'owner', 'due'].includes(k))) fail('Jira owns status, assignee, and due date; change them in Jira');
-          if (!object(data.jira)) fail('Invalid Jira reference');
-          const site = data.jira.site || jiraConnections()?.default_site;
-          if (!site) fail('Jira site required: pass jira.site or set default_site in .ddt/personal/jira.json');
-          if (!/^[A-Z][A-Z0-9_]*-\d+$/.test(data.jira.key || '')) fail('Invalid Jira reference');
-          let url;
-          try { url = new URL(site); } catch { fail('Jira site must be an HTTPS URL without credentials/query'); }
-          if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) fail('Jira site must be an HTTPS URL without credentials/query');
-          const normalized = { site: url.href.replace(/\/$/, ''), key: data.jira.key };
-          if (old && !same(normalized, old.jira)) fail('Jira reference identity cannot change');
-          data.jira = normalized;
-          delete data.status; delete data.owner; delete data.due;
-        } else {
-          if (data.jira) fail('Local work cannot contain Jira execution data');
-          if (!['open', 'in-progress', 'done'].includes(data.status)) fail('Invalid work status');
-          text(data.owner, 'owner', true);
-          if (data.due !== null && !validDue(data.due)) fail('Invalid due date');
-        }
+        if (data.provider === 'jira' && Object.keys(fields).some(k => ['status', 'owner', 'due'].includes(k))) fail('Jira owns status, assignee, and due date; change them in Jira');
       }
+      checkEntity(kind, scope, data);
+      if (kind === 'work' && data.provider === 'jira' && old && !same(data.jira, old.jira)) fail('Jira reference identity cannot change');
       return data;
     });
   }
@@ -466,7 +508,8 @@ function createWorkspace(workspace, options = {}) {
     if (item.provider !== 'jira') fail('Work item is not linked to Jira');
     const connections = jiraConnections();
     if (!connections) fail('Configure the Jira connection privately in .ddt/personal/jira.json');
-    const connection = connections.sites?.find(c => c.site?.replace(/\/$/, '') === item.jira.site);
+    const normalizedSite = value => { try { return new URL(value).href.replace(/\/$/, ''); } catch { return null; } };
+    const connection = connections.sites?.find(c => normalizedSite(c.site) === item.jira.site);
     if (!connection) fail('Jira site is not approved in private connection configuration');
     const base = new URL(connection.api_base || connection.site);
     if (base.protocol !== 'https:' || base.username || base.password || base.search || base.hash) fail('Invalid private Jira API base');
@@ -611,6 +654,9 @@ function createWorkspace(workspace, options = {}) {
     if (state.ahead === 1) outgoingFiles(input.scope, state.head);
     return pushCommit(input, state.head);
   }
+  function readRecordAt(scope, ref, file) {
+    try { return decodeText(file, git(scope, ['show', `${ref}:${file}`])); } catch { return null; }
+  }
   function rebase(input) {
     if (!input.confirm) fail('Rebase needs explicit confirmation of the commit and destination');
     const scope = input.scope;
@@ -621,37 +667,51 @@ function createWorkspace(workspace, options = {}) {
     if (trackedChanges(scope)) fail('Commit or resolve local team changes before rebasing');
     const files = outgoingFiles(scope, state.head);
     const upstream = git(scope, ['rev-parse', '@{upstream}']);
-    const base = git(scope, ['merge-base', 'HEAD', '@{upstream}']);
-    const repo = scopeRoot(scope);
-    const editor = { env: { GIT_EDITOR: 'true', GIT_SEQUENCE_EDITOR: 'true' } };
+    const base = git(scope, ['merge-base', state.head, upstream]);
     const choices = object(input.resolution) ? input.resolution : {};
-    try { git(scope, ['rebase', upstream], editor); }
-    catch (e) {
-      let conflicted = [];
-      try { conflicted = git(scope, ['diff', '--name-only', '--diff-filter=U']).split('\n').filter(Boolean); } catch {}
-      if (!conflicted.length) {
-        try { git(scope, ['rebase', '--abort']); } catch {}
-        fail(`Rebase failed and was aborted (${redact(e.message)})`);
-      }
-      const unresolved = [];
-      for (const file of conflicted) {
-        const version = ref => { try { return decodeText(file, git(scope, ['show', `${ref}:${file}`])); } catch { return null; } };
-        const entry = { path: file, ...recordIdentity(file) };
-        if (!publicationPath(file)) { unresolved.push({ ...entry, conflicts: ['non-record path'] }); continue; }
-        const local = version(state.head), theirs = version(upstream), common = version(base);
-        const merged = mergeRecords(common, theirs, local, object(choices[file]) ? choices[file] : {});
-        if (!merged.ok) { unresolved.push({ ...entry, conflicts: merged.conflicts, local, upstream: theirs }); continue; }
-        fs.writeFileSync(path.join(repo, file), encodeRecord(file, merged.record));
-        git(scope, ['add', '--', file]);
-      }
-      if (unresolved.length) {
-        try { git(scope, ['rebase', '--abort']); } catch {}
-        return { rebased: false, head: state.head, unresolved, guidance: 'Both sides changed the listed fields. Compare local and upstream, agree the merged meaning with the user, then rerun sync-rebase with resolution: { "<path>": { "<field>": "local" | "upstream" | { "value": ... } } }. No history was rewritten.' };
-      }
-      git(scope, ['rebase', '--continue'], editor);
+    const unresolved = [], entries = [];
+    for (const file of files) {
+      const identity = { path: file, ...recordIdentity(file) };
+      let local = readRecordAt(scope, state.head, file);
+      const theirs = readRecordAt(scope, upstream, file), common = readRecordAt(scope, base, file);
+      if (local && theirs && identity.kind === 'project') local = { ...local, id: theirs.id }; // Project ids are informational.
+      if (!local) { unresolved.push({ ...identity, conflicts: ['the outgoing commit removed this record; removals cannot be replayed'] }); continue; }
+      if (common && !theirs) { unresolved.push({ ...identity, conflicts: ['upstream removed or moved this record'], local, upstream: null }); continue; }
+      if (!theirs || same(theirs, common)) { entries.push({ file, blob: git(scope, ['rev-parse', `${state.head}:${file}`]) }); continue; } // Upstream did not touch it: replay the reviewed bytes.
+      const result = mergeRecords(common, theirs, local, object(choices[file]) ? choices[file] : {}, IDENTITY_FIELDS[identity.kind] || []);
+      if (!result.ok) { unresolved.push({ ...identity, conflicts: result.conflicts, local, upstream: theirs }); continue; }
+      try { checkRecord(identity.kind, scope, result.record); }
+      catch (e) { unresolved.push({ ...identity, conflicts: [`invalid resolution: ${e.message}`], local, upstream: theirs }); continue; }
+      entries.push({ file, content: encodeRecord(file, result.record) });
     }
+    if (unresolved.length) return { rebased: false, head: state.head, unresolved, guidance: 'Compare local and upstream, agree the merged meaning with the user, then rerun sync-rebase with resolution: { "<path>": { "<field>": "local" | "upstream" | { "value": ... } } } for the listed fields. Identity fields and removed records cannot be chosen; re-save on top of upstream instead. No history was rewritten.' };
+    // Replay with plumbing on the upstream tree, like publish: no hooks, editors or
+    // half-finished rebase state; commit signing follows the repository configuration.
+    const repo = scopeRoot(scope);
+    const index = path.resolve(repo, git(scope, ['rev-parse', '--git-path', 'index']));
+    const tempIndex = index + '.' + crypto.randomUUID() + '.ddt-tmp';
+    const env = { GIT_INDEX_FILE: tempIndex };
+    let commit;
+    try {
+      git(scope, ['read-tree', upstream], { env });
+      for (const entry of entries) {
+        const blob = entry.blob || git(scope, ['hash-object', '-w', '--stdin'], { input: entry.content });
+        git(scope, ['update-index', '--add', '--cacheinfo', '100644', blob, entry.file], { env });
+      }
+      const tree = git(scope, ['write-tree'], { env });
+      if (tree === git(scope, ['rev-parse', upstream + '^{tree}'])) commit = upstream; // Upstream already holds these changes.
+      else {
+        const [name, email, date] = git(scope, ['log', '-1', '--format=%an%x00%ae%x00%aI', state.head]).split('\0');
+        const message = git(scope, ['log', '-1', '--format=%B', state.head]);
+        commit = git(scope, ['commit-tree', tree, '-p', upstream], { input: message + '\n', env: { GIT_AUTHOR_NAME: name, GIT_AUTHOR_EMAIL: email, GIT_AUTHOR_DATE: date } });
+      }
+    } finally { if (fs.existsSync(tempIndex)) fs.unlinkSync(tempIndex); }
+    // Move index and working tree first; Git refuses to overwrite untracked files, and nothing has changed if it does.
+    try { git(scope, ['read-tree', '-m', '-u', state.head, commit]); }
+    catch (e) { fail(`Rebase computed but the working tree could not be updated; nothing changed (${redact(e.message)})`); }
+    git(scope, ['update-ref', 'HEAD', commit, state.head]);
     const after = gitStatus(scope);
-    return { rebased: true, previous_commit: state.head, head: after.head, ahead: after.ahead, behind: after.behind, records: files, next: 'Review the rebased records, then sync-push with expected_commit set to head' };
+    return { rebased: true, previous_commit: state.head, head: after.head, ahead: after.ahead, behind: after.behind, records: files, next: after.ahead ? 'Review the replayed records, then sync-push with expected_commit set to head' : 'Upstream already contained these changes; nothing to push' };
   }
   function publish(input) {
     if (!input.confirm) fail('Publication needs explicit confirmation of contents, destination, and message');
@@ -698,11 +758,18 @@ function createWorkspace(workspace, options = {}) {
     return pushCommit(input, commit);
   }
   function arrivals(since, warnings) {
-    // The local reflog records when pulled content arrived in this clone.
+    // The local reflog records when content reached this clone; commits made under
+    // this clone's own Git identity are the user's publications, reported as authored.
     const arrived = new Set();
     for (const scope of Object.keys(config().teams)) {
       try {
-        for (const file of git(scope, ['diff', '--name-only', `HEAD@{${since}}`, 'HEAD', '--', 'projects/']).split('\n').filter(Boolean)) arrived.add(`${scope}:${file}`);
+        let me = '';
+        try { me = git(scope, ['config', '--get', 'user.email']); } catch {}
+        for (const line of git(scope, ['log', '--format=%H %ce', `HEAD@{${since}}..HEAD`, '--', 'projects/']).split('\n').filter(Boolean)) {
+          const [sha, email = ''] = line.split(' ');
+          if (me && email === me) continue;
+          for (const file of git(scope, ['diff-tree', '--no-commit-id', '--name-only', '-r', sha, '--', 'projects/']).split('\n').filter(Boolean)) arrived.add(`${scope}:${file}`);
+        }
       } catch (e) { warnings.push({ scope, error: `Arrival history unavailable; showing author times only (${redact(e.message)})` }); }
     }
     return arrived;
@@ -722,7 +789,10 @@ function createWorkspace(workspace, options = {}) {
       }
       case 'note-save': return saveEntity('note', input);
       case 'note-adopt': return adoptNote(input);
-      case 'work': return maybeSummary(input, input.project ? workItems(input) : [...workItems(input), ...((input.scope || 'personal') === 'personal' ? legacyWork() : [])]);
+      case 'work': {
+        const items = workItems(input);
+        return maybeSummary(input, input.project || (input.scope || 'personal') !== 'personal' ? items : [...items, ...legacyWork(false, items)]);
+      }
       case 'work-item': {
         if (!input.id) fail('work-item requires id');
         const found = [...workItems(input), ...(!input.project && (input.scope || 'personal') === 'personal' ? legacyWork() : [])].find(w => w.id === input.id);
@@ -761,10 +831,10 @@ function createWorkspace(workspace, options = {}) {
         return { ...view, audience, instruction: `Synthesize this current context with linked notes and work for a ${audience} audience. Distinguish proposals from agreements, cite sources and Jira fetch times, ${audience === 'personal' ? 'keep linked private material out of anything shared with the team, ' : ''}and do not persist another maintained status document.` };
       }
       case 'catch-up': {
-        if (typeof input.since !== 'string' || Number.isNaN(Date.parse(input.since))) fail('since must be an ISO date or timestamp');
+        if (typeof input.since !== 'string' || !/^\d{4}-\d{2}-\d{2}(T|$)/.test(input.since) || Number.isNaN(Date.parse(input.since))) fail('since must be an ISO date (YYYY-MM-DD) or timestamp');
         const sinceMs = Date.parse(input.since);
         const view = overview();
-        const arrived = arrivals(input.since, view.warnings);
+        const arrived = arrivals(new Date(sinceMs).toISOString(), view.warnings);
         const change = r => {
           const authored = Boolean(r.updated_at && Date.parse(r.updated_at) > sinceMs);
           const pulled = r.scope !== 'personal' && arrived.has(`${r.scope}:${r.storage}`);
@@ -788,7 +858,7 @@ function createWorkspace(workspace, options = {}) {
     const scope = input.scope || 'personal';
     const file = projectFile(scope, input.project);
     if (!fs.existsSync(projectDir(scope, input.project))) fail('Project not found');
-    const project = fs.existsSync(file) ? recordView(file, 'project', scope, input.project) : { id: input.project, title: input.project, legacy: true, scope };
+    const project = fs.existsSync(file) ? projectRecord(file, scope, input.project) : { id: input.project, title: input.project, legacy: true, scope };
     const view = overview({ scopes: scope === 'personal' ? ['personal'] : [scope, 'personal'] });
     const linksHere = r => r.links?.some(l => l.scope === scope && l.project === input.project);
     const own = r => r.scope === scope && (r.project === input.project || linksHere(r));
@@ -820,4 +890,4 @@ if (require.main === module) {
   })().catch(e => { console.error(JSON.stringify({ ok: false, error: e.message })); process.exitCode = 1; });
 }
 
-module.exports = { createWorkspace, safePath, decodeRecord, atomicWrite, mergeRecords, VERSION, COMMANDS };
+module.exports = { createWorkspace, safePath, decodeRecord, atomicWrite, mergeRecords, redact, VERSION, COMMANDS };
