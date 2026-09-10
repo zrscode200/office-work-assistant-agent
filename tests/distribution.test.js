@@ -44,6 +44,8 @@ test('Claude hook runs read-only without teams, including shell metacharacters i
  const base=scratch(t);const target=path.join(base,'space $literal `literal`');fs.mkdirSync(target);install(target);write(path.join(target,'.ddt/config.md'),'todo_surfacing: proactive\n');
  const {createWorkspace}=require('../core/runtime/ddt');return createWorkspace(target).run('work-save',{expected:0,author:'Maya',fields:{title:'Personal task'}}).then(()=>{
  const config=JSON.parse(fs.readFileSync(path.join(target,'.claude/settings.json')));const cmd=config.hooks.SessionStart[0].hooks[0].command;const output=execFileSync('sh',['-c',cmd],{encoding:'utf8',env:{...process.env,CLAUDE_PROJECT_DIR:target}});assert.match(output,/1 open/);assert.match(output,/not refreshed/);
+ // Claude Code only injects context from the documented hookSpecificOutput shape.
+ const hook=JSON.parse(output);assert.equal(hook.hookSpecificOutput.hookEventName,'SessionStart');assert.match(hook.hookSpecificOutput.additionalContext,/1 open/);assert.equal('additionalContext' in hook,false);
  assert.equal(fs.statSync(path.join(target,'.claude/hooks/session-sync.sh')).mode&0o111,0o111);
  });
 });
@@ -110,10 +112,28 @@ test('Copilot native onboarding overrides reach fresh and upgraded workspaces wi
  // Every other common reference still comes from core; the override is Copilot-only.
  for(const command of files(path.join(root,'core/commands')).filter(x=>x!=='self-tutorial.md')){
   const rel=files(path.join(target,'.github/skills')).find(x=>x.endsWith('/references/'+command));
-  assert.equal(fs.readFileSync(path.join(target,'.github/skills',rel),'utf8'),fs.readFileSync(path.join(root,'core/commands',command),'utf8').replaceAll('the workspace operating manual','`.ddt/runtime/ASSISTANT.md`'));
+  assert.equal(fs.readFileSync(path.join(target,'.github/skills',rel),'utf8'),fs.readFileSync(path.join(root,'core/commands',command),'utf8').replaceAll('{{MANUAL}}','`.ddt/runtime/ASSISTANT.md`'));
  }
  for(const runtime of runtimes.filter(x=>x!=='copilot')){
-  const dir=path.join(root,'generated',runtime);const rel=files(dir).find(x=>x.endsWith('/self-tutorial.md'));
-  assert.deepEqual(fs.readFileSync(path.join(dir,rel)),fs.readFileSync(path.join(root,'core/commands/self-tutorial.md')));
+  const dir=path.join(root,'generated',runtime);const rel=files(dir).find(x=>x.endsWith('/self-tutorial.md'));const manual=runtime==='claude'?'CLAUDE.md':'AGENTS.md';
+  assert.equal(fs.readFileSync(path.join(dir,rel),'utf8'),fs.readFileSync(path.join(root,'core/commands/self-tutorial.md'),'utf8').replaceAll('{{MANUAL}}','`'+manual+'`'));
  }
+});
+
+test('every runtime renders the manual token, Codex skills index their references, and no inert skills config ships',()=>{
+ for(const runtime of runtimes){
+  const generated=path.join(root,'generated',runtime);
+  for(const rel of files(generated))if(rel.endsWith('.md'))assert.equal(fs.readFileSync(path.join(generated,rel),'utf8').includes('{{'),false,runtime+' '+rel);
+  const manual=runtime==='claude'?'CLAUDE.md':runtime==='copilot'?'.ddt/runtime/ASSISTANT.md':'AGENTS.md';
+  const skills=files(generated).filter(f=>f.endsWith('/SKILL.md'));assert.equal(skills.length,3,runtime);
+  for(const rel of skills)assert.ok(fs.readFileSync(path.join(generated,rel),'utf8').includes('`'+manual+'`'),runtime+' '+rel);
+ }
+ const codex=path.join(root,'generated/codex');const references=[];
+ for(const name of ['project-manager','think-partner','task-manager']){
+  const dir=path.join(codex,'.codex/skills',name);const skill=fs.readFileSync(path.join(dir,'SKILL.md'),'utf8');
+  const links=[...skill.matchAll(/\]\((references\/[^)]+)\)/g)];assert.ok(links.length,name);
+  for(const [,link] of links){assert.ok(fs.statSync(path.join(dir,link)).isFile());references.push(path.basename(link));}
+ }
+ assert.deepEqual(references.sort(),files(path.join(root,'core/commands')).sort());
+ assert.equal(fs.readFileSync(path.join(codex,'.codex/config.toml'),'utf8').includes('[[skills.config]]'),false);
 });

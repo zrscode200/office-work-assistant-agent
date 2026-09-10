@@ -60,9 +60,9 @@ Use this path only when the user asks to perform a real operation or accepts a c
 
 Explain the audience boundary before helping with a shared contribution:
 
-- Linking a private note or follow-up to a team project does not share its contents. A personal project briefing may include private linked context; that does not make it suitable to send to the team. Use shared or explicitly authorized sources for a team-facing brief.
+- Linking a private note or follow-up to a team project does not share its contents. A brief with audience personal includes the user's own linked private context for their preparation; a team brief (the default) omits it and is the only kind suitable to send onward.
 - Shared context lives in the configured team Git repository. Each teammate uses their own clone. A local team save is not a published change; say which state actually occurred. Another teammate's changes arrive through explicit synchronization, not live co-editing.
-- Sharing selected content and publishing it are deliberate steps. Show the actual content and destination and honor existing scoped authority. Follow the shared helper's preview/revision/publication flow; explaining it does not authorize a pull, push, or message.
+- Sharing selected content and publishing it are deliberate steps. Show the actual content and destination and honor existing scoped authority. Follow the shared helper's preview/revision/publication flow; explaining it does not authorize a pull, push, or message. If two people publish the same record, the helper merges fields and asks about genuine conflicts; nothing is force-pushed.
 - Jira is optional and owns execution fields for linked issues. An explicit refresh produces a dated private snapshot, not live truth. Teams remains everyday conversation; this workspace helps prepare source-backed context and briefings. Missing either service does not block local use.
 
 Do not contact Jira, inspect credentials, pull/push a repository, send a Teams message, or change tool permissions as a tour demonstration. Help perform a separately requested operation under its normal authority and workflow.

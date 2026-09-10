@@ -2,6 +2,6 @@
 description: "Learn the workspace"
 ---
 
-Read the operating manual and explain projects, notes, and linked work using the user’s context. Show how a note develops in place, a follow-up appears in several views, and shared project context supports Teams conversations. Explain standalone operation, optional Jira, explicit sharing, and retained legacy sources.
+Read {{MANUAL}} and explain projects, notes, and linked work using the user’s context. Show how a note develops in place, a follow-up appears in several views, and shared project context supports Teams conversations. Explain standalone operation, optional Jira, explicit sharing, and retained legacy sources.
 
-Read the workspace operating manual and `.ddt/runtime/WORKFLOWS.md`. Use its shared helper and revision/privacy rules. These commands are convenience entry points; the user can express the same intent naturally.
+Read {{MANUAL}} and `.ddt/runtime/WORKFLOWS.md`. Use its shared helper and revision/privacy rules. These commands are convenience entry points; the user can express the same intent naturally.

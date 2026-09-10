@@ -1,13 +1,4 @@
 #:schema https://developers.openai.com/codex/config-schema.json
 
-[[skills.config]]
-path = "./skills/project-manager"
-enabled = true
-
-[[skills.config]]
-path = "./skills/think-partner"
-enabled = true
-
-[[skills.config]]
-path = "./skills/task-manager"
-enabled = true
+# Skills under .codex/skills are discovered automatically. To disable one, add a
+# skills.config entry (name = "<skill>", enabled = false) to your user-level config.

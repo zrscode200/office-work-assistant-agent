@@ -38,6 +38,9 @@ Try these prompts:
 - “Use /office-notes to capture this idea and link it to Atlas privately.”
 - “Use /office-projects to prepare a briefing on Atlas with sources.”
 - “Use /office-work to track a follow-up with Maya for Friday.”
+- “What's on my plate this week?”
+- “What changed in Atlas since Monday?” (includes teammates' changes that arrived through a pull and Jira refreshes)
+- “Find the note about the vendor contract.”
 
 The three skills include references for jot, notebook, brainstorming, projects, meetings, decisions, todo, Jira, catch-up, dashboard, and synchronization. These references are guidance loaded as needed; their filenames are not standalone Copilot CLI commands.
 
@@ -74,6 +77,8 @@ node .ddt/runtime/server.js
 
 Open the printed loopback URL. The dashboard reads the same records and can complete/reopen local follow-ups. Stop it with Ctrl-C.
 
-Update from the toolkit with `bootstrap/init-workspace.sh --update --runtime copilot /path/to/workspace`. The updater refreshes toolkit helpers, its namespaced office skills/agent, and this guide. It preserves `.github/copilot-instructions.md`, your configuration, unrelated customizations, and all existing data. Legacy adoption remains explicit. If the instructions file existed before installation, the named agent and skills still point directly to the installed operating manual.
+Update from the toolkit with `bootstrap/init-workspace.sh --update --runtime copilot /path/to/workspace`. The updater refreshes toolkit helpers, its namespaced office skills/agent, and this guide. It preserves `.github/copilot-instructions.md`, your configuration, unrelated customizations, and all existing data, and prints a notice when a preserved file differs from the current toolkit version so you can merge the parts you want. Legacy adoption remains explicit. If the instructions file existed before installation, the named agent and skills still point directly to the installed operating manual.
+
+When two teammates publish the same record, the second push is rejected and the assistant recovers with `sync-fetch`, `sync-rebase` and `sync-push`. Records are merged field by field; a field both people changed is shown to you for a decision. Nothing is force-pushed.
 
 Copilot CLI installation, account authentication, and organization policy are managed separately. Setup does not log in, install dependencies, or publish source/data.

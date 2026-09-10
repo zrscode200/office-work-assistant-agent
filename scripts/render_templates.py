@@ -3,7 +3,6 @@
 from __future__ import annotations
 import argparse
 import filecmp
-import os
 import shutil
 import stat
 import sys
@@ -12,12 +11,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIMES = ("claude", "codex", "opencode", "copilot")
+# Where each runtime's always-loaded manual lives; core text refers to it as {{MANUAL}}.
+MANUAL_PATH = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "opencode": "AGENTS.md", "copilot": ".ddt/runtime/ASSISTANT.md"}
+TOKEN = "{{MANUAL}}"
 COPILOT_SKILLS = {"project-manager": "office-projects", "think-partner": "office-notes", "task-manager": "office-work"}
-COMMAND_OWNER = {"jot": "think-partner", "notebook": "think-partner", "brainstorm": "think-partner", "todo": "task-manager", "jira": "task-manager"}
+# Every core command is assigned explicitly; the renderer refuses to guess an owner.
+COMMAND_OWNER = {
+    "brainstorm": "think-partner", "jot": "think-partner", "notebook": "think-partner",
+    "todo": "task-manager", "jira": "task-manager",
+    "catch-up": "project-manager", "create-project-update": "project-manager", "dashboard": "project-manager",
+    "decide": "project-manager", "meeting": "project-manager", "new-project": "project-manager",
+    "project-comment": "project-manager", "project-scoping": "project-manager", "project-status": "project-manager",
+    "self-tutorial": "project-manager", "sync": "project-manager",
+}
 
 
 def copy_tree(src: Path, dst: Path) -> None:
     for file in src.rglob("*"):
+        if file.is_symlink():
+            raise SystemExit(f"symlinks are not rendered: {file}")
         if file.is_file():
             target = dst / file.relative_to(src)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +41,25 @@ def write(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+def render_text(text: str, runtime: str, source: Path) -> str:
+    rendered = text.replace(TOKEN, f"`{MANUAL_PATH[runtime]}`")
+    if "{{" in rendered:
+        raise SystemExit(f"unrendered token in {source} for {runtime}")
+    return rendered
+
+
+def commands_by_owner() -> list[Path]:
+    commands = sorted((ROOT / "core/commands").glob("*.md"))
+    names = {command.stem for command in commands}
+    missing = sorted(names - set(COMMAND_OWNER))
+    extra = sorted(set(COMMAND_OWNER) - names)
+    if missing or extra:
+        raise SystemExit(f"COMMAND_OWNER must list every core command exactly (missing={missing}, extra={extra})")
+    return commands
+
+
 def render_all(out_root: Path) -> None:
+    commands = commands_by_owner()
     for runtime in RUNTIMES:
         out = out_root / runtime
         if out.exists():
@@ -48,34 +78,31 @@ def render_all(out_root: Path) -> None:
             if runtime == "copilot":
                 name = COPILOT_SKILLS[skill.name]
                 dest = out / ".github/skills" / name
-                copy_tree(skill, dest)
-                # Native adapter guidance may specialize a common skill while
-                # the renderer still owns its complete command-reference index.
-                override = ROOT / "adapters" / runtime / dest.relative_to(out) / "SKILL.md"
-                text = (override if override.is_file() else dest / "SKILL.md").read_text()
-                text = text.replace(f"name: {skill.name}\n", f"name: {name}\n")
-                text = text.replace("the root operating manual", "`.ddt/runtime/ASSISTANT.md`")
-                references = [command for command in sorted((ROOT / "core/commands").glob("*.md"))
-                              if COMMAND_OWNER.get(command.stem, "project-manager") == skill.name]
+            else:
+                name = skill.name
+                dest = out / f".{runtime}/skills" / name
+            copy_tree(skill, dest)
+            # Native adapter guidance may specialize a common skill while the
+            # renderer still owns its complete command-reference index.
+            override = ROOT / "adapters" / runtime / dest.relative_to(out) / "SKILL.md"
+            source = override if override.is_file() else skill / "SKILL.md"
+            text = render_text(source.read_text().replace(f"name: {skill.name}\n", f"name: {name}\n"), runtime, source)
+            if runtime in ("copilot", "codex"):
+                references = [command for command in commands if COMMAND_OWNER[command.stem] == skill.name]
                 text += "\nAll workspace paths above are relative to the workspace root. Read the relevant reference when needed:\n\n"
                 text += "".join(f"- [{command.stem}](references/{command.name})\n" for command in references)
-                write(dest / "SKILL.md", text)
-            else:
-                copy_tree(skill, out / f".{runtime}/skills" / skill.name)
-        for command in sorted((ROOT / "core/commands").glob("*.md")):
-            owner = COMMAND_OWNER.get(command.stem, "project-manager")
-            text = command.read_text()
+            write(dest / "SKILL.md", text)
+        for command in commands:
+            owner = COMMAND_OWNER[command.stem]
             if runtime == "copilot":
                 dest = out / ".github/skills" / COPILOT_SKILLS[owner] / "references" / command.name
-                override = ROOT / "adapters" / runtime / dest.relative_to(out)
-                if override.is_file():
-                    text = override.read_text()
-                text = text.replace("the workspace operating manual", "`.ddt/runtime/ASSISTANT.md`")
             elif runtime == "codex":
                 dest = out / ".codex/skills" / owner / "references" / command.name
             else:
                 dest = out / f".{runtime}/commands" / command.name
-            write(dest, text)
+            override = ROOT / "adapters" / runtime / dest.relative_to(out)
+            source = override if override.is_file() else command
+            write(dest, render_text(source.read_text(), runtime, source))
         for folder in (".ddt/projects", ".ddt/personal/notes", ".ddt/personal/work"):
             write(out / folder / ".gitkeep", "")
         # Retain the old server entry point for existing bookmarks/workflows.
@@ -90,18 +117,16 @@ def compare_dirs(left: Path, right: Path) -> list[str]:
         problems.append(f"missing from generated: {Path(cmp.left) / name}")
     for name in cmp.right_only:
         problems.append(f"extra in generated: {Path(cmp.right) / name}")
-    for name in cmp.diff_files:
-        problems.append(f"stale generated file: {Path(cmp.right) / name}")
     for name in cmp.common_files:
         left_file = Path(cmp.left) / name
         right_file = Path(cmp.right) / name
+        # Byte comparison: a same-size, same-mtime file can still differ.
+        if not filecmp.cmp(left_file, right_file, shallow=False):
+            problems.append(f"stale generated file: {right_file}")
         left_mode = stat.S_IMODE(left_file.stat().st_mode)
         right_mode = stat.S_IMODE(right_file.stat().st_mode)
         if left_mode != right_mode:
-            problems.append(
-                "stale generated mode: "
-                f"{right_file} expected {left_mode:o} got {right_mode:o}"
-            )
+            problems.append(f"stale generated mode: {right_file} expected {left_mode:o} got {right_mode:o}")
     for sub in cmp.common_dirs:
         problems.extend(compare_dirs(Path(cmp.left) / sub, Path(cmp.right) / sub))
     return problems
