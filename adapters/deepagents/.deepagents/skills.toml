@@ -1,0 +1,5 @@
+# Office Work Assistant skill selection for this workspace. Only [skills] is allowed here.
+[skills]
+mode = "project"
+sources = [".deepagents/skills"]
+include_builtin = true

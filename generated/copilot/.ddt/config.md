@@ -15,7 +15,7 @@ todo_surfacing: contextual
 
 - passive: show work when requested.
 - contextual: include relevant follow-ups while discussing a project.
-- proactive: also show local follow-up counts at session start where the runtime installs a session hook (Claude Code).
+- proactive: also show local follow-up counts at session start where the runtime installs a session hook (Claude Code; deepagents clients launched with --trust-project-hooks).
 
 ## Workspace
 

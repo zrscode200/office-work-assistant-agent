@@ -248,6 +248,7 @@
         <span class="pill">Claude Code</span>
         <span class="pill">Codex</span>
         <span class="pill">OpenCode</span>
+        <span class="pill">lc-code (deepagents)</span>
         <span class="muted small">same records, same helper</span>
       </div>
       <p class="hint">Use <kbd>→</kbd> and <kbd>←</kbd> to move between slides, <kbd>i</kbd> for the index.</p>
@@ -373,7 +374,7 @@ launch date and cut the pilot to two regions.</pre>
           <rect class="box-personal" x="32" y="56" width="170" height="84" rx="6"/>
           <text class="t-title" x="44" y="80">AI assistant runtime</text>
           <text class="t-muted" x="44" y="100">Copilot CLI · Claude Code</text>
-          <text class="t-muted" x="44" y="118">Codex · OpenCode</text>
+          <text class="t-muted" x="44" y="118">Codex · OpenCode · lc-code</text>
           <rect class="box-personal" x="250" y="56" width="150" height="84" rx="6"/>
           <text class="t-title" x="262" y="80">ddt.js helper</text>
           <text class="t-muted" x="262" y="100">Node 18+, no packages</text>
@@ -441,7 +442,7 @@ launch date and cut the pilot to two regions.</pre>
     <div class="main">
       <h2>How the assistant is instructed</h2>
       <div class="layers">
-        <div class="layer"><b>Always loaded</b><div>Copilot: a short seed in <span class="mono">.github/copilot-instructions.md</span>, yours to edit. Claude Code: <span class="mono">CLAUDE.md</span>. Codex and OpenCode: <span class="mono">AGENTS.md</span>.</div></div>
+        <div class="layer"><b>Always loaded</b><div>Copilot: a short seed in <span class="mono">.github/copilot-instructions.md</span>, yours to edit. Claude Code: <span class="mono">CLAUDE.md</span>. Codex and OpenCode: <span class="mono">AGENTS.md</span>. deepagents clients: <span class="mono">.deepagents/AGENTS.md</span>, refreshed by the toolkit, together with a root <span class="mono">AGENTS.md</span> that holds your agent's learnings.</div></div>
         <div class="layer"><b>On demand: the manual</b><div><span class="mono">.ddt/runtime/ASSISTANT.md</span> holds the information model, the intent rules, the privacy rules and the autonomy modes. Copilot's skills and named agent read it when office work comes up.</div></div>
         <div class="layer"><b>Skills</b><div><span class="mono">office-projects</span>, <span class="mono">office-notes</span>, <span class="mono">office-work</span>, each with references for meetings, decisions, catch-up, sync, Jira and the guided tour. Other runtimes ship the same content as skills and slash commands.</div></div>
         <div class="layer"><b>The contract</b><div><span class="mono">.ddt/runtime/WORKFLOWS.md</span> lists every helper command, its request shape and the revision rules. The assistant reads it before any write.</div></div>
@@ -732,7 +733,7 @@ launch date and cut the pilot to two regions.</pre>
   <section class="slide" id="s16" aria-label="Same helper, four assistants">
     <div class="rail"><span class="num">16</span><span class="eyebrow">Runtimes</span><span class="claim">Pick your assistant. The records and the helper do not change.</span></div>
     <div class="main">
-      <h2>Same helper, four assistants</h2>
+      <h2>Same helper, five assistants</h2>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Runtime</th><th>Always loaded</th><th>Loaded on demand</th><th>Extras</th></tr></thead>
@@ -741,6 +742,7 @@ launch date and cut the pilot to two regions.</pre>
             <tr><td><b>Claude Code</b></td><td><span class="mono">CLAUDE.md</span></td><td><span class="mono">.claude/skills</span>, 16 slash commands</td><td>session hook with open follow-up counts when surfacing is proactive</td></tr>
             <tr><td><b>Codex</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.codex/skills</span> with reference indexes</td><td></td></tr>
             <tr><td><b>OpenCode</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.opencode/commands</span> and skills</td><td>edit and shell permissions set to ask</td></tr>
+            <tr><td><b>deepagents</b><br><span class="small muted">lc-code, ddt-agent</span></td><td><span class="mono">.deepagents/AGENTS.md</span> with the full manual, plus your root <span class="mono">AGENTS.md</span> memory</td><td><span class="mono">.deepagents/skills</span> office skills with references, selected by <span class="mono">skills.toml</span></td><td>session hook with <span class="mono">--trust-project-hooks</span>; helper calls approved in Manual mode</td></tr>
           </tbody>
         </table>
       </div>
@@ -794,6 +796,8 @@ copilot --agent=office-work-assistant
           <h3>Joining a team</h3>
           <p class="small">Clone the team's context repository next to your workspace, then add one line under <code>## Team Repos</code> in <code>.ddt/config.md</code>:</p>
           <pre class="code">product: /Users/maya/work/product-context</pre>
+          <h3>Other runtimes</h3>
+          <p class="small">Same installer, different flag: <code>--runtime claude</code>, <code>codex</code>, <code>opencode</code> or <code>deepagents</code>. For deepagents, launch <code>lc-code --trust-project-hooks</code> from the workspace; the manual lives in <code>.deepagents/AGENTS.md</code> and your learnings in the root <code>AGENTS.md</code>.</p>
           <h3>Later updates</h3>
           <p class="small"><code>./bootstrap/init-workspace.sh --update --runtime copilot ~/work/office</code> refreshes toolkit files. Your instructions file, configuration and records are kept, and <code>.ddt/runtime/manifest.copilot.txt</code> lists exactly what the toolkit manages.</p>
           <p class="small muted">Windows: install through WSL or another POSIX shell.</p>

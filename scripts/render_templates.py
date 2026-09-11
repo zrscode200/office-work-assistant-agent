@@ -10,11 +10,17 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNTIMES = ("claude", "codex", "opencode", "copilot")
+RUNTIMES = ("claude", "codex", "opencode", "copilot", "deepagents")
 # Where each runtime's always-loaded manual lives; core text refers to it as {{MANUAL}}.
-MANUAL_PATH = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "opencode": "AGENTS.md", "copilot": ".ddt/runtime/ASSISTANT.md"}
+MANUAL_PATH = {"claude": "CLAUDE.md", "codex": "AGENTS.md", "opencode": "AGENTS.md", "copilot": ".ddt/runtime/ASSISTANT.md", "deepagents": ".deepagents/AGENTS.md"}
+# deepagents clients load .deepagents/AGENTS.md and the root AGENTS.md together; the
+# toolkit owns the former and the agent's learnings live in the latter.
+DEEPAGENTS_NOTE = "Managed by the Office Work Assistant toolkit: this file is replaced on update. Record learnings in the workspace-root AGENTS.md, never here.\n\n"
 TOKEN = "{{MANUAL}}"
-COPILOT_SKILLS = {"project-manager": "office-projects", "think-partner": "office-notes", "task-manager": "office-work"}
+# Runtimes whose skill catalogue mixes with other skills get namespaced names.
+NAMESPACED_SKILLS = {"project-manager": "office-projects", "think-partner": "office-notes", "task-manager": "office-work"}
+SKILL_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills", "opencode": ".opencode/skills", "copilot": ".github/skills", "deepagents": ".deepagents/skills"}
+INDEXED_RUNTIMES = ("copilot", "codex", "deepagents")
 # Every core command is assigned explicitly; the renderer refuses to guess an owner.
 COMMAND_OWNER = {
     "brainstorm": "think-partner", "jot": "think-partner", "notebook": "think-partner",
@@ -68,36 +74,34 @@ def render_all(out_root: Path) -> None:
         copy_tree(ROOT / "adapters" / runtime, out)
         copy_tree(ROOT / "core/runtime", out / ".ddt/runtime")
         manual = "CLAUDE.md" if runtime == "claude" else "AGENTS.md"
+        manual_text = (ROOT / "core/manual.md").read_text()
         if runtime == "copilot":
             # Keep always-loaded instructions small. Both the skills and the
             # named agent explicitly load this shared manual when needed.
-            write(out / ".ddt/runtime/ASSISTANT.md", (ROOT / "core/manual.md").read_text())
+            write(out / ".ddt/runtime/ASSISTANT.md", manual_text)
+        elif runtime == "deepagents":
+            write(out / MANUAL_PATH[runtime], DEEPAGENTS_NOTE + manual_text + "\n" + (ROOT / "adapters/deepagents" / MANUAL_PATH[runtime]).read_text())
         else:
-            write(out / manual, (ROOT / "core/manual.md").read_text() + "\n" + (ROOT / "adapters" / runtime / manual).read_text())
+            write(out / manual, manual_text + "\n" + (ROOT / "adapters" / runtime / manual).read_text())
         for skill in sorted((ROOT / "core/skills").iterdir()):
-            if runtime == "copilot":
-                name = COPILOT_SKILLS[skill.name]
-                dest = out / ".github/skills" / name
-            else:
-                name = skill.name
-                dest = out / f".{runtime}/skills" / name
+            name = NAMESPACED_SKILLS[skill.name] if runtime in ("copilot", "deepagents") else skill.name
+            dest = out / SKILL_DIRS[runtime] / name
             copy_tree(skill, dest)
             # Native adapter guidance may specialize a common skill while the
             # renderer still owns its complete command-reference index.
             override = ROOT / "adapters" / runtime / dest.relative_to(out) / "SKILL.md"
             source = override if override.is_file() else skill / "SKILL.md"
             text = render_text(source.read_text().replace(f"name: {skill.name}\n", f"name: {name}\n"), runtime, source)
-            if runtime in ("copilot", "codex"):
+            if runtime in INDEXED_RUNTIMES:
                 references = [command for command in commands if COMMAND_OWNER[command.stem] == skill.name]
                 text += "\nAll workspace paths above are relative to the workspace root. Read the relevant reference when needed:\n\n"
                 text += "".join(f"- [{command.stem}](references/{command.name})\n" for command in references)
             write(dest / "SKILL.md", text)
         for command in commands:
             owner = COMMAND_OWNER[command.stem]
-            if runtime == "copilot":
-                dest = out / ".github/skills" / COPILOT_SKILLS[owner] / "references" / command.name
-            elif runtime == "codex":
-                dest = out / ".codex/skills" / owner / "references" / command.name
+            if runtime in INDEXED_RUNTIMES:
+                folder = NAMESPACED_SKILLS[owner] if runtime in ("copilot", "deepagents") else owner
+                dest = out / SKILL_DIRS[runtime] / folder / "references" / command.name
             else:
                 dest = out / f".{runtime}/commands" / command.name
             override = ROOT / "adapters" / runtime / dest.relative_to(out)
@@ -106,7 +110,7 @@ def render_all(out_root: Path) -> None:
         for folder in (".ddt/projects", ".ddt/personal/notes", ".ddt/personal/work"):
             write(out / folder / ".gitkeep", "")
         # Retain the old server entry point for existing bookmarks/workflows.
-        if runtime != "copilot":
+        if runtime in ("claude", "codex", "opencode"):
             write(out / f".{runtime}/dashboard/server.js", "#!/usr/bin/env node\nrequire('../../.ddt/runtime/server').start(process.cwd());\n")
 
 

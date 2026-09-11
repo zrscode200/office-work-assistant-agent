@@ -4,10 +4,11 @@ set -eu
 usage() {
   cat <<'USAGE'
 Usage:
-  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode|copilot] [--no-git] /path/to/target-dir
+  bootstrap/init-workspace.sh [--update] [--runtime claude|codex|opencode|copilot|deepagents] [--no-git] /path/to/target-dir
 
 Installs the selected assistant surface and shared runtime:
-  - Operating manual and README (Copilot loads its manual from .ddt/runtime/)
+  - Operating manual and README (Copilot loads its manual from .ddt/runtime/,
+    deepagents clients from .deepagents/AGENTS.md beside your own AGENTS.md)
   - .ddt/config.md, profile.md, norms.md (user-owned; seeded only when missing)
   - .ddt/projects/ and .ddt/personal/notes|work/ (private records; never touched)
   - .ddt/runtime/ (shared helper, workflows, and local dashboard; Node.js 18+)
@@ -21,7 +22,8 @@ repository unless it already is one or --no-git is given.
 --update refreshes the files the manifest records as toolkit-managed and keeps
 files recorded as yours. User-owned files (.ddt/config.md, profile.md, norms.md,
 .claude/settings.json, .codex/config.toml, opencode.json,
-.github/copilot-instructions.md, projects and personal records) are never
+.github/copilot-instructions.md, and for deepagents AGENTS.md, .deepagents/skills.toml
+and .deepagents/hooks.json, plus projects and personal records) are never
 touched; a notice is printed when one differs from the current toolkit version.
 A workspace installed before manifests existed gets its root README.md,
 CLAUDE.md or AGENTS.md backed up as <file>.before-update-<timestamp> before
@@ -30,7 +32,8 @@ ships are reported, never deleted. Without --runtime, --update detects the
 installed runtime from the manifest.
 
 Options:
-  --runtime claude|codex|opencode|copilot   Runtime surface (fresh install default: claude)
+  --runtime claude|codex|opencode|copilot|deepagents
+                                            Runtime surface (fresh install default: claude)
   --update                                  Update an existing workspace
   --no-git                                  Do not initialize a Git repository
 USAGE
@@ -38,7 +41,7 @@ USAGE
 
 UPDATE_MODE=false
 NO_GIT=false
-SUPPORTED_RUNTIMES="claude codex opencode copilot"
+SUPPORTED_RUNTIMES="claude codex opencode copilot deepagents"
 RUNTIME_INPUT=""
 TARGET_INPUT=""
 
@@ -131,7 +134,7 @@ if [ -z "$RUNTIME_INPUT" ]; then
 fi
 
 case "$RUNTIME_INPUT" in
-  claude|codex|opencode|copilot) ;;
+  claude|codex|opencode|copilot|deepagents) ;;
   *)
     echo "Error: unsupported runtime: $RUNTIME_INPUT" >&2
     echo "Supported runtimes: $SUPPORTED_RUNTIMES" >&2
@@ -160,6 +163,13 @@ template_files() {
 }
 
 is_user_owned_file() {
+  # deepagents clients treat the root AGENTS.md as workspace memory the agent
+  # writes to; the toolkit's manual lives in .deepagents/AGENTS.md instead.
+  if [ "$RUNTIME_INPUT" = "deepagents" ]; then
+    case "$1" in
+      AGENTS.md|.deepagents/skills.toml|.deepagents/hooks.json) return 0 ;;
+    esac
+  fi
   case "$1" in
     .ddt/config.md|\
     .ddt/profile.md|\
@@ -197,7 +207,7 @@ is_root_doc() {
 # expected to diverge and never produce a notice.
 is_runtime_config() {
   case "$1" in
-    .claude/settings.json|.codex/config.toml|opencode.json|.github/copilot-instructions.md) return 0 ;;
+    .claude/settings.json|.codex/config.toml|opencode.json|.github/copilot-instructions.md|.deepagents/skills.toml|.deepagents/hooks.json) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -454,5 +464,9 @@ else
   if [ "$RUNTIME_INPUT" = "copilot" ]; then
     echo "Copilot CLI: run copilot --agent=office-work-assistant from the workspace."
     echo "Existing Copilot repository instructions are preserved; check /instructions and /skills list."
+  fi
+  if [ "$RUNTIME_INPUT" = "deepagents" ]; then
+    echo "deepagents: run lc-code (or your client) from the workspace; add --trust-project-hooks for the session hook."
+    echo "The manual is .deepagents/AGENTS.md (managed); AGENTS.md at the root is yours for learnings."
   fi
 fi

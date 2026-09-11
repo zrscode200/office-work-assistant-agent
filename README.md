@@ -1,6 +1,6 @@
 # Office Work Assistant
 
-A portable assistant workspace for understanding projects, developing notes, and coordinating work through shared context. Install it into a working folder for Claude Code, Codex, OpenCode, or GitHub Copilot CLI.
+A portable assistant workspace for understanding projects, developing notes, and coordinating work through shared context. Install it into a working folder for Claude Code, Codex, OpenCode, GitHub Copilot CLI, or a LangChain deepagents client such as `lc-code`.
 
 The first team version uses three core records:
 
@@ -19,7 +19,7 @@ Requires Git and Node.js 18+. Python 3 is needed only to regenerate or test this
 ```sh
 mkdir -p /path/to/workspace
 ./bootstrap/init-workspace.sh --runtime codex /path/to/workspace
-# or --runtime claude / --runtime opencode / --runtime copilot
+# or --runtime claude / --runtime opencode / --runtime copilot / --runtime deepagents
 ```
 
 The installer never overwrites existing files: a pre-existing README.md, CLAUDE.md or AGENTS.md is recorded as yours. It initializes a Git repository in the target unless one exists or `--no-git` is given, and writes `.ddt/runtime/manifest.<runtime>.txt` listing the files it manages.
@@ -41,6 +41,14 @@ Install with `./bootstrap/init-workspace.sh --runtime copilot /path/to/workspace
 This adapter uses a short `.github/copilot-instructions.md`, three native skills (`office-projects`, `office-notes`, `office-work`), and one optional custom agent. Detailed guidance is loaded as needed from the common runtime manual and skill references. Existing repository instructions are preserved on update; no global configuration, permission grants, or model settings are installed.
 
 See [Copilot CLI guide](adapters/copilot/README.md) for discovery checks, examples, permissions, and upgrades. [Adapter design](docs/copilot-cli-adapter.md) documents the verified CLI surface and validation limits.
+
+## deepagents (lc-code)
+
+Install with `./bootstrap/init-workspace.sh --runtime deepagents /path/to/workspace`, then launch your deepagents client (`lc-code`, or `ddt-agent`) from that workspace. The client must already be installed and configured.
+
+This adapter uses the client's own conventions: the complete operating manual in `.deepagents/AGENTS.md`, which the toolkit refreshes on update, beside a root `AGENTS.md` that stays yours and holds the learnings your agent persists; three project skills (`office-projects`, `office-notes`, `office-work`) under `.deepagents/skills`, selected by a seeded `.deepagents/skills.toml` that keeps the client's built-in skills; and a `SessionStart` hook in `.deepagents/hooks.json` that reports open follow-ups when the client is launched with `--trust-project-hooks`. Record operations run through the shell tool; in Manual mode you approve each helper call, and in Auto or non-interactive mode add `node` to the client's shell allow-list. Stamp a workspace for this runtime alone.
+
+See the [deepagents guide](adapters/deepagents/README.md) for launch, approvals, memory, discovery checks, and upgrades.
 
 ## Team use
 
@@ -64,7 +72,7 @@ Legacy scratch, notebook, todos, and specialized project documents remain readab
 
 ## Development
 
-`core/runtime/` owns storage, CLI, dashboard, and the shared workflow protocol. `core/manual.md`, `core/commands/`, and `core/skills/` define assistant behavior. `adapters/` adds runtime discovery/configuration; `generated/` contains the installable output for all four runtimes.
+`core/runtime/` owns storage, CLI, dashboard, and the shared workflow protocol. `core/manual.md`, `core/commands/`, and `core/skills/` define assistant behavior. `adapters/` adds runtime discovery/configuration; `generated/` contains the installable output for all five runtimes.
 
 ```sh
 python3 scripts/render_templates.py
