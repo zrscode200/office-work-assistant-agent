@@ -10,7 +10,7 @@ The first team version uses three core records:
 
 Briefings, project views, meeting preparation, and handovers assemble those records. Everyday conversation stays in MS Teams. The workspace works standalone and does not require Jira or a team server.
 
-New to the workspace? Open [docs/office-work-assistant-deck.html](docs/office-work-assistant-deck.html) in a browser for a twenty-slide orientation: the records, the helper, privacy, team sync, Jira, and Copilot setup. Arrow keys move between slides; print it for a handout.
+New to the workspace? Open [docs/office-work-assistant-deck.html](docs/office-work-assistant-deck.html) in a browser for a short, plain-language tour: what you gain, what you can say, privacy, sharing with the team, Jira and Teams, and how to start. Arrow keys move between slides; print it for a handout.
 
 ## Install
 

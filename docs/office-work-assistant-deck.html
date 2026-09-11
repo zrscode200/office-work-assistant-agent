@@ -4,231 +4,171 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How the Office Work Assistant Works</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600&family=Source+Sans+3:wght@400;500;600&display=swap">
 <style>
   :root {
-    --bg: #F2F5F3;
+    --bg: #FAF7F2;
     --surface: #FFFFFF;
-    --ink: #142B27;
-    --muted: #5B716B;
-    --line: #CFDBD6;
-    --accent: #176A55;
-    --accent-soft: #DCEFE7;
-    --team: #A8641B;
-    --team-soft: #F6E7CF;
-    --ext: #3F5F80;
-    --ext-soft: #DCE6F0;
-    --code-bg: #E9EFEC;
-    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-    --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-    --mono: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+    --ink: #2B2A27;
+    --muted: #6E6A63;
+    --line: #E6DFD4;
+    --accent: #2E6B60;
+    --accent-soft: #E3EFEA;
+    --team: #B8863B;
+    --team-soft: #F6EAD3;
+    --ext: #4A6B8A;
+    --ext-soft: #E3EAF1;
+    --serif: "Lora", Georgia, "Times New Roman", serif;
+    --sans: "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0F1A18;
-      --surface: #16231F;
-      --ink: #E3EEEA;
-      --muted: #9DB3AC;
-      --line: #2E423C;
-      --accent: #7FD3B2;
-      --accent-soft: #1B3A32;
-      --team: #E2B266;
-      --team-soft: #3E2E14;
-      --ext: #92B4D6;
-      --ext-soft: #1E2F40;
-      --code-bg: #1C2A26;
+      --bg: #1C1A17; --surface: #25221E; --ink: #EDE7DD; --muted: #A9A197; --line: #3B362F;
+      --accent: #8FCDB9; --accent-soft: #223A34; --team: #E1B96B; --team-soft: #3D3120; --ext: #9DBBD6; --ext-soft: #25313D;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0F1A18;
-    --surface: #16231F;
-    --ink: #E3EEEA;
-    --muted: #9DB3AC;
-    --line: #2E423C;
-    --accent: #7FD3B2;
-    --accent-soft: #1B3A32;
-    --team: #E2B266;
-    --team-soft: #3E2E14;
-    --ext: #92B4D6;
-    --ext-soft: #1E2F40;
-    --code-bg: #1C2A26;
+    --bg: #1C1A17; --surface: #25221E; --ink: #EDE7DD; --muted: #A9A197; --line: #3B362F;
+    --accent: #8FCDB9; --accent-soft: #223A34; --team: #E1B96B; --team-soft: #3D3120; --ext: #9DBBD6; --ext-soft: #25313D;
   }
 
   * { box-sizing: border-box; }
   html { color-scheme: light dark; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font: 400 1.02rem/1.55 var(--sans);
-    -webkit-font-smoothing: antialiased;
-  }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1.12rem/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
   a { color: var(--accent); }
   a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
-  code, kbd, pre, .mono { font-family: var(--mono); }
-  code { font-size: .9em; background: var(--code-bg); padding: .08em .38em; border-radius: 4px; }
-  kbd { font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: .05em .45em; background: var(--surface); }
-  pre { margin: 0; }
+  kbd { font: .85em var(--sans); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: .05em .45em; background: var(--surface); }
+  p, h1, h2, h3, ul, ol { margin: 0; }
+  h1, h2, h3 { text-wrap: balance; }
 
-  /* Deck scaffolding */
   .progress { position: fixed; top: 0; left: 0; height: 3px; width: 100%; background: var(--line); z-index: 5; }
-  .progress > div { height: 100%; width: 5%; background: var(--accent); transition: width .25s ease; }
+  .progress > div { height: 100%; width: 6%; background: var(--accent); transition: width .25s ease; }
   .deck { height: 100vh; height: 100dvh; overflow-y: auto; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+
+  /* A slide: headline band, one idea in the middle, light footer */
   .slide {
-    min-height: 100vh; min-height: 100dvh;
-    scroll-snap-align: start;
-    padding: clamp(28px, 5vw, 64px) clamp(20px, 6vw, 84px) clamp(84px, 9vw, 110px);
-    display: grid;
-    grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
-    gap: clamp(20px, 4vw, 56px);
-    align-content: start;
+    min-height: 100vh; min-height: 100dvh; scroll-snap-align: start;
+    display: grid; grid-template-rows: auto 1fr auto; gap: clamp(20px, 3.5vw, 44px);
+    padding: clamp(36px, 6vh, 64px) clamp(28px, 8vw, 120px) clamp(28px, 4vh, 40px);
     border-top: 1px solid var(--line);
   }
   .slide:first-child { border-top: 0; }
-  .rail { display: grid; gap: 10px; align-content: start; }
-  .rail .num { font: 600 clamp(1.6rem, 3.2vw, 2.3rem)/1 var(--serif); font-variant-numeric: tabular-nums; color: var(--accent); }
-  .eyebrow { font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
-  .rail .claim { font-size: .9rem; color: var(--muted); max-width: 24ch; line-height: 1.45; }
-  .main { min-width: 0; display: grid; gap: clamp(16px, 2.4vw, 28px); align-content: start; }
-  h1, h2, h3 { margin: 0; text-wrap: balance; }
-  h2 { font: 600 clamp(1.55rem, 3.1vw, 2.45rem)/1.12 var(--serif); letter-spacing: -.01em; }
-  h3 { font: 600 1rem/1.3 var(--sans); }
-  p { margin: 0; }
-  .prose { max-width: 64ch; }
-  .prose p + p { margin-top: .7em; }
-  ul, ol { margin: 0; padding-left: 1.2em; }
-  li + li { margin-top: .35em; }
-  .muted { color: var(--muted); }
-  .small { font-size: .9rem; }
+  .head { display: grid; gap: 10px; max-width: 26ch; }
+  .eyebrow { font-size: .78rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  h2 { font: 600 clamp(1.9rem, 3.8vw, 3rem)/1.12 var(--serif); letter-spacing: -.01em; }
+  .body { display: grid; align-content: center; gap: clamp(18px, 2.6vw, 30px); min-width: 0; }
+  .foot { display: flex; justify-content: space-between; gap: 16px; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+  .foot .num { font-variant-numeric: tabular-nums; }
+  .lede { font-size: clamp(1.2rem, 2vw, 1.5rem); line-height: 1.45; max-width: 44ch; color: var(--ink); }
+  .quiet { color: var(--muted); }
+  .small { font-size: .95rem; }
+  .prose { max-width: 56ch; display: grid; gap: .8em; }
+  .statement { font: 500 clamp(1.5rem, 3vw, 2.3rem)/1.3 var(--serif); max-width: 30ch; }
+  .statement em { font-style: normal; color: var(--accent); }
 
-  /* Title slide */
-  .slide.title { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: center; align-content: center; }
-  .slide.title h1 { font: 600 clamp(2.4rem, 6vw, 4.4rem)/1.04 var(--serif); letter-spacing: -.02em; }
-  .slide.title .lede { font-size: clamp(1.05rem, 1.7vw, 1.3rem); max-width: 34ch; color: var(--muted); }
-  .runtimes-line { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: .9rem; }
-  .pill { border: 1px solid var(--line); border-radius: 999px; padding: .15em .7em; background: var(--surface); }
+  /* Title and closing */
+  .slide.cover { grid-template-rows: 1fr auto; }
+  .cover .body { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(28px, 6vw, 80px); align-items: center; }
+  .cover h1 { font: 600 clamp(2.6rem, 6.4vw, 4.8rem)/1.05 var(--serif); letter-spacing: -.02em; }
+  .cover .intro { display: grid; gap: 20px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; font-size: .92rem; }
+  .pill { border: 1px solid var(--line); border-radius: 999px; padding: .2em .8em; background: var(--surface); }
   .pill.primary { border-color: var(--accent); color: var(--accent); font-weight: 600; }
-  .hint { font-size: .88rem; color: var(--muted); }
+  .hint { font-size: .9rem; color: var(--muted); }
 
-  /* Record card */
-  .record { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; box-shadow: 0 10px 30px rgba(20, 43, 39, .08); }
-  .record-head { display: flex; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--line); font: 500 .78rem/1.4 var(--mono); color: var(--muted); }
-  .record-head .rev { color: var(--accent); }
-  .record pre { padding: 14px 16px; font-size: .8rem; line-height: 1.5; overflow-x: auto; }
-  .record pre .k { color: var(--muted); }
-  .record pre .s { color: var(--accent); }
-  .record pre .t { color: var(--team); }
+  /* Paper note card */
+  .note { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; display: grid; gap: 10px; box-shadow: 0 12px 34px rgba(60, 45, 20, .08); }
+  .note .title { font: 600 1.35rem/1.25 var(--serif); }
+  .note .meta { font-size: .88rem; color: var(--muted); }
+  .note .text { font-size: 1.02rem; }
+  .note .where { display: flex; flex-wrap: wrap; gap: 6px; font-size: .82rem; color: var(--muted); align-items: center; }
+  .note .where span { border: 1px solid var(--line); border-radius: 999px; padding: .1em .65em; background: var(--bg); }
+  .tag { display: inline-block; font-size: .8rem; border-radius: 999px; padding: .1em .7em; background: var(--accent-soft); color: var(--accent); font-weight: 600; vertical-align: middle; }
+  .tag.team { background: var(--team-soft); color: var(--team); }
 
-  /* Blocks */
-  .code { background: var(--code-bg); border-radius: 8px; padding: 14px 16px; font-size: .86rem; line-height: 1.55; overflow-x: auto; }
-  .code .c { color: var(--muted); }
-  .code .p { color: var(--accent); }
-  .cols { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-  .col { border-top: 2px solid var(--line); padding-top: 12px; display: grid; gap: 8px; align-content: start; }
-  .col h3 { font-family: var(--serif); font-size: 1.15rem; }
-  .col.personal { border-top-color: var(--accent); }
-  .col.team { border-top-color: var(--team); }
-  .col.ext { border-top-color: var(--ext); }
-  .fields { font: 400 .8rem/1.6 var(--mono); color: var(--muted); }
-  .callout { border-left: 3px solid var(--accent); padding: 10px 16px; background: var(--surface); border-radius: 0 8px 8px 0; max-width: 72ch; }
-  .callout.team { border-left-color: var(--team); }
-  .two { display: grid; gap: 20px 32px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
-  .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
-  th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
-  th { font-weight: 600; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  td .mono { font-size: .82rem; color: var(--accent); white-space: nowrap; }
-  tr:last-child td { border-bottom: 0; }
-  .steps { list-style: none; padding: 0; display: grid; gap: 10px; counter-reset: step; }
-  .steps li { display: grid; grid-template-columns: 2.2rem 1fr; gap: 12px; align-items: baseline; }
-  .steps li::before { counter-increment: step; content: counter(step, decimal-leading-zero); font: 600 1rem/1 var(--serif); color: var(--accent); font-variant-numeric: tabular-nums; }
-  .steps .cmd { font-family: var(--mono); font-size: .84rem; color: var(--accent); }
-  .layers { display: grid; gap: 8px; }
-  .layer { display: grid; grid-template-columns: minmax(130px, 170px) 1fr; gap: 14px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
-  .layer b { font-weight: 600; }
-  .layer .mono { font-size: .8rem; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { font: 500 .8rem/1 var(--mono); padding: .45em .6em; border-radius: 5px; background: var(--code-bg); border: 1px solid var(--line); }
-  .chip-group { display: grid; grid-template-columns: minmax(120px, 150px) 1fr; gap: 10px; align-items: start; }
-  .chip-group + .chip-group { margin-top: 12px; }
-  .chip-group .label { font-size: .85rem; font-weight: 600; padding-top: .35em; }
-  .modes { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-  .mode { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; }
-  .mode .name { font-family: var(--mono); font-weight: 500; color: var(--accent); }
-  .mode.selected { border-color: var(--accent); }
-  .always-never { display: grid; gap: 20px 40px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-  .always-never h3 { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 8px; }
-  .always-never ul { list-style: none; padding: 0; }
-  .always-never li { padding-left: 1.3em; position: relative; }
-  .always-never li::before { position: absolute; left: 0; font-weight: 600; }
-  .always li::before { content: "+"; color: var(--accent); }
+  /* Compositions */
+  .cards { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 22px 24px; display: grid; gap: 10px; align-content: start; }
+  .card h3 { font: 600 1.3rem/1.25 var(--serif); }
+  .card.personal { border-top: 4px solid var(--accent); }
+  .card.team { border-top: 4px solid var(--team); }
+  .card.ext { border-top: 4px solid var(--ext); }
+  .card.value { border-top: 4px solid var(--accent); }
+  .card .big { font: 600 1.6rem/1.15 var(--serif); color: var(--accent); }
+  .split { display: grid; gap: 24px 48px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: center; }
+  .say { list-style: none; padding: 0; display: grid; gap: 12px; }
+  .say li { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(220px, 1.25fr); gap: 16px; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+  .say li:last-child { border-bottom: 0; }
+  .say q { font: 500 1.15rem/1.35 var(--serif); quotes: "\201C" "\201D"; }
+  .say .then { color: var(--muted); }
+  .callout { border-left: 4px solid var(--accent); padding: 12px 20px; background: var(--surface); border-radius: 0 12px 12px 0; max-width: 60ch; }
+  .steps { list-style: none; padding: 0; display: grid; gap: 16px; counter-reset: step; }
+  .steps li { display: grid; grid-template-columns: 2.6rem 1fr; gap: 14px; align-items: baseline; }
+  .steps li::before { counter-increment: step; content: counter(step); font: 600 1.6rem/1 var(--serif); color: var(--accent); }
+  .steps b { font-weight: 600; }
+  .day { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .day .slot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; display: grid; gap: 6px; }
+  .day .when { font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .day q { font: 500 1.05rem/1.35 var(--serif); quotes: "\201C" "\201D"; }
+  .day .result { font-size: .92rem; color: var(--muted); }
+  .timeline { display: grid; border-left: 2px solid var(--line); margin-left: 8px; padding-left: 20px; }
+  .timeline div { position: relative; padding: 6px 0 18px; }
+  .timeline div::before { content: ""; position: absolute; left: -27px; top: 14px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline .when { font-size: .88rem; color: var(--muted); }
+  .cols { display: grid; gap: 24px 48px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+  .cols h3 { font: 600 1.3rem/1.25 var(--serif); margin-bottom: 8px; }
+  .cols ul { list-style: none; padding: 0; display: grid; gap: 8px; }
+  .cols li { padding-left: 1.4em; position: relative; }
+  .cols li::before { position: absolute; left: 0; font-weight: 600; }
   .never li::before { content: "–"; color: var(--team); }
+  .always li::before { content: "+"; color: var(--accent); }
 
-  /* Diagrams */
-  figure { margin: 0; display: grid; gap: 8px; }
+  figure { margin: 0; display: grid; gap: 10px; }
   figure svg { max-width: 100%; height: auto; display: block; color: var(--ink); }
-  figcaption { font-size: .86rem; color: var(--muted); max-width: 72ch; }
-  svg text { font-family: var(--sans); font-size: 12px; fill: currentColor; }
-  svg .t-title { font-weight: 600; font-size: 13px; }
-  svg .t-mono { font-family: var(--mono); font-size: 10.5px; }
-  svg .t-muted { fill: var(--muted); font-size: 11px; }
-  svg .t-eyebrow { font-size: 10px; letter-spacing: 1.6px; font-weight: 600; fill: var(--muted); }
-  svg .t-lbl { font-size: 10.5px; fill: var(--muted); }
-  svg .zone-personal { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
-  svg .zone-team { fill: var(--team-soft); stroke: var(--team); stroke-width: 1; }
-  svg .box { fill: var(--surface); stroke: currentColor; stroke-width: 1; }
-  svg .box-personal { fill: var(--surface); stroke: var(--accent); stroke-width: 1.2; }
-  svg .box-team { fill: var(--surface); stroke: var(--team); stroke-width: 1.2; }
-  svg .box-ext { fill: var(--ext-soft); stroke: var(--ext); stroke-width: 1; }
+  figcaption { font-size: .95rem; color: var(--muted); max-width: 60ch; }
+  svg text { font-family: var(--sans); font-size: 14px; fill: currentColor; }
+  svg .t-title { font-family: var(--serif); font-weight: 600; font-size: 17px; }
+  svg .t-muted { fill: var(--muted); font-size: 13px; }
+  svg .t-lbl { font-size: 13px; fill: var(--muted); }
+  svg .box-personal { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.2; }
+  svg .box-team { fill: var(--team-soft); stroke: var(--team); stroke-width: 1.2; }
+  svg .box-ext { fill: var(--ext-soft); stroke: var(--ext); stroke-width: 1.2; }
   svg .box-dashed { fill: none; stroke: var(--muted); stroke-dasharray: 5 4; stroke-width: 1; }
-  svg .box-soft-personal { fill: var(--accent-soft); stroke: none; }
-  svg .box-soft-team { fill: var(--team-soft); stroke: none; }
-  svg .arrow { stroke: currentColor; stroke-width: 1.4; fill: none; }
+  svg .arrow { stroke: currentColor; stroke-width: 1.6; fill: none; }
   svg .arrow-dashed { stroke-dasharray: 5 4; }
-  svg .lane { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; }
-  svg .cross { stroke: var(--team); stroke-width: 2; }
 
-  /* Dashboard mock */
-  .mock { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: .82rem; max-width: 560px; }
-  .mock-bar { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--code-bg); color: var(--muted); font-family: var(--mono); font-size: .74rem; }
-  .mock-tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px; }
-  .mock-tools span { border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; }
+  .mock { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: .88rem; max-width: 520px; }
+  .mock-tools { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .mock-tools span { border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
   .mock-tools .on { border-color: var(--accent); color: var(--accent); }
-  .mock-card { margin: 0 12px 12px; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; }
-  .mock-card .badge { display: inline-block; font-size: .7rem; border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; margin-left: 6px; }
-  .mock-card .meta { color: var(--muted); font-size: .74rem; }
-  .mock-card button { font: inherit; font-size: .78rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 4px 10px; width: max-content; }
+  .mock-card { margin: 12px 14px; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; }
+  .mock-card .meta { color: var(--muted); font-size: .8rem; }
+  .mock-card button { font: inherit; font-size: .82rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 5px 11px; width: max-content; }
 
-  /* Controls */
-  .controls { position: fixed; right: clamp(12px, 3vw, 28px); bottom: clamp(12px, 3vw, 24px); display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 8px; box-shadow: 0 8px 24px rgba(20, 43, 39, .12); z-index: 6; }
-  .controls button { font: 500 .88rem/1 var(--sans); color: var(--ink); background: transparent; border: 0; border-radius: 999px; padding: 8px 12px; cursor: pointer; }
-  .controls button:hover { background: var(--code-bg); }
-  .controls .counter { font: 500 .82rem/1 var(--mono); color: var(--muted); padding: 0 6px; font-variant-numeric: tabular-nums; min-width: 5.6ch; text-align: center; }
-  dialog { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); padding: 20px 24px; max-width: min(92vw, 560px); width: 100%; }
-  dialog::backdrop { background: rgba(10, 20, 18, .45); }
-  dialog h3 { font-family: var(--serif); font-size: 1.2rem; margin-bottom: 10px; }
-  dialog ol { padding-left: 2.2em; columns: 1; font-size: .92rem; }
-  dialog li { margin: 0; padding: 2px 0; }
+  .controls { position: fixed; right: clamp(12px, 3vw, 28px); bottom: clamp(12px, 3vw, 24px); display: flex; align-items: center; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 8px; box-shadow: 0 8px 24px rgba(60, 45, 20, .12); z-index: 6; }
+  .controls button { font: 500 .9rem/1 var(--sans); color: var(--ink); background: transparent; border: 0; border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+  .controls button:hover { background: var(--accent-soft); }
+  .controls .counter { font: 500 .84rem/1 var(--sans); color: var(--muted); padding: 0 6px; font-variant-numeric: tabular-nums; min-width: 5.6ch; text-align: center; }
+  dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); padding: 20px 24px; max-width: min(92vw, 520px); width: 100%; }
+  dialog::backdrop { background: rgba(40, 30, 15, .45); }
+  dialog h3 { font: 600 1.25rem var(--serif); margin-bottom: 10px; }
+  dialog ol { padding-left: 2.2em; font-size: .95rem; }
+  dialog li { padding: 2px 0; }
   dialog a { color: var(--ink); text-decoration: none; }
   dialog a:hover, dialog a[aria-current="true"] { color: var(--accent); }
-  dialog .close { margin-top: 14px; font: 500 .88rem/1 var(--sans); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+  dialog .close { margin-top: 14px; font: 500 .9rem/1 var(--sans); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
 
   @media (max-width: 860px) {
-    .slide { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-    .slide.title { grid-template-columns: minmax(0, 1fr); align-content: start; }
-    .rail { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
-    .rail .claim { max-width: none; flex-basis: 100%; }
-    .layer, .chip-group { grid-template-columns: 1fr; }
+    .cover .body { grid-template-columns: minmax(0, 1fr); }
+    .say li { grid-template-columns: 1fr; gap: 4px; }
+    .head { max-width: none; }
   }
-  @media (prefers-reduced-motion: reduce) {
-    .deck { scroll-behavior: auto; }
-    .progress > div { transition: none; }
-  }
+  @media (prefers-reduced-motion: reduce) { .deck { scroll-behavior: auto; } .progress > div { transition: none; } }
   @media print {
     .progress, .controls { display: none; }
     .deck { height: auto; overflow: visible; scroll-snap-type: none; }
     .slide { min-height: 0; break-after: page; page-break-after: always; padding: 24px 0; }
-    .record, .mock { box-shadow: none; }
+    .note, .mock { box-shadow: none; }
   }
 </style>
 </head>
@@ -237,634 +177,286 @@
 
 <main class="deck" id="deck">
 
-  <!-- 01 Title -->
-  <section class="slide title" id="s1" aria-label="Title">
-    <div class="main">
-      <p class="eyebrow">Orientation for new users · toolkit 1.1.0</p>
-      <h1>The Office Work Assistant</h1>
-      <p class="lede">One information model for your projects, your thinking and your follow-ups, operated by the AI assistant you already use.</p>
-      <div class="runtimes-line">
-        <span class="pill primary">GitHub Copilot CLI</span>
-        <span class="pill">Claude Code</span>
-        <span class="pill">Codex</span>
-        <span class="pill">OpenCode</span>
-        <span class="pill">lc-code (deepagents)</span>
-        <span class="muted small">same records, same helper</span>
+  <section class="slide cover" id="s1" aria-label="Welcome">
+    <div class="body">
+      <div class="intro">
+        <p class="eyebrow">A short tour for new users</p>
+        <h1>Your work, in one place, kept by the assistant you already use.</h1>
+        <p class="lede">Projects, notes and follow-ups stay current because you talk about them, not because you maintain them.</p>
+        <div class="pills">
+          <span class="pill primary">GitHub Copilot</span><span class="pill">Claude Code</span><span class="pill">Codex</span><span class="pill">OpenCode</span><span class="pill">the team's deepagents client</span>
+        </div>
+        <p class="hint"><kbd>→</kbd> and <kbd>←</kbd> move between slides. <kbd>i</kbd> shows the list.</p>
       </div>
-      <p class="hint">Use <kbd>→</kbd> and <kbd>←</kbd> to move between slides, <kbd>i</kbd> for the index.</p>
+      <div class="note" aria-label="Example note">
+        <div class="title">Vendor review <span class="tag">agreed</span></div>
+        <div class="meta">Updated by Theo, Tuesday 10:05 · linked to the Atlas project</div>
+        <p class="text">The vendor needs another week. We agreed to keep the launch date and cut the pilot to two regions.</p>
+        <div class="where">Shows up in: <span>Atlas project</span><span>your notebook</span><span>Monday's catch-up</span><span>the steering brief</span></div>
+      </div>
     </div>
-    <div class="record" aria-label="Example note record">
-      <div class="record-head"><span>.ddt/personal/notes/vendor-review.md</span><span class="rev">revision 3</span></div>
-<pre>---
-{
-  <span class="k">"id"</span>: <span class="s">"vendor-review"</span>,
-  <span class="k">"title"</span>: <span class="s">"Vendor review"</span>,
-  <span class="k">"state"</span>: <span class="s">"agreed"</span>,
-  <span class="k">"revision"</span>: 3,
-  <span class="k">"updated_by"</span>: <span class="s">"Theo"</span>,
-  <span class="k">"links"</span>: [{ <span class="k">"scope"</span>: <span class="t">"product"</span>, <span class="k">"project"</span>: <span class="t">"atlas"</span> }],
-  <span class="k">"sources"</span>: [{ <span class="k">"label"</span>: <span class="s">"Atlas sync, 9 Sep"</span>,
-                <span class="k">"ref"</span>: <span class="t">"projects/atlas/notes/sync-0909.md"</span> }],
-  <span class="k">"history"</span>: [
-    { <span class="k">"revision"</span>: 1, <span class="k">"author"</span>: <span class="s">"Maya"</span>, <span class="k">"at"</span>: <span class="s">"2026-09-08T09:12Z"</span> },
-    { <span class="k">"revision"</span>: 2, <span class="k">"author"</span>: <span class="s">"Maya"</span>, <span class="k">"at"</span>: <span class="s">"2026-09-08T14:40Z"</span> },
-    { <span class="k">"revision"</span>: 3, <span class="k">"author"</span>: <span class="s">"Theo"</span>, <span class="k">"at"</span>: <span class="s">"2026-09-09T10:05Z"</span> }
-  ]
-}
----
-The vendor needs another week. We agreed to keep the
-launch date and cut the pilot to two regions.</pre>
-    </div>
+    <div class="foot"><span>The Office Work Assistant</span><span class="num">01 / 16</span></div>
   </section>
 
-  <!-- 02 Why -->
-  <section class="slide" id="s2" aria-label="The problem it solves">
-    <div class="rail"><span class="num">02</span><span class="eyebrow">Why</span><span class="claim">The same fact ends up in five documents, and none of them is current.</span></div>
-    <div class="main">
-      <h2>The problem this system exists for</h2>
-      <div class="two">
-        <div class="col">
-          <h3>How work context scatters today</h3>
-          <ul>
-            <li>Meeting takeaways in a notes doc.</li>
-            <li>The decision in a chat thread nobody can find a month later.</li>
-            <li>Status in a spreadsheet that is always a week stale.</li>
-            <li>Follow-ups in a todo app, disconnected from the project.</li>
-            <li>The reasoning behind all of it in someone's head.</li>
-          </ul>
-        </div>
-        <div class="col personal">
-          <h3>The rule this system enforces</h3>
-          <p class="callout">Keep one authoritative home for each fact. Project views and briefs cite it.</p>
-          <ul>
-            <li>Capture once, develop in place.</li>
-            <li>Assemble views and briefs on demand; never maintain copies.</li>
-            <li>No <code>status.md</code>, <code>plan.md</code> or decision log to keep in sync.</li>
-          </ul>
-        </div>
-      </div>
-      <p class="prose muted small">You talk about your work in natural language. The assistant routes each intent to the one record it belongs to, and every summary you ask for is built from those records at that moment.</p>
+  <section class="slide" id="s2" aria-label="The problem">
+    <div class="head"><p class="eyebrow">The problem</p><h2>The same fact ends up in five places</h2></div>
+    <div class="body">
+      <p class="statement">Meeting takeaways in a doc. The decision in a chat thread. Status in a spreadsheet. Follow-ups in a todo app. The reasoning in someone's head. <em>Each copy drifts, and nobody knows which one is current.</em></p>
     </div>
+    <div class="foot"><span>Why this exists</span><span class="num">02 / 16</span></div>
   </section>
 
-  <!-- 03 The model -->
-  <section class="slide" id="s3" aria-label="Three kinds of record">
-    <div class="rail"><span class="num">03</span><span class="eyebrow">The model</span><span class="claim">Three kinds of record. Nothing else to maintain.</span></div>
-    <div class="main">
-      <h2>Projects, notes and work</h2>
-      <div class="cols">
-        <div class="col personal">
-          <h3>Projects</h3>
-          <p>Purpose, scope, lifecycle and the current understanding, with references to the sources that support it.</p>
-          <p class="fields">title · purpose · scope_description<br>context · health · status · sources</p>
-          <p class="small muted">Health: unknown, on-track, at-risk, blocked. Status: active, completed, archived.</p>
-        </div>
-        <div class="col personal">
-          <h3>Notes</h3>
-          <p>Quick capture, discussion, evidence and decision rationale. A quick thought and the developed version are the same note.</p>
-          <p class="fields">title · body (Markdown) · state<br>links · sources · history</p>
-          <p class="small muted">State describes the content: note, proposal or agreed. There is no promotion pipeline.</p>
-        </div>
-        <div class="col personal">
-          <h3>Work</h3>
-          <p>A lightweight local follow-up, or a reference to a Jira issue. One record shows up in every view that needs it.</p>
-          <p class="fields">title · provider local|jira · status<br>owner · due · links · sources</p>
-          <p class="small muted">Completing a follow-up changes its status. It never moves to another file.</p>
-        </div>
+  <section class="slide" id="s3" aria-label="What you get">
+    <div class="head"><p class="eyebrow">What you get</p><h2>Three things change on day one</h2></div>
+    <div class="body">
+      <div class="cards">
+        <div class="card value"><p class="big">One home, no copies</p><p>Every fact lives in one note, project or follow-up. Status updates and summaries are built from it when you ask, so there is nothing to keep in sync.</p></div>
+        <div class="card value"><p class="big">Ask, don't dig</p><p>"Brief me for Thursday" or "What changed since Monday?" gives you the current picture in seconds, with sources, instead of an afternoon of compiling.</p></div>
+        <div class="card value"><p class="big">Share on purpose</p><p>Everything is private until you publish it. Your team sees exactly what you chose to share, and nothing else.</p></div>
       </div>
-      <p class="callout">Views and briefs assemble these three. A fresh project gets no overview, status, plan, meeting or decision scaffolding.</p>
     </div>
+    <div class="foot"><span>Value</span><span class="num">03 / 16</span></div>
   </section>
 
-  <!-- 04 One record, many views -->
-  <section class="slide" id="s4" aria-label="One record, many views">
-    <div class="rail"><span class="num">04</span><span class="eyebrow">The model</span><span class="claim">A record is a file with an identity, a revision and a history.</span></div>
-    <div class="main">
-      <h2>One record, many views</h2>
-      <div class="two">
+  <section class="slide" id="s4" aria-label="A day with it">
+    <div class="head"><p class="eyebrow">What you get</p><h2>A day with it</h2></div>
+    <div class="body">
+      <div class="day">
+        <div class="slot"><span class="when">Morning</span><q>What changed since yesterday?</q><p class="result">Two teammates updated Atlas, one Jira ticket moved. You are caught up before coffee.</p></div>
+        <div class="slot"><span class="when">After the sync</span><q>Here are the Atlas notes. Update the project.</q><p class="result">The note is kept, the project reflects what was agreed, and the actions become follow-ups.</p></div>
+        <div class="slot"><span class="when">Before steering</span><q>Brief me for the steering meeting.</q><p class="result">A one-page picture with sources, decisions apart from proposals, ready to paste into Teams.</p></div>
+        <div class="slot"><span class="when">End of day</span><q>What's on my plate this week?</q><p class="result">Your open follow-ups across every project, in one list.</p></div>
+      </div>
+      <p class="quiet small">None of this required opening a document, a board, or a spreadsheet.</p>
+    </div>
+    <div class="foot"><span>Value</span><span class="num">04 / 16</span></div>
+  </section>
+
+  <section class="slide" id="s5" aria-label="You just talk">
+    <div class="head"><p class="eyebrow">Daily use</p><h2>You just talk</h2></div>
+    <div class="body">
+      <ul class="say">
+        <li><q>Remember that the vendor needs another week.</q><span class="then">Saved as a note, or added to the note you were already working on.</span></li>
+        <li><q>Track: ask Priya for the vendor list by Friday.</q><span class="then">A follow-up with an owner and a date.</span></li>
+        <li><q>What's the status of Atlas?</q><span class="then">The current picture, the open questions, and your own private notes about it.</span></li>
+        <li><q>Find the note about the vendor contract.</q><span class="then">The note, wherever it lives, with the matching lines.</span></li>
+        <li><q>I'm new here. Help me get started.</q><span class="then">A guided tour, one step at a time. Nothing is saved until you ask.</span></li>
+      </ul>
+      <p class="quiet small">No special words to learn. The assistant works out what you mean and tells you what it saved.</p>
+    </div>
+    <div class="foot"><span>Daily use</span><span class="num">05 / 16</span></div>
+  </section>
+
+  <section class="slide" id="s6" aria-label="What it keeps">
+    <div class="head"><p class="eyebrow">The basics</p><h2>It keeps three kinds of things</h2></div>
+    <div class="body">
+      <div class="cards">
+        <div class="card personal"><h3>Projects</h3><p>What a project is for, how it is going, and where that understanding comes from.</p></div>
+        <div class="card personal"><h3>Notes</h3><p>Your thinking, meeting context, evidence and the reasons behind decisions. A quick note and its developed version are the same note.</p></div>
+        <div class="card personal"><h3>Follow-ups</h3><p>Who does what by when. A simple local item, or a link to a Jira issue.</p></div>
+      </div>
+      <p class="quiet">Status updates, briefings and meeting prep are assembled from these three whenever you ask.</p>
+    </div>
+    <div class="foot"><span>The basics</span><span class="num">06 / 16</span></div>
+  </section>
+
+  <section class="slide" id="s7" aria-label="A note grows">
+    <div class="head"><p class="eyebrow">The basics</p><h2>A note grows in place</h2></div>
+    <div class="body">
+      <div class="split">
         <div class="prose">
-          <p>Every record carries a stable <code>id</code>, a <code>revision</code> that increments on each save, and a <code>history</code> of who changed it and when. Saves must quote the revision that was read. A stale revision is rejected, so two edits can never silently overwrite each other.</p>
-          <p>The note on the title slide is a private note. It links to the team project <code>atlas</code> and cites a shared meeting note as its source. The link changes where the note appears, not who can read it.</p>
+          <p>You capture a thought. Later you add to it, or a teammate does. It stays one note, with a record of who changed what and when.</p>
+          <p>If two people try to save over each other, the assistant notices and reconciles instead of overwriting. Nothing is lost quietly.</p>
         </div>
-        <div>
-          <h3>Where that one note shows up</h3>
-          <table>
-            <tr><td>Project view for <code>atlas</code></td><td class="muted">under your linked private notes</td></tr>
-            <tr><td>Notebook view and <code>search</code></td><td class="muted">by title, body or id</td></tr>
-            <tr><td>A brief for yourself</td><td class="muted">included, cited as a source</td></tr>
-            <tr><td>A brief for the team</td><td class="muted">omitted, because it is private</td></tr>
-            <tr><td>Catch-up since Monday</td><td class="muted">revision 3, by Theo</td></tr>
-            <tr><td>Dashboard</td><td class="muted">notebook and changes views</td></tr>
-          </table>
+        <div class="timeline" aria-label="How one note changed">
+          <div><b>Quick capture</b><br><span class="when">Maya, Monday 9:12</span></div>
+          <div><b>Developed after the vendor call</b><br><span class="when">Maya, Monday 14:40</span></div>
+          <div><b>Marked as agreed, pilot cut to two regions</b><br><span class="when">Theo, Tuesday 10:05</span></div>
         </div>
       </div>
     </div>
+    <div class="foot"><span>The basics</span><span class="num">07 / 16</span></div>
   </section>
 
-  <!-- 05 Architecture -->
-  <section class="slide" id="s5" aria-label="How it is built">
-    <div class="rail"><span class="num">05</span><span class="eyebrow">How it works</span><span class="claim">Plain files, one helper, and the assistant you already run.</span></div>
-    <div class="main">
-      <h2>Plain files, one helper, your assistant</h2>
+  <section class="slide" id="s8" aria-label="Where things live">
+    <div class="head"><p class="eyebrow">How it works</p><h2>Where things live</h2></div>
+    <div class="body">
       <figure>
-        <svg viewBox="0 0 960 470" role="img" aria-label="The assistant runtime calls the ddt.js helper with JSON requests; the helper reads and writes plain record files in the personal workspace and, with a team scope, in separate team clones that publish to and fetch from a Git remote; Jira is refreshed explicitly into a private snapshot; Teams has no data path.">
+        <svg viewBox="0 0 960 300" role="img" aria-label="Your folder holds your private notes and follow-ups and your assistant; the team's shared folder holds the projects everyone sees and changes only when you publish; Jira keeps its own status and is refreshed only when you ask; Teams stays where conversation happens and receives nothing.">
           <defs><marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
-          <rect class="zone-personal" x="16" y="16" width="420" height="438" rx="10"/>
-          <text class="t-eyebrow" x="32" y="40">YOUR WORKSPACE FOLDER · PERSONAL, PRIVATE</text>
-          <rect class="box-personal" x="32" y="56" width="170" height="84" rx="6"/>
-          <text class="t-title" x="44" y="80">AI assistant runtime</text>
-          <text class="t-muted" x="44" y="100">Copilot CLI · Claude Code</text>
-          <text class="t-muted" x="44" y="118">Codex · OpenCode · lc-code</text>
-          <rect class="box-personal" x="250" y="56" width="150" height="84" rx="6"/>
-          <text class="t-title" x="262" y="80">ddt.js helper</text>
-          <text class="t-muted" x="262" y="100">Node 18+, no packages</text>
-          <text class="t-muted" x="262" y="118">validate · lock · revision</text>
-          <path class="arrow" d="M202 98 H250" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="226" y="90" text-anchor="middle">JSON request</text>
-          <rect class="box" x="32" y="186" width="340" height="124" rx="6"/>
-          <text class="t-title" x="44" y="210">Records, plain files</text>
-          <text class="t-mono" x="44" y="236">.ddt/projects/&lt;slug&gt;/project.json</text>
-          <text class="t-mono" x="44" y="258">.ddt/personal/notes/&lt;id&gt;.md   frontmatter + Markdown</text>
-          <text class="t-mono" x="44" y="280">.ddt/personal/work/&lt;id&gt;.json</text>
-          <text class="t-muted" x="44" y="302">each with revision, history and sources</text>
-          <path class="arrow" d="M325 140 V186" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="333" y="167">reads and writes, revision-checked</text>
-          <rect class="box" x="32" y="340" width="190" height="70" rx="6"/>
-          <text class="t-title" x="44" y="362">Dashboard</text>
-          <text class="t-mono" x="44" y="382">node .ddt/runtime/server.js</text>
-          <text class="t-muted" x="44" y="400">loopback only · complete/reopen</text>
-          <path class="arrow" d="M127 340 V310" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="135" y="329">reads through the helper</text>
-          <path class="arrow" d="M388 140 V400 H680" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="534" y="392" text-anchor="middle">explicit refresh → private snapshot, labelled fetched_at</text>
-
-          <rect class="zone-team" x="450" y="16" width="200" height="314" rx="10"/>
-          <text class="t-eyebrow" x="466" y="40">TEAM CLONES</text>
-          <rect class="box-team" x="466" y="56" width="168" height="150" rx="6"/>
-          <text class="t-title" x="478" y="80">projects/&lt;slug&gt;/</text>
-          <text class="t-mono" x="478" y="104">project.json</text>
-          <text class="t-mono" x="478" y="124">notes/&lt;id&gt;.md</text>
-          <text class="t-mono" x="478" y="144">work/&lt;id&gt;.json</text>
-          <text class="t-muted" x="478" y="172">one local Git checkout</text>
-          <text class="t-muted" x="478" y="190">per team, under teams/</text>
-          <text class="t-muted" x="466" y="240">local until you publish</text>
-          <text class="t-mono" x="466" y="264">config.md → product: teams/product</text>
-          <path class="arrow" d="M400 98 H466" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="433" y="88" text-anchor="middle">scope: team</text>
-
-          <rect class="box-ext" x="680" y="56" width="264" height="90" rx="6"/>
-          <text class="t-title" x="692" y="80">Git remote, the team repository</text>
-          <text class="t-muted" x="692" y="102">repository access is team membership</text>
-          <text class="t-muted" x="692" y="122">branch rules apply; commits are unsigned</text>
-          <path class="arrow" d="M634 84 H680" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="657" y="76" text-anchor="middle">publish</text>
-          <path class="arrow" d="M680 116 H634" marker-end="url(#arrA)"/>
-          <text class="t-lbl" x="657" y="132" text-anchor="middle">fetch · pull</text>
-
-          <rect class="box-dashed" x="680" y="230" width="264" height="90" rx="6"/>
-          <text class="t-title" x="692" y="254">MS Teams</text>
-          <text class="t-muted" x="692" y="276">everyday conversation stays here</text>
-          <text class="t-muted" x="692" y="296">no data path; the assistant never posts</text>
-
-          <rect class="box-ext" x="680" y="370" width="264" height="70" rx="6"/>
-          <text class="t-title" x="692" y="394">Jira, optional</text>
-          <text class="t-muted" x="692" y="414">owns status, assignee and due date</text>
-          <text class="t-muted" x="692" y="432">read-only here; refresh only when asked</text>
+          <rect class="box-personal" x="20" y="24" width="300" height="200" rx="14"/>
+          <text class="t-title" x="42" y="58">Your folder</text>
+          <text class="t-muted" x="42" y="90">Your private notes and follow-ups</text>
+          <text class="t-muted" x="42" y="112">The projects you run</text>
+          <text class="t-muted" x="42" y="134">Your assistant works here</text>
+          <text class="t-muted" x="42" y="176">Plain files on your computer.</text>
+          <text class="t-muted" x="42" y="198">Nothing leaves unless you say so.</text>
+          <rect class="box-team" x="400" y="24" width="300" height="200" rx="14"/>
+          <text class="t-title" x="422" y="58">Your team's shared folder</text>
+          <text class="t-muted" x="422" y="90">Projects the whole team can see</text>
+          <text class="t-muted" x="422" y="112">Every teammate has a copy</text>
+          <text class="t-muted" x="422" y="134">Changes arrive when you pull them</text>
+          <text class="t-muted" x="422" y="176">Your notes never go here unless</text>
+          <text class="t-muted" x="422" y="198">you decide to share them.</text>
+          <path class="arrow" d="M320 96 H400" marker-end="url(#arrA)"/>
+          <text class="t-lbl" x="360" y="86" text-anchor="middle">publish</text>
+          <path class="arrow" d="M400 150 H320" marker-end="url(#arrA)"/>
+          <text class="t-lbl" x="360" y="172" text-anchor="middle">pull</text>
+          <rect class="box-ext" x="760" y="24" width="180" height="88" rx="14"/>
+          <text class="t-title" x="780" y="54">Jira, optional</text>
+          <text class="t-muted" x="780" y="78">Status stays in Jira.</text>
+          <text class="t-muted" x="780" y="98">Refreshed when you ask.</text>
+          <path class="arrow arrow-dashed" d="M700 68 H760" marker-end="url(#arrA)"/>
+          <rect class="box-dashed" x="760" y="136" width="180" height="88" rx="14"/>
+          <text class="t-title" x="780" y="166">Teams</text>
+          <text class="t-muted" x="780" y="190">Conversation stays here.</text>
+          <text class="t-muted" x="780" y="210">Nothing is ever sent.</text>
+          <text class="t-muted" x="480" y="272" text-anchor="middle">Everything is a file you can open. No server to log into, no background syncing.</text>
         </svg>
-        <figcaption>Everything the assistant knows lives in files you can open. The helper is the only writer; team clones are ordinary Git checkouts; Jira and the dashboard are read paths unless you ask otherwise.</figcaption>
+        <figcaption>Two folders and two optional connections. Your folder is private. The shared folder changes only when someone publishes on purpose.</figcaption>
       </figure>
     </div>
+    <div class="foot"><span>How it works</span><span class="num">08 / 16</span></div>
   </section>
 
-  <!-- 06 Instruction layers -->
-  <section class="slide" id="s6" aria-label="How the assistant is instructed">
-    <div class="rail"><span class="num">06</span><span class="eyebrow">How it works</span><span class="claim">The system prompt is progressive, and the helper is the only tool for records.</span></div>
-    <div class="main">
-      <h2>How the assistant is instructed</h2>
-      <div class="layers">
-        <div class="layer"><b>Always loaded</b><div>Copilot: a short seed in <span class="mono">.github/copilot-instructions.md</span>, yours to edit. Claude Code: <span class="mono">CLAUDE.md</span>. Codex and OpenCode: <span class="mono">AGENTS.md</span>. deepagents clients: <span class="mono">.deepagents/AGENTS.md</span>, refreshed by the toolkit, together with a root <span class="mono">AGENTS.md</span> that holds your agent's learnings.</div></div>
-        <div class="layer"><b>On demand: the manual</b><div><span class="mono">.ddt/runtime/ASSISTANT.md</span> holds the information model, the intent rules, the privacy rules and the autonomy modes. Copilot's skills and named agent read it when office work comes up.</div></div>
-        <div class="layer"><b>Skills</b><div><span class="mono">office-projects</span>, <span class="mono">office-notes</span>, <span class="mono">office-work</span>, each with references for meetings, decisions, catch-up, sync, Jira and the guided tour. Other runtimes ship the same content as skills and slash commands.</div></div>
-        <div class="layer"><b>The contract</b><div><span class="mono">.ddt/runtime/WORKFLOWS.md</span> lists every helper command, its request shape and the revision rules. The assistant reads it before any write.</div></div>
-      </div>
-      <p class="callout">The assistant never edits record files by hand. Its only write path is a JSON request handed to the helper. If you think in agent terms: one tool with a strict schema, and instruction files that describe it in increasing detail.</p>
-    </div>
-  </section>
-
-  <!-- 07 Request lifecycle -->
-  <section class="slide" id="s7" aria-label="A request, end to end">
-    <div class="rail"><span class="num">07</span><span class="eyebrow">How it works</span><span class="claim">From a sentence to a saved record in five moves.</span></div>
-    <div class="main">
-      <h2>A request, end to end</h2>
-      <figure>
-        <svg viewBox="0 0 960 250" role="img" aria-label="Six steps: you say a sentence, the assistant decides the record kind, reads the current state and revision, writes a JSON request file, the helper validates and saves atomically as the next revision, and the assistant reports what was saved.">
-          <defs><marker id="arrB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
-          <rect class="box-personal" x="16" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="28" y="42">1 · YOU SAY</text>
-          <text x="28" y="66">"Priya wants the</text><text x="28" y="84">vendor list by</text><text x="28" y="102">Friday."</text>
-          <path class="arrow" d="M152 79 H176" marker-end="url(#arrB)"/>
-          <rect class="box" x="176" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="188" y="42">2 · DECIDE</text>
-          <text x="188" y="66">Owner and date:</text><text x="188" y="84">a follow-up,</text><text x="188" y="102">not a note.</text>
-          <path class="arrow" d="M312 79 H336" marker-end="url(#arrB)"/>
-          <rect class="box" x="336" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="348" y="42">3 · READ</text>
-          <text x="348" y="66">Existing record?</text><text class="t-mono" x="348" y="84">search, work-item</text><text x="348" y="102">→ revision N</text>
-          <path class="arrow" d="M472 79 H496" marker-end="url(#arrB)"/>
-          <rect class="box" x="496" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="508" y="42">4 · REQUEST</text>
-          <text class="t-mono" x="508" y="66">.ddt/personal/</text><text class="t-mono" x="508" y="82">requests/x.json</text><text class="t-mono" x="508" y="102">{ "expected": N }</text>
-          <path class="arrow" d="M632 79 H656" marker-end="url(#arrB)"/>
-          <rect class="box-personal" x="656" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="668" y="42">5 · HELPER</text>
-          <text x="668" y="66">validate · lock</text><text x="668" y="84">atomic write</text><text x="668" y="102">→ revision N+1</text>
-          <path class="arrow" d="M792 79 H816" marker-end="url(#arrB)"/>
-          <rect class="box" x="816" y="20" width="136" height="118" rx="6"/>
-          <text class="t-eyebrow" x="828" y="42">6 · REPORT</text>
-          <text x="828" y="66">"Follow-up saved,</text><text x="828" y="84">private, due Fri,</text><text x="828" y="102">owner Priya."</text>
-          <rect class="box-soft-personal" x="16" y="170" width="936" height="60" rx="6"/>
-          <text class="t-title" x="32" y="194">Guardrails on every write</text>
-          <text class="t-muted" x="32" y="216">Stale revision → reread and reconcile, never retry blindly.  Partial multi-record save → report exactly what saved.  Author = the owner in your config.</text>
-        </svg>
-        <figcaption>The sentence never touches a file directly. The helper enforces the schema, the lock and the revision; the assistant's job is intent, wording and the report back to you.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- 08 What you can say -->
-  <section class="slide" id="s8" aria-label="What you can say">
-    <div class="rail"><span class="num">08</span><span class="eyebrow">Daily use</span><span class="claim">No command vocabulary to learn. Intent decides the record.</span></div>
-    <div class="main">
-      <h2>What you can say</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>You say</th><th>What happens</th><th>Helper call</th></tr></thead>
-          <tbody>
-            <tr><td>"Remember that the vendor needs another week."</td><td>A note, or the note you were already developing.</td><td><span class="mono">note-save</span></td></tr>
-            <tr><td>"Track: ask Priya for the vendor list by Friday."</td><td>A follow-up with an owner and a due date.</td><td><span class="mono">work-save</span></td></tr>
-            <tr><td>"Here are the Atlas sync notes; update the project."</td><td>One note keeps the source. Project context is reconciled. Adopted actions become follow-ups. One operation, cited.</td><td><span class="mono">note-save · project-save · work-save</span></td></tr>
-            <tr><td>"What's the status of Atlas?"</td><td>Current understanding, open questions, publication state, and your own private notes linked to it.</td><td><span class="mono">project</span></td></tr>
-            <tr><td>"Brief me for the steering meeting."</td><td>Sources assembled; proposals kept apart from agreements; Jira fetch times labelled.</td><td><span class="mono">brief</span> audience team or personal</td></tr>
-            <tr><td>"What changed since Monday?"</td><td>What you authored, what arrived through a pull, what Jira refreshed.</td><td><span class="mono">catch-up</span></td></tr>
-            <tr><td>"What's on my plate?"</td><td>Your open work across every project and team.</td><td><span class="mono">overview</span> summary</td></tr>
-            <tr><td>"Find the note about the vendor contract."</td><td>Matches with snippets, across notes, projects and work.</td><td><span class="mono">search</span></td></tr>
-            <tr><td>"I'm new here. Help me get started."</td><td>A paced tour. Nothing is saved unless you ask for a real task.</td><td>tutorial reference</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- 09 Autonomy -->
-  <section class="slide" id="s9" aria-label="How much it does on its own">
-    <div class="rail"><span class="num">09</span><span class="eyebrow">Daily use</span><span class="claim">You pick how much it does alone. Sharing always waits for you.</span></div>
-    <div class="main">
-      <h2>How much it does on its own</h2>
-      <div class="modes">
-        <div class="mode"><span class="name">supervised</span><p>Shows every proposed record write before making it.</p></div>
-        <div class="mode selected"><span class="name">gated</span><p>Proceeds with clear local edits to the record being discussed and its project. Pauses before touching another project or any shared record.</p><p class="small muted">Default.</p></div>
-        <div class="mode"><span class="name">autonomous</span><p>Proceeds with clear local edits. Pauses only on ambiguity.</p></div>
-      </div>
-      <div class="two">
-        <p class="callout">In every mode, sharing, publication, Jira requests and messages need your explicit go. A proposed idea or a quoted message is never treated as an agreed commitment.</p>
+  <section class="slide" id="s9" aria-label="Private by default">
+    <div class="head"><p class="eyebrow">Privacy</p><h2>Private by default</h2></div>
+    <div class="body">
+      <div class="split">
         <div class="prose">
-          <p><b>Who signs a save.</b> The <code>owner:</code> line in <code>.ddt/config.md</code> is the author of every record you save. If it is still a placeholder, the assistant asks once and writes it back. Author names are attribution, not authentication.</p>
-          <p class="small muted">Set <code>mode:</code> and <code>owner:</code> in the same file. <code>todo_surfacing:</code> decides whether open follow-ups come up on their own while you discuss a project.</p>
+          <p>Your notes and follow-ups are yours. Link a private note to a team project and it appears in <em>your</em> view of that project. The team still cannot see it.</p>
+          <p>A briefing <b>for yourself</b> includes your private notes. A briefing <b>for the team</b> leaves them out, so it is safe to send onward.</p>
+        </div>
+        <div class="note" aria-label="Example private note">
+          <div class="title">Atlas vendor worry <span class="tag">private</span></div>
+          <div class="meta">Linked to <span class="tag team">Atlas</span> · only you can see this</div>
+          <p class="text">If the vendor slips again we should ask procurement about a second supplier.</p>
+          <div class="where">Appears in: <span>your view of Atlas</span><span>your own briefing</span></div>
+          <div class="where">Not in: <span>the team's copy of Atlas</span><span>a briefing for the team</span></div>
         </div>
       </div>
     </div>
+    <div class="foot"><span>Privacy</span><span class="num">09 / 16</span></div>
   </section>
 
-  <!-- 10 Privacy -->
-  <section class="slide" id="s10" aria-label="Private by default">
-    <div class="rail"><span class="num">10</span><span class="eyebrow">Privacy</span><span class="claim">Private by default. A link changes where a record appears, not who can read it.</span></div>
-    <div class="main">
-      <h2>Private by default; links never share</h2>
-      <figure>
-        <svg viewBox="0 0 960 300" role="img" aria-label="A private note and a private follow-up in the personal workspace link to the team project atlas in the team clone; the links carry no content. A brief with audience personal includes those private records for the owner; a brief with audience team omits them.">
-          <defs><marker id="arrC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
-          <rect class="zone-personal" x="16" y="16" width="420" height="176" rx="10"/>
-          <text class="t-eyebrow" x="32" y="40">PERSONAL WORKSPACE · .ddt, gitignored</text>
-          <rect class="box-personal" x="40" y="52" width="370" height="56" rx="6"/>
-          <text class="t-title" x="52" y="74">Private note · "Atlas vendor worry"</text>
-          <text class="t-mono" x="52" y="96">links: [{ scope: "product", project: "atlas" }]</text>
-          <rect class="box-personal" x="40" y="120" width="370" height="56" rx="6"/>
-          <text class="t-title" x="52" y="142">Private follow-up · "Chase vendor"</text>
-          <text class="t-mono" x="52" y="164">links: [{ scope: "product", project: "atlas" }]</text>
-          <rect class="zone-team" x="524" y="16" width="420" height="176" rx="10"/>
-          <text class="t-eyebrow" x="540" y="40">TEAM CLONE · product</text>
-          <rect class="box-team" x="548" y="52" width="372" height="124" rx="6"/>
-          <text class="t-title" x="560" y="76">Team project · atlas</text>
-          <text class="t-mono" x="560" y="98">projects/atlas/project.json</text>
-          <text class="t-mono" x="560" y="116">projects/atlas/notes/ · work/</text>
-          <text class="t-muted" x="560" y="142">readable by everyone with repository access</text>
-          <text class="t-muted" x="560" y="160">your private records are not here</text>
-          <path class="arrow arrow-dashed" d="M410 80 H548" marker-end="url(#arrC)"/>
-          <path class="arrow arrow-dashed" d="M410 148 H548" marker-end="url(#arrC)"/>
-          <text class="t-lbl" x="479" y="118" text-anchor="middle">links carry no content</text>
-          <rect class="box-soft-personal" x="16" y="216" width="452" height="70" rx="6"/>
-          <text class="t-title" x="32" y="240">brief · audience: personal</text>
-          <text class="t-muted" x="32" y="262">includes your linked private records, for your own preparation</text>
-          <rect class="box-soft-team" x="492" y="216" width="452" height="70" rx="6"/>
-          <text class="t-title" x="508" y="240">brief · audience: team  (default)</text>
-          <text class="t-muted" x="508" y="262">omits private records; safe to send onward</text>
-        </svg>
-        <figcaption>Personal records live under <code>.ddt/</code> in your folder and never enter a team clone. The project view still shows you your own linked material, and only a personal-audience brief includes it.</figcaption>
-      </figure>
-      <p class="prose small muted">Copying private content into a team note is a deliberate step: the assistant shows the exact content and destination first. Private paths, personal Jira caches and credentials are rejected inside shared records.</p>
+  <section class="slide" id="s10" aria-label="Sharing with the team">
+    <div class="head"><p class="eyebrow">Team</p><h2>Sharing with the team</h2></div>
+    <div class="body">
+      <ol class="steps">
+        <li><div><b>Pull the latest.</b> Your copy of the shared folder catches up with what teammates published.</div></li>
+        <li><div><b>Make your change.</b> Update a project, add a shared note, track a team follow-up. It stays on your computer for now.</div></li>
+        <li><div><b>Publish.</b> The assistant shows you exactly which records change and where they go. You say yes, and only those are shared.</div></li>
+      </ol>
+      <p class="callout">Local until you publish. The assistant always tells you which state a change is in.</p>
     </div>
+    <div class="foot"><span>Team</span><span class="num">10 / 16</span></div>
   </section>
 
-  <!-- 11 Team sync -->
-  <section class="slide" id="s11" aria-label="Shared context through Git">
-    <div class="rail"><span class="num">11</span><span class="eyebrow">Team</span><span class="claim">Shared context travels through Git, one reviewed publication at a time.</span></div>
-    <div class="main">
-      <h2>Shared context travels through Git</h2>
-      <div class="two">
-        <ol class="steps">
-          <li><div><span class="cmd">sync-status</span> · <span class="cmd">sync-fetch</span><br><span class="small muted">Where your clone stands; fetch contacts the remote read-only for fresh ahead/behind counts.</span></div></li>
-          <li><div><span class="cmd">sync-pull</span><br><span class="small muted">Fast-forward only. Untracked files are fine; modified tracked files stop for reconciliation.</span></div></li>
-          <li><div>Edit with expected revisions<br><span class="small muted">Team records save into the clone and stay local until published. The assistant tells you which state you are in.</span></div></li>
-          <li><div><span class="cmd">publish-preview</span> → <span class="cmd">publish</span><br><span class="small muted">You see the exact files, their digests and the destination branch. Publish commits those reviewed bytes and pushes that one commit.</span></div></li>
-        </ol>
-        <div class="col team">
-          <h3>What publication refuses</h3>
-          <ul>
-            <li>Paths outside <code>projects/&lt;slug&gt;/</code>.</li>
-            <li>Content that changed since the preview.</li>
-            <li>Staged or outgoing commits you did not review.</li>
-            <li>Force pushes, history rewrites, unscoped commits.</li>
-          </ul>
-          <p class="small muted">Commits are made with Git plumbing: no hooks or editors run, and they are unsigned. Each teammate uses their own clone and identity; the repository's access rules are the membership list.</p>
-        </div>
+  <section class="slide" id="s11" aria-label="When two people change the same thing">
+    <div class="head"><p class="eyebrow">Team</p><h2>When two people change the same thing</h2></div>
+    <div class="body">
+      <div class="cards">
+        <div class="card team"><h3>It happens</h3><p>You and a teammate both update the Atlas project before either of you publishes.</p></div>
+        <div class="card team"><h3>Merged, part by part</h3><p>Their change to the purpose and your change to the status both survive. Nothing is overwritten.</p></div>
+        <div class="card team"><h3>You decide the rest</h3><p>Only when you both changed the very same part does the assistant show both versions and ask which to keep.</p></div>
       </div>
+      <p class="quiet small">Nothing is lost and nothing is forced. The assistant never rewrites what the team already has.</p>
     </div>
+    <div class="foot"><span>Team</span><span class="num">11 / 16</span></div>
   </section>
 
-  <!-- 12 Collision recovery -->
-  <section class="slide" id="s12" aria-label="When two people change the same record">
-    <div class="rail"><span class="num">12</span><span class="eyebrow">Team</span><span class="claim">Two people, one record, no lost work and no force push.</span></div>
-    <div class="main">
-      <h2>When two people change the same record</h2>
-      <figure>
-        <svg viewBox="0 0 960 330" role="img" aria-label="Sequence across three lanes: Maya publishes the Atlas project record to the remote and it is accepted; Theo's publish of his own edit is rejected because the remote moved; Theo runs sync-fetch, then sync-rebase which replays his commit on the upstream version and merges fields, returning any field both changed for a decision; then sync-push is accepted.">
-          <defs><marker id="arrD" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>
-          <text class="t-eyebrow" x="160" y="24" text-anchor="middle">MAYA'S CLONE</text>
-          <text class="t-eyebrow" x="480" y="24" text-anchor="middle">TEAM REMOTE</text>
-          <text class="t-eyebrow" x="800" y="24" text-anchor="middle">THEO'S CLONE</text>
-          <line class="lane" x1="160" y1="34" x2="160" y2="318"/>
-          <line class="lane" x1="480" y1="34" x2="480" y2="318"/>
-          <line class="lane" x1="800" y1="34" x2="800" y2="318"/>
-          <rect class="box-personal" x="50" y="46" width="220" height="36" rx="6"/>
-          <text class="t-mono" x="160" y="69" text-anchor="middle">publish  atlas/project.json</text>
-          <rect class="box-ext" x="370" y="46" width="220" height="36" rx="6"/>
-          <text x="480" y="69" text-anchor="middle">accepted · context: Maya's</text>
-          <path class="arrow" d="M270 64 H370" marker-end="url(#arrD)"/>
-          <rect class="box-team" x="690" y="104" width="220" height="36" rx="6"/>
-          <text class="t-mono" x="800" y="127" text-anchor="middle">publish  atlas/project.json</text>
-          <rect class="box-ext" x="370" y="104" width="220" height="36" rx="6"/>
-          <text x="480" y="127" text-anchor="middle">rejected: the remote moved</text>
-          <path class="arrow" d="M690 122 H590" marker-end="url(#arrD)"/>
-          <line class="cross" x1="634" y1="114" x2="646" y2="130"/><line class="cross" x1="646" y1="114" x2="634" y2="130"/>
-          <rect class="box-team" x="690" y="162" width="220" height="36" rx="6"/>
-          <text class="t-mono" x="800" y="185" text-anchor="middle">sync-fetch</text>
-          <path class="arrow" d="M590 180 H690" marker-end="url(#arrD)"/>
-          <text class="t-lbl" x="640" y="172" text-anchor="middle">ahead 1 · behind 1</text>
-          <rect class="box-team" x="610" y="220" width="340" height="60" rx="6"/>
-          <text class="t-mono" x="622" y="242">sync-rebase</text>
-          <text class="t-muted" x="622" y="260">replays Theo's commit on the upstream version, field by field:</text>
-          <text class="t-muted" x="622" y="274">context: Maya's ✓  purpose: Theo's ✓  title, both changed → Theo chooses</text>
-          <rect class="box-team" x="690" y="292" width="220" height="30" rx="6"/>
-          <text class="t-mono" x="800" y="312" text-anchor="middle">sync-push</text>
-          <rect class="box-ext" x="370" y="290" width="220" height="32" rx="6"/>
-          <text x="480" y="311" text-anchor="middle">accepted · both edits kept</text>
-          <path class="arrow" d="M690 306 H590" marker-end="url(#arrD)"/>
-        </svg>
-        <figcaption>A rejected publish is normal, not an incident. Records are merged one field at a time; only a field both people changed differently comes back with both versions, and the assistant asks you before finishing with a <code>resolution</code>. Nothing is force-pushed and no published history is rewritten.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <!-- 13 Jira and Teams -->
-  <section class="slide" id="s13" aria-label="Jira and Teams">
-    <div class="rail"><span class="num">13</span><span class="eyebrow">Integrations</span><span class="claim">Jira owns execution. Teams stays conversation. Neither is required.</span></div>
-    <div class="main">
-      <h2>Jira owns execution; Teams stays conversation</h2>
-      <div class="two">
-        <div class="col ext">
-          <h3>Jira references</h3>
-          <p>A work record can point at an issue by site and key. Status, assignee and due date belong to Jira and are read-only here. A refresh happens only when you ask, and the result is a dated snapshot in your private cache.</p>
-          <pre class="code"><span class="c">.ddt/personal/jira.json</span>
-{
-  "default_site": "https://yourorg.atlassian.net",
-  "sites": [{
-    "site": "https://yourorg.atlassian.net",
-    "auth": "basic",
-    "email": "maya@yourorg.com",
-    "token_env": "JIRA_API_TOKEN"
-  }]
-}</pre>
-          <p class="small muted">The token lives only in that environment variable, never in a file. OAuth bearer tokens and Data Center are supported too. Every snapshot shows its <code>fetched_at</code> time.</p>
-        </div>
-        <div class="col ext">
-          <h3>MS Teams</h3>
-          <p>Everyday conversation keeps happening in Teams. This system prepares the context and the briefs you bring there; it has no connection to Teams and never sends a message unless you explicitly ask for that action.</p>
-          <p class="callout">Without Jira or a team repository, everything on the previous slides still works. Standalone use is the baseline, not a degraded mode.</p>
-        </div>
+  <section class="slide" id="s12" aria-label="Jira and Teams">
+    <div class="head"><p class="eyebrow">Connections</p><h2>Jira and Teams stay what they are</h2></div>
+    <div class="body">
+      <div class="cards">
+        <div class="card ext"><h3>Jira</h3><p>Link a follow-up to a Jira issue. Its status, owner and due date stay Jira's. The assistant refreshes them only when you ask, and shows when it last did.</p></div>
+        <div class="card ext"><h3>Teams</h3><p>Everyday conversation keeps happening in Teams. The assistant prepares what you bring there. It never posts anything on its own.</p></div>
       </div>
+      <p class="callout">No Jira and no team folder yet? Everything on the previous slides still works for you alone.</p>
     </div>
+    <div class="foot"><span>Connections</span><span class="num">12 / 16</span></div>
   </section>
 
-  <!-- 14 Catch-up and briefs -->
-  <section class="slide" id="s14" aria-label="Catch-up and briefs">
-    <div class="rail"><span class="num">14</span><span class="eyebrow">Daily use</span><span class="claim">Change is dated by when it reached you, not only by when it was written.</span></div>
-    <div class="main">
-      <h2>Catch-up and briefs</h2>
-      <div class="two">
-        <div>
-          <h3>"What changed since Monday?"</h3>
-          <table>
-            <tr><td class="mono">authored</td><td>You saved it after that time.</td></tr>
-            <tr><td class="mono">arrived</td><td>It reached your clone through a pull after that time. A teammate's edit from last week that you pulled today still shows. Your own publications count as authored.</td></tr>
-            <tr><td class="mono">jira_refreshed</td><td>A Jira snapshot was refreshed after that time.</td></tr>
-          </table>
-          <p class="small muted">Arrival comes from your clone's own Git reflog, so no notification inbox or server is involved.</p>
-        </div>
-        <div class="col personal">
-          <h3>"Brief me for the steering meeting."</h3>
-          <ul>
-            <li>Built from current records at that moment, never from a maintained status document.</li>
-            <li>Cites its sources and keeps proposals apart from agreements.</li>
-            <li>Labels every Jira figure with its fetch time.</li>
-            <li>Returned in the conversation. Saved only if you ask, as a dated snapshot that is never a second source to keep up to date.</li>
-            <li>Audience <code>team</code> omits your private linked notes; audience <code>personal</code> includes them.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 15 Dashboard -->
-  <section class="slide" id="s15" aria-label="The dashboard">
-    <div class="rail"><span class="num">15</span><span class="eyebrow">Daily use</span><span class="claim">A local page over the same files, for scanning rather than talking.</span></div>
-    <div class="main">
-      <h2>The dashboard</h2>
-      <div class="two">
+  <section class="slide" id="s13" aria-label="A page for scanning">
+    <div class="head"><p class="eyebrow">Daily use</p><h2>A page for scanning</h2></div>
+    <div class="body">
+      <div class="split">
         <div class="prose">
-          <p>Run <code>node .ddt/runtime/server.js</code> in your workspace and open the printed loopback URL. It serves only your machine, with a per-session token, and reads through the same helper.</p>
-          <ul>
-            <li>Views: projects, notebook, work, changes since a date.</li>
-            <li>Filter by project, including your private records linked to team projects.</li>
-            <li>The one write it can make: complete or reopen a local follow-up, with your name for attribution.</li>
-            <li>Reads never pull, publish or contact Jira. Malformed files show as warnings without hiding anything else.</li>
-          </ul>
+          <p>Sometimes you want to look rather than ask. A simple page on your own computer shows your projects, notebook, follow-ups and recent changes, filtered by project.</p>
+          <p>Tick off a follow-up there. Everything else stays with the assistant, and the page never reaches out to the team folder or Jira on its own.</p>
         </div>
         <div class="mock" aria-hidden="true">
-          <div class="mock-bar"><span>http://127.0.0.1:53171</span><span>· Project context</span></div>
-          <div class="mock-tools"><span class="on">Work</span><span>Projects</span><span>Notebook</span><span>Changes</span><span>product / Atlas ▾</span></div>
-          <div class="mock-card"><div><b>Ask Priya for the vendor list</b><span class="badge">open</span></div><div class="meta">personal · Maya · due 2026-09-11 · revision 1</div><button type="button">Mark complete</button></div>
-          <div class="mock-card"><div><b>ATLAS-42 Integration work</b><span class="badge">Jira</span></div><div class="meta">In Progress · Sam · fetched 2026-09-10 09:40. Jira remains authoritative.</div></div>
+          <div class="mock-tools"><span class="on">Follow-ups</span><span>Projects</span><span>Notebook</span><span>Changes</span><span>Atlas ▾</span></div>
+          <div class="mock-card"><b>Ask Priya for the vendor list</b><div class="meta">Maya · due Friday</div><button type="button">Mark complete</button></div>
+          <div class="mock-card"><b>ATLAS-42 Integration work</b><div class="meta">In progress · Sam · from Jira, fetched this morning</div></div>
         </div>
       </div>
     </div>
+    <div class="foot"><span>Daily use</span><span class="num">13 / 16</span></div>
   </section>
 
-  <!-- 16 Runtimes -->
-  <section class="slide" id="s16" aria-label="Same helper, four assistants">
-    <div class="rail"><span class="num">16</span><span class="eyebrow">Runtimes</span><span class="claim">Pick your assistant. The records and the helper do not change.</span></div>
-    <div class="main">
-      <h2>Same helper, five assistants</h2>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Runtime</th><th>Always loaded</th><th>Loaded on demand</th><th>Extras</th></tr></thead>
-          <tbody>
-            <tr><td><b>GitHub Copilot CLI</b><br><span class="small muted">primary for this team</span></td><td><span class="mono">.github/copilot-instructions.md</span>, a short seed you own</td><td>the manual, three <span class="mono">office-*</span> skills with references, the guided tour</td><td><span class="mono">office-work-assistant</span> named agent</td></tr>
-            <tr><td><b>Claude Code</b></td><td><span class="mono">CLAUDE.md</span></td><td><span class="mono">.claude/skills</span>, 16 slash commands</td><td>session hook with open follow-up counts when surfacing is proactive</td></tr>
-            <tr><td><b>Codex</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.codex/skills</span> with reference indexes</td><td></td></tr>
-            <tr><td><b>OpenCode</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.opencode/commands</span> and skills</td><td>edit and shell permissions set to ask</td></tr>
-            <tr><td><b>deepagents</b><br><span class="small muted">lc-code, ddt-agent</span></td><td><span class="mono">.deepagents/AGENTS.md</span> with the full manual, plus your root <span class="mono">AGENTS.md</span> memory</td><td><span class="mono">.deepagents/skills</span> office skills with references, selected by <span class="mono">skills.toml</span></td><td>session hook once project hooks are allowed; helper calls approved in Manual mode or allow-listed</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="callout">Every runtime installs the same <code>.ddt/runtime</code> helper, dashboard and contract, byte for byte. Switching assistants later changes the instruction surface, not your records.</p>
+  <section class="slide" id="s14" aria-label="Works with your assistant">
+    <div class="head"><p class="eyebrow">Your assistant</p><h2>Works with the assistant you already use</h2></div>
+    <div class="body">
+      <p class="statement">GitHub Copilot, Claude Code, Codex, OpenCode, or the team's own deepagents client. <em>Same notes, same projects, same results.</em> Switching assistants later keeps everything.</p>
+      <p class="quiet">In Copilot, the office assistant has its own name and a guided tour. The others get the same abilities in their own style.</p>
     </div>
+    <div class="foot"><span>Your assistant</span><span class="num">14 / 16</span></div>
   </section>
 
-  <!-- 17 Tool surface -->
-  <section class="slide" id="s17" aria-label="The helper's tool surface">
-    <div class="rail"><span class="num">17</span><span class="eyebrow">Runtimes</span><span class="claim">For the curious: the whole tool surface fits on one slide.</span></div>
-    <div class="main">
-      <h2>The helper's tool surface</h2>
-      <div>
-        <div class="chip-group"><span class="label">Read</span><div class="chips"><span class="chip">overview</span><span class="chip">projects</span><span class="chip">project</span><span class="chip">notes</span><span class="chip">note</span><span class="chip">work</span><span class="chip">work-item</span><span class="chip">search</span><span class="chip">brief</span><span class="chip">catch-up</span></div></div>
-        <div class="chip-group"><span class="label">Write</span><div class="chips"><span class="chip">project-save</span><span class="chip">note-save</span><span class="chip">work-save</span></div></div>
-        <div class="chip-group"><span class="label">Adopt legacy</span><div class="chips"><span class="chip">project-adopt</span><span class="chip">note-adopt</span><span class="chip">work-adopt</span></div></div>
-        <div class="chip-group"><span class="label">Team sync</span><div class="chips"><span class="chip">sync-status</span><span class="chip">sync-fetch</span><span class="chip">sync-pull</span><span class="chip">publish-preview</span><span class="chip">publish</span><span class="chip">sync-push</span><span class="chip">sync-rebase</span></div></div>
-        <div class="chip-group"><span class="label">Jira</span><div class="chips"><span class="chip">jira-refresh</span></div></div>
-      </div>
-      <div class="two">
-        <pre class="code"><span class="c"># every call has this shape</span>
-node .ddt/runtime/ddt.js <span class="p">&lt;command&gt;</span> --input <span class="p">&lt;request.json&gt;</span>
-<span class="c"># → { "ok": true, "result": … }  or  { "ok": false, "error": "…" }</span>
-node .ddt/runtime/ddt.js --help</pre>
-        <p class="prose small muted">Requests are JSON files, never shell-interpolated text. Reads accept <code>summary: true</code> to skip bodies. Writes quote the <code>expected</code> revision. Old scratch, notebook and todo files from earlier versions stay readable and are adopted only when you say so.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- 18 Get started -->
-  <section class="slide" id="s18" aria-label="Get started with Copilot CLI">
-    <div class="rail"><span class="num">18</span><span class="eyebrow">Get started</span><span class="claim">Copilot CLI in five minutes. Node 18+, Git and a POSIX shell.</span></div>
-    <div class="main">
-      <h2>Copilot CLI in five minutes</h2>
-      <div class="two">
-        <pre class="code"><span class="c"># 1. From the toolkit checkout, install into a folder of your own</span>
-./bootstrap/init-workspace.sh --runtime copilot ~/work/office
-
-<span class="c"># 2. Say who you are (the tour can do this for you)</span>
-<span class="c">#    .ddt/config.md  →  owner: Maya Chen</span>
-
-<span class="c"># 3. Start Copilot with the office agent</span>
-cd ~/work/office
-copilot --agent=office-work-assistant
-
-<span class="c"># 4. In the session</span>
-<span class="p">I'm new here. Help me get started.</span>
-/skills list      <span class="c"># office-projects, office-notes, office-work</span>
-/agent            <span class="c"># office-work-assistant</span></pre>
-        <div class="col">
-          <h3>Joining a team</h3>
-          <p class="small">Clone the team's context repository inside your workspace under <code>teams/</code>, which the workspace ignores, then add one line under <code>## Team Repos</code> in <code>.ddt/config.md</code>:</p>
-          <pre class="code">product: teams/product</pre>
-          <h3>Other runtimes</h3>
-          <p class="small">Same installer, different flag: <code>--runtime claude</code>, <code>codex</code>, <code>opencode</code> or <code>deepagents</code>. For deepagents, launch <code>lc-code</code> from the workspace and allow project hooks when asked; the manual lives in <code>.deepagents/AGENTS.md</code> and your learnings in the root <code>AGENTS.md</code>.</p>
-          <h3>Later updates</h3>
-          <p class="small"><code>./bootstrap/init-workspace.sh --update --runtime copilot ~/work/office</code> refreshes toolkit files. Your instructions file, configuration and records are kept, and <code>.ddt/runtime/manifest.copilot.txt</code> lists exactly what the toolkit manages.</p>
-          <p class="small muted">Windows: install through WSL or another POSIX shell.</p>
+  <section class="slide" id="s15" aria-label="Getting started and trust">
+    <div class="head"><p class="eyebrow">Start</p><h2>Getting started, and what it never does on its own</h2></div>
+    <div class="body">
+      <div class="cols">
+        <div>
+          <h3>Three steps</h3>
+          <ol class="steps">
+            <li><div><b>Get a folder set up.</b> Whoever looks after the toolkit installs it into a folder of yours, for the assistant you use. Your team's shared folder goes inside it.</div></li>
+            <li><div><b>Say who you are.</b> Your name goes on what you save. The tour can set it for you.</div></li>
+            <li><div><b>Open your assistant there and say</b> <q>I'm new here. Help me get started.</q></div></li>
+          </ol>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 19 Guarantees -->
-  <section class="slide" id="s19" aria-label="What it always does and never does">
-    <div class="rail"><span class="num">19</span><span class="eyebrow">Guarantees</span><span class="claim">The rules the helper enforces, whatever the model decides.</span></div>
-    <div class="main">
-      <h2>What it always does, and never does</h2>
-      <div class="always-never">
-        <div class="always">
-          <h3>Always</h3>
-          <ul>
-            <li>Checks the revision you read before saving.</li>
-            <li>Writes atomically under a lock and keeps a history of who changed what.</li>
-            <li>Publishes exactly the bytes you reviewed, to the destination you saw.</li>
-            <li>Labels every Jira snapshot with its fetch time.</li>
-            <li>Tells you whether a change is local or published.</li>
-            <li>Reports failures with their cause, with credentials redacted.</li>
-            <li>Records what the installer manages, so updates never overwrite your files.</li>
+        <div>
+          <h3>Never without asking you</h3>
+          <ul class="never">
+            <li>Publish or pull team changes.</li>
+            <li>Contact Jira or send a message anywhere.</li>
+            <li>Copy your private notes into something shared.</li>
+            <li>Overwrite a teammate's change.</li>
           </ul>
-        </div>
-        <div class="never">
-          <h3>Never</h3>
-          <ul>
-            <li>Edits record files by hand.</li>
-            <li>Pulls, publishes, refreshes Jira or sends a message on its own.</li>
-            <li>Copies private notes or personal caches into shared records.</li>
-            <li>Stores a credential in a file.</li>
-            <li>Force-pushes, rewrites published history, or runs Git hooks during publish.</li>
-            <li>Signs commits: branch rules that require signatures will reject them.</li>
-            <li>Deletes or moves legacy files during an update.</li>
+          <h3 style="margin-top:18px">Always</h3>
+          <ul class="always">
+            <li>Keeps a history of who changed what.</li>
+            <li>Shows you what will be shared before sharing it.</li>
+            <li>Keeps passwords and tokens out of your files.</li>
           </ul>
         </div>
       </div>
-      <p class="small muted">Requirements: Node.js 18 or later, Git, a POSIX shell. No packages, no database, no background sync.</p>
     </div>
+    <div class="foot"><span>Start</span><span class="num">15 / 16</span></div>
   </section>
 
-  <!-- 20 Close -->
-  <section class="slide title" id="s20" aria-label="Closing">
-    <div class="main">
-      <p class="eyebrow">In one sentence</p>
-      <h1>Talk about your work. The records stay honest.</h1>
-      <p class="lede">Every fact has one home, every summary is built fresh from it, and every shared change is one you reviewed.</p>
-      <div class="runtimes-line"><span class="pill primary">Start: "I'm new here. Help me get started."</span></div>
+  <section class="slide cover" id="s16" aria-label="Closing">
+    <div class="body">
+      <div class="intro">
+        <p class="eyebrow">In one sentence</p>
+        <h1>Talk about your work. The records stay honest.</h1>
+        <p class="lede">Every fact has one home, every summary is built fresh from it, and every shared change is one you reviewed.</p>
+        <div class="pills"><span class="pill primary">Start with: "I'm new here. Help me get started."</span></div>
+      </div>
+      <div class="card">
+        <h3>If you want the details</h3>
+        <p class="small">The toolkit's README covers installation and team setup. Inside your workspace, the operating manual and the workflow guide describe exactly how the assistant reads and writes your records.</p>
+      </div>
     </div>
-    <div class="col">
-      <h3>Read next</h3>
-      <ul>
-        <li><span class="mono">README.md</span> in the toolkit: install, team use, upgrades.</li>
-        <li><span class="mono">adapters/copilot/README.md</span>: Copilot discovery checks and everyday prompts.</li>
-        <li><span class="mono">.ddt/runtime/WORKFLOWS.md</span> in your workspace: the full command contract.</li>
-        <li><span class="mono">.ddt/runtime/ASSISTANT.md</span>: the operating manual the assistant follows.</li>
-      </ul>
-    </div>
+    <div class="foot"><span>The Office Work Assistant</span><span class="num">16 / 16</span></div>
   </section>
 
 </main>
 
 <div class="controls" role="group" aria-label="Slide navigation">
   <button type="button" id="prev" aria-label="Previous slide">‹ Prev</button>
-  <span class="counter" id="counter" aria-live="polite">01 / 20</span>
+  <span class="counter" id="counter" aria-live="polite">01 / 16</span>
   <button type="button" id="next" aria-label="Next slide">Next ›</button>
   <button type="button" id="open-index" aria-label="Open slide index">Index</button>
 </div>
