@@ -1,6 +1,8 @@
 # Office Work Assistant private workspace and transient writes
 .ddt/personal/
 .ddt/projects/
+# Team clones nested in this workspace are separate repositories
+teams/
 *.ddt-lock
 *.ddt-tmp
 .DS_Store

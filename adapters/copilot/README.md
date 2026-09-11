@@ -63,7 +63,7 @@ After an update, start a new session so instruction changes take effect. `/skill
 
 Read `.ddt/runtime/ASSISTANT.md` for behavior and `.ddt/runtime/WORKFLOWS.md` for the command/data contract. Both are loaded when needed; the short `.github/copilot-instructions.md` provides initial guidance. No root `AGENTS.md` or `CLAUDE.md` is installed by this adapter.
 
-Run Copilot from the personal workspace. Team clones remain separate and are configured under `## Team Repos` in `.ddt/config.md`. If Copilot needs access to a configured clone outside the workspace, grant that specific directory through its normal permission flow. Do not enable unrestricted paths/tools just to use the assistant. Workspace autonomy describes product behavior and does not override native permissions.
+Run Copilot from the personal workspace. Team clones are separate repositories configured under `## Team Repos` in `.ddt/config.md`; keep them under `teams/<name>` inside the workspace so Copilot needs no extra directory access. A clone elsewhere works too if you grant that specific directory through Copilot's normal permission flow. Do not enable unrestricted paths/tools just to use the assistant. Workspace autonomy describes product behavior and does not override native permissions.
 
 This distribution adds no automatic sync hooks, MCP servers, global config, or model override. Use the assistant's explicit synchronization/Jira workflows when needed. Existing repository instructions and custom unrelated agents/skills/hooks are retained; reconcile conflicting guidance in your own instructions.
 

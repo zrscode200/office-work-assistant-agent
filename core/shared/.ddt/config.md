@@ -24,7 +24,8 @@ created: [date]
 
 ## Team Repos
 
-<!-- One team per line, no indentation: team-name: /absolute/path/to/local/clone
-Team clones must be separate from this personal workspace and contain projects/.
+<!-- One team per line, no indentation: team-name: teams/team-name (a clone inside this
+workspace, ignored by its repository) or team-name: /absolute/path/to/local/clone.
+Team clones are separate Git repositories containing projects/; this workspace must never sit inside one.
 Repository access controls team membership; author metadata provides attribution.
 No configuration is needed for standalone personal use. -->

@@ -384,3 +384,31 @@ test('duplicate legacy ids stay index-keyed; a blocked HEAD update restores the 
  assert.equal(git(b,'status','--porcelain'),'');assert.equal((await two.run('sync-status',{scope:'team'})).head,rejected.committed);
  assert.equal((await two.run('sync-rebase',{scope:'team',expected_commit:rejected.committed,destination,confirm:true})).rebased,true);
 });
+
+test('team clones nested under teams/ publish and pull; containing, .ddt and non-repository locations are refused',async t=>{
+ const base=scratch();t.after(()=>fs.rmSync(base,{recursive:true,force:true}));const remote=path.join(base,'remote.git');fs.mkdirSync(remote);git(remote,'init','--bare');git(remote,'symbolic-ref','HEAD','refs/heads/main');
+ const seed=path.join(base,'seed');fs.mkdirSync(seed);git(seed,'init','-b','main');write(path.join(seed,'README.md'),'Team fixture\n');git(seed,'add','.');git(seed,'commit','-m','Init');git(seed,'remote','add','origin',remote);git(seed,'push','-u','origin','main');
+ const stores=[];
+ for(const who of ['maya','theo']){
+  const ws=path.join(base,who);fs.mkdirSync(ws);git(ws,'init','-b','main');write(path.join(ws,'.gitignore'),'.ddt/personal/\n.ddt/projects/\nteams/\n');
+  git(base,'clone',remote,path.join(ws,'teams/product'));git(path.join(ws,'teams/product'),'config','user.name','Fixture');git(path.join(ws,'teams/product'),'config','user.email',who+'@example.invalid');
+  write(path.join(ws,'.ddt/config.md'),'owner: '+who+'\n## Team Repos\nproduct: teams/product\n');
+  stores.push(createWorkspace(ws,{env:{GIT_CONFIG_GLOBAL:'/dev/null',GIT_CONFIG_NOSYSTEM:'1'}}));
+ }
+ const [maya,theo]=stores;
+ const status=await maya.run('sync-status',{scope:'product'});assert.equal(status.nested.path,'teams/product');assert.equal(status.nested.workspace_ignore,'ignored');
+ await maya.run('project-save',{scope:'product',project:'atlas',expected:0,fields:{title:'Atlas',context:'Nested clone'}});
+ const n=await maya.run('note-save',{expected:0,fields:{title:'Private',body:'Only mine',links:[{scope:'product',project:'atlas'}]}});
+ const preview=await maya.run('publish-preview',{scope:'product',paths:['projects/atlas/project.json']});
+ const result=await maya.run('publish',{scope:'product',paths:['projects/atlas/project.json'],expected_head:preview.head,destination:preview.destination,expected_files:{'projects/atlas/project.json':preview.files[0].digest},confirm:true,message:'Share atlas'});
+ assert.equal(result.published,true);
+ await theo.run('sync-pull',{scope:'product'});const view=await theo.run('project',{scope:'product',project:'atlas'});assert.equal(view.project.context,'Nested clone');assert.equal(view.notes.length,0);
+ assert.equal(git(path.join(base,'maya/teams/product'),'ls-files').includes('.ddt'),false);assert.equal(git(path.join(base,'maya'),'status','--porcelain').includes('teams'),false);
+ assert.equal(JSON.stringify(await maya.run('brief',{scope:'product',project:'atlas'})).includes('Only mine'),false);assert.equal((await maya.run('brief',{scope:'product',project:'atlas',audience:'personal'})).linked_private.notes[0].id,n.id);
+ write(path.join(base,'maya/.gitignore'),'.ddt/personal/\n.ddt/projects/\n');assert.match((await maya.run('sync-status',{scope:'product'})).nested.workspace_ignore,/not ignored: add teams\//);
+ write(path.join(base,'maya/.ddt/config.md'),'owner: maya\n## Team Repos\nparent: '+base+'\nhidden: .ddt/team\nplain: teams/plain\nmissing: teams/none\n');
+ git(base,'init','-b','main');fs.mkdirSync(path.join(base,'maya/.ddt/team'),{recursive:true});fs.mkdirSync(path.join(base,'maya/teams/plain'),{recursive:true});
+ const warnings=(await maya.run('projects')).warnings.map(w=>w.scope+': '+w.error);
+ assert.match(warnings.find(w=>w.startsWith('parent')),/must not contain the personal workspace/);assert.match(warnings.find(w=>w.startsWith('hidden')),/inside \.ddt/);
+ assert.match(warnings.find(w=>w.startsWith('plain')),/own Git repository/);assert.match(warnings.find(w=>w.startsWith('missing')),/does not exist/);
+});

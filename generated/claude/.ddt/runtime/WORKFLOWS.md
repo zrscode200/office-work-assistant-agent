@@ -29,7 +29,7 @@ Requests and outputs are JSON. Write request files with the runtime's file tool 
 
 `summary: true` omits note bodies and histories and adds `body_preview`. A record that cannot be parsed appears once with `malformed: true` and its error, and in `warnings`; other records are unaffected. A record whose file name differs from its embedded id reports `id_mismatch`; the file name is the identity. Jira work items carry `snapshot` (or `snapshot_error` when the cached snapshot is invalid) and `execution_owner: "jira"`. `brief` adds `audience`, an `instruction` for the synthesis, and `linked_private_excluded` when the team audience omitted private records.
 
-`scope` defaults to `personal`. Other values are team names under `## Team Repos` in `.ddt/config.md`. A project is a lowercase kebab-case slug. Team directories must be separate Git repositories outside the personal workspace. Projects use `project.json`; project notes and work are in `notes/` and `work/`. Unattached private records use `.ddt/personal/notes/` and `.ddt/personal/work/`.
+`scope` defaults to `personal`. Other values are team names under `## Team Repos` in `.ddt/config.md`, each mapped to a local clone: a workspace-relative path such as `teams/product` (recommended; the workspace's `.gitignore` ignores `teams/`, so its own repository never records the clone) or an absolute path elsewhere. A team directory must be its own Git repository, never inside `.ddt`, and the workspace can never sit inside a team clone. A project is a lowercase kebab-case slug. Projects use `project.json`; project notes and work are in `notes/` and `work/`. Unattached private records use `.ddt/personal/notes/` and `.ddt/personal/work/`.
 
 ## Create or reconcile a project
 
@@ -104,7 +104,7 @@ API references: [Cloud get issue](https://developer.atlassian.com/cloud/jira/pla
 
 ## Team synchronization and publication
 
-1. `sync-status` with `scope` shows local HEAD, branch, pending changes, and last-known upstream counts. It does not contact the remote.
+1. `sync-status` with `scope` shows local HEAD, branch, pending changes, and last-known upstream counts. It does not contact the remote. For a clone nested in the workspace it adds `nested` with the relative path and whether the workspace repository ignores it.
 2. `sync-fetch` with `scope` contacts the configured remote (read-only) and returns fresh `ahead`/`behind` counts. Use it before deciding whether to pull or publish.
 3. When authorized, `sync-pull` fast-forwards the checkout. Untracked files are tolerated; modified tracked files and divergence stop for reconciliation. Do not change other people's work to make a pull pass.
 4. Read records, prepare changes, and save with expected revisions. Files remain local until publication. Attribution is informational; actual access is controlled by Git/repository permissions.

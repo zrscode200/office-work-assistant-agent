@@ -169,7 +169,7 @@ test('installer rejects unknown flags and extra targets, honors --no-git, guards
  write(path.join(target,'.gitignore'),'custom\r\n.ddt/personal/\r\n!.ddt/projects/\r\n');
  const out=execFileSync('sh',[installer,'--no-git','--runtime','copilot',target],{encoding:'utf8',stdio:['ignore','pipe','pipe']});
  assert.equal(fs.existsSync(path.join(target,'.git')),false);assert.match(out,/negates '.ddt\/projects\/'/);
- const ignores=fs.readFileSync(path.join(target,'.gitignore'),'utf8');assert.equal(ignores.split(/\r?\n/).filter(l=>l==='.ddt/personal/').length,1);assert.equal(/^\.ddt\/projects\/$/m.test(ignores),false);assert.ok(ignores.split(/\r?\n/).includes('*.ddt-lock'));
+ const ignores=fs.readFileSync(path.join(target,'.gitignore'),'utf8');assert.equal(ignores.split(/\r?\n/).filter(l=>l==='.ddt/personal/').length,1);assert.equal(/^\.ddt\/projects\/$/m.test(ignores),false);assert.ok(ignores.split(/\r?\n/).includes('*.ddt-lock'));assert.ok(ignores.split(/\r?\n/).includes('teams/'));
  execFileSync('sh',[installer,'--no-git','--runtime','copilot',target],{stdio:['ignore','pipe','pipe']});assert.equal(fs.readFileSync(path.join(target,'.gitignore'),'utf8'),ignores);
 });
 

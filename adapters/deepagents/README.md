@@ -19,6 +19,7 @@ The first time, the client asks whether to allow this project's hooks; choose to
 
 - **Its own Git root.** The client finds project memory, skills and hooks at the nearest Git root. The installer initializes a repository in the workspace even when the folder sits inside another repository, and refuses `--no-git` for this runtime.
 - **Stamped alone.** The root `AGENTS.md` is the client's memory file, and another runtime would use that same file as its manual. The installer refuses to add this runtime to a workspace stamped for another one, and the reverse. Use a separate folder per runtime.
+- **Team clones under `teams/<name>`.** They are separate repositories the workspace ignores, so every helper call stays inside the project the client trusts, and the client still resolves the project at the workspace root.
 - Node.js 18+ and Git on the machine; no Node packages.
 
 ## What is installed

@@ -206,8 +206,10 @@ function createWorkspace(workspace, options = {}) {
     const teamSection = content.split(/^## Team Repos\s*$/m)[1]?.split(/^## /m)[0] || '';
     const teams = {};
     for (const line of teamSection.split('\n')) {
-      const m = line.match(/^([a-z0-9][a-z0-9-]*):\s*(\/[^\r\n]+)$/);
-      if (m) teams[m[1]] = m[2].trim();
+      const m = line.match(/^([a-z0-9][a-z0-9-]*):\s*([^\r\n]+?)\s*$/);
+      if (!m || /[\u0000-\u001f]/.test(m[2]) || m[2].startsWith('#')) continue;
+      // Relative locations are inside the workspace, typically teams/<name>.
+      teams[m[1]] = path.isAbsolute(m[2]) ? m[2] : path.resolve(root, m[2]);
     }
     return { owner: content.match(/^owner:\s*(.*)$/m)?.[1]?.trim() || '', teams };
   }
@@ -229,8 +231,16 @@ function createWorkspace(workspace, options = {}) {
     if (!slugPattern.test(scope)) fail('Invalid scope');
     const location = config().teams[scope];
     if (!location) fail('Unknown team scope');
-    const resolved = fs.realpathSync(location);
-    if (resolved === root || resolved.startsWith(root + path.sep) || root.startsWith(resolved + path.sep)) fail('Team storage must be separate from the personal workspace');
+    let resolved;
+    try { resolved = fs.realpathSync(location); } catch { fail(`Team location does not exist: ${location}`); }
+    if (resolved === root || root.startsWith(resolved + path.sep)) fail('Team storage must not contain the personal workspace');
+    if (resolved.startsWith(root + path.sep)) {
+      // A nested clone is fine when it is its own repository outside .ddt; the
+      // workspace ignores teams/ so its own repository never records the clone.
+      const ddt = path.join(root, '.ddt');
+      if (resolved === ddt || resolved.startsWith(ddt + path.sep)) fail('Team storage cannot live inside .ddt');
+      if (!fs.existsSync(path.join(resolved, '.git'))) fail('A team clone inside the workspace must be its own Git repository; clone it under teams/<name>');
+    }
     if (cache) cache.roots.set(scope, resolved);
     return resolved;
   }
@@ -575,13 +585,29 @@ function createWorkspace(workspace, options = {}) {
   function remoteName(scope, branch) {
     try { return git(scope, ['config', '--get', `branch.${branch}.remote`]); } catch { return null; }
   }
+  // For a clone nested in the workspace, say whether the workspace's own
+  // repository ignores it; an unignored clone would be recorded as a pointer.
+  function workspaceIgnore(scope) {
+    const teamRoot = scopeRoot(scope);
+    if (!teamRoot.startsWith(root + path.sep)) return null;
+    const rel = path.relative(root, teamRoot);
+    const top = rel.split(path.sep)[0];
+    try {
+      execFileSync('git', ['-C', root, 'check-ignore', '-q', '--', rel], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000, env: gitEnv });
+      return { path: rel, workspace_ignore: 'ignored' };
+    } catch (e) {
+      if (e.status === 1) return { path: rel, workspace_ignore: `not ignored: add ${top}/ to the workspace .gitignore` };
+      return { path: rel, workspace_ignore: 'no workspace repository' };
+    }
+  }
   function gitStatus(scope) {
     requireTeamScope(scope);
     try {
       const head = git(scope, ['rev-parse', 'HEAD']);
       let upstream = null, ahead = null, behind = null;
       try { upstream = git(scope, ['rev-parse', '--abbrev-ref', '@{upstream}']); [ahead, behind] = git(scope, ['rev-list', '--left-right', '--count', 'HEAD...@{upstream}']).split(/\s+/).map(Number); } catch {}
-      return { head, destination: destination(scope), branch: git(scope, ['branch', '--show-current']), changes: git(scope, ['status', '--porcelain']), upstream, ahead, behind, freshness: 'Local Git view; remote changes are unknown until an explicit fetch or pull' };
+      const nested = workspaceIgnore(scope);
+      return { head, destination: destination(scope), branch: git(scope, ['branch', '--show-current']), changes: git(scope, ['status', '--porcelain']), upstream, ahead, behind, ...(nested ? { nested } : {}), freshness: 'Local Git view; remote changes are unknown until an explicit fetch or pull' };
     } catch (e) { fail(`Team location must be an initialized Git repository with a commit (${redact(e.message)})`); }
   }
   function trackedChanges(scope) { return git(scope, ['status', '--porcelain', '--untracked-files=no']); }

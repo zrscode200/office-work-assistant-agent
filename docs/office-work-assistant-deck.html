@@ -406,9 +406,9 @@ launch date and cut the pilot to two regions.</pre>
           <text class="t-mono" x="478" y="124">notes/&lt;id&gt;.md</text>
           <text class="t-mono" x="478" y="144">work/&lt;id&gt;.json</text>
           <text class="t-muted" x="478" y="172">one local Git checkout</text>
-          <text class="t-muted" x="478" y="190">per team, outside .ddt</text>
+          <text class="t-muted" x="478" y="190">per team, under teams/</text>
           <text class="t-muted" x="466" y="240">local until you publish</text>
-          <text class="t-mono" x="466" y="264">config.md → product: /path/to/clone</text>
+          <text class="t-mono" x="466" y="264">config.md → product: teams/product</text>
           <path class="arrow" d="M400 98 H466" marker-end="url(#arrA)"/>
           <text class="t-lbl" x="433" y="88" text-anchor="middle">scope: team</text>
 
@@ -794,8 +794,8 @@ copilot --agent=office-work-assistant
 /agent            <span class="c"># office-work-assistant</span></pre>
         <div class="col">
           <h3>Joining a team</h3>
-          <p class="small">Clone the team's context repository next to your workspace, then add one line under <code>## Team Repos</code> in <code>.ddt/config.md</code>:</p>
-          <pre class="code">product: /Users/maya/work/product-context</pre>
+          <p class="small">Clone the team's context repository inside your workspace under <code>teams/</code>, which the workspace ignores, then add one line under <code>## Team Repos</code> in <code>.ddt/config.md</code>:</p>
+          <pre class="code">product: teams/product</pre>
           <h3>Other runtimes</h3>
           <p class="small">Same installer, different flag: <code>--runtime claude</code>, <code>codex</code>, <code>opencode</code> or <code>deepagents</code>. For deepagents, launch <code>lc-code</code> from the workspace and allow project hooks when asked; the manual lives in <code>.deepagents/AGENTS.md</code> and your learnings in the root <code>AGENTS.md</code>.</p>
           <h3>Later updates</h3>
