@@ -176,7 +176,7 @@ if [ "$RUNTIME_INPUT" = "deepagents" ]; then
     fi
   done
 elif [ -f "$TARGET_DIR/.deepagents/AGENTS.md" ] && grep -q '^Managed by the Office Work Assistant toolkit' "$TARGET_DIR/.deepagents/AGENTS.md"; then
-  echo "Error: this workspace is stamped for deepagents, whose root AGENTS.md is the client's memory file; stamp '$RUNTIME_INPUT' in a separate folder." >&2
+  echo "Error: this workspace is stamped for deepagents, whose root AGENTS.md is the client's memory file; deepagents workspaces are stamped alone. Stamp '$RUNTIME_INPUT' in a separate folder." >&2
   exit 1
 fi
 
