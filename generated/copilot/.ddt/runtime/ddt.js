@@ -106,9 +106,15 @@ function acquireLock(lock, busyMessage) {
       if (owner && Number.isInteger(owner.pid)) stale = owner.pid !== process.pid && !alive(owner.pid);
       else { try { stale = Date.now() - fs.statSync(lock).mtimeMs > STALE_LOCK_MS; } catch { stale = false; } } // Older versions wrote empty locks.
       if (attempt === 0 && stale) {
-        // Rename first so two writers cannot both remove a freshly recreated lock.
+        // Move the inspected lock aside and unlink only that inode; a live lock
+        // recreated by another writer in the meantime is put back untouched.
         const moved = lock + '.stale.' + crypto.randomUUID();
-        try { fs.renameSync(lock, moved); fs.unlinkSync(moved); } catch {}
+        try {
+          const inspected = fs.statSync(lock).ino;
+          fs.renameSync(lock, moved);
+          if (fs.statSync(moved).ino === inspected) fs.unlinkSync(moved);
+          else fs.renameSync(moved, lock);
+        } catch {}
         continue;
       }
       const age = owner?.at && Number.isFinite(Date.parse(owner.at)) ? `${Math.max(0, Math.round((Date.now() - Date.parse(owner.at)) / 1000))}s old` : 'unknown age';
@@ -360,7 +366,7 @@ function createWorkspace(workspace, options = {}) {
         // does not re-key adopted items; older index keys still count as adopted.
         const indexed = `${rel}#${index}:${item.id}`;
         const source = item.id !== undefined && item.id !== null && counts.get(String(item.id)) === 1 ? `${rel}#id:${item.id}` : indexed;
-        const byId = item.id !== undefined && item.id !== null && adoptedIds.has(`${rel}|${item.id}`);
+        const byId = item.id !== undefined && item.id !== null && counts.get(String(item.id)) === 1 && adoptedIds.has(`${rel}|${item.id}`);
         if (includeAdopted || !(adopted.has(source) || adopted.has(indexed) || byId)) result.push({ ...item, id: 'legacy-' + hash(source).slice(0, 24), title: item.what, scope: 'personal', project: null, kind: 'work', legacy: true, legacy_source: source, revision: hash(JSON.stringify(item)), original: item });
       });
     }
@@ -383,6 +389,7 @@ function createWorkspace(workspace, options = {}) {
       catch (e) { result.warnings.push({ scope: project.scope, project: project.project, error: e.message }); }
     }
     for (const r of [...allNotes, ...allWork]) if (r.malformed) result.warnings.push({ scope: r.scope, project: r.project, kind: r.kind, storage: r.storage, error: r.error });
+    if (options.scopes) result.projects = result.projects.filter(p => include(p.scope));
     return { version: VERSION, ...result, notes: allNotes, work: allWork, generated_at: now() };
   }
   const summarize = r => {
@@ -655,7 +662,9 @@ function createWorkspace(workspace, options = {}) {
     return pushCommit(input, state.head);
   }
   function readRecordAt(scope, ref, file) {
-    try { return decodeText(file, git(scope, ['show', `${ref}:${file}`])); } catch { return null; }
+    let content;
+    try { content = git(scope, ['show', `${ref}:${file}`]); } catch { return null; }
+    try { return decodeText(file, content); } catch (e) { return { malformed: e.message }; }
   }
   function rebase(input) {
     if (!input.confirm) fail('Rebase needs explicit confirmation of the commit and destination');
@@ -674,6 +683,8 @@ function createWorkspace(workspace, options = {}) {
       const identity = { path: file, ...recordIdentity(file) };
       let local = readRecordAt(scope, state.head, file);
       const theirs = readRecordAt(scope, upstream, file), common = readRecordAt(scope, base, file);
+      const broken = [local, theirs, common].find(r => r?.malformed);
+      if (broken) { unresolved.push({ ...identity, conflicts: [`a version of this record cannot be parsed; repair it first (${broken.malformed})`] }); continue; }
       if (local && theirs && identity.kind === 'project') local = { ...local, id: theirs.id }; // Project ids are informational.
       if (!local) { unresolved.push({ ...identity, conflicts: ['the outgoing commit removed this record; removals cannot be replayed'] }); continue; }
       if (common && !theirs) { unresolved.push({ ...identity, conflicts: ['upstream removed or moved this record'], local, upstream: null }); continue; }
@@ -686,7 +697,7 @@ function createWorkspace(workspace, options = {}) {
     }
     if (unresolved.length) return { rebased: false, head: state.head, unresolved, guidance: 'Compare local and upstream, agree the merged meaning with the user, then rerun sync-rebase with resolution: { "<path>": { "<field>": "local" | "upstream" | { "value": ... } } } for the listed fields. Identity fields and removed records cannot be chosen; re-save on top of upstream instead. No history was rewritten.' };
     // Replay with plumbing on the upstream tree, like publish: no hooks, editors or
-    // half-finished rebase state; commit signing follows the repository configuration.
+    // half-finished rebase state. Plumbing commits are not GPG-signed.
     const repo = scopeRoot(scope);
     const index = path.resolve(repo, git(scope, ['rev-parse', '--git-path', 'index']));
     const tempIndex = index + '.' + crypto.randomUUID() + '.ddt-tmp';
@@ -709,7 +720,12 @@ function createWorkspace(workspace, options = {}) {
     // Move index and working tree first; Git refuses to overwrite untracked files, and nothing has changed if it does.
     try { git(scope, ['read-tree', '-m', '-u', state.head, commit]); }
     catch (e) { fail(`Rebase computed but the working tree could not be updated; nothing changed (${redact(e.message)})`); }
-    git(scope, ['update-ref', 'HEAD', commit, state.head]);
+    try { git(scope, ['update-ref', 'HEAD', commit, state.head]); }
+    catch (e) {
+      // HEAD did not move: put index and working tree back so nothing is left half done.
+      try { git(scope, ['read-tree', '-m', '-u', commit, state.head]); } catch {}
+      fail(`Rebase computed but HEAD could not be updated; working tree restored (${redact(e.message)})`);
+    }
     const after = gitStatus(scope);
     return { rebased: true, previous_commit: state.head, head: after.head, ahead: after.ahead, behind: after.behind, records: files, next: after.ahead ? 'Review the replayed records, then sync-push with expected_commit set to head' : 'Upstream already contained these changes; nothing to push' };
   }
@@ -795,7 +811,8 @@ function createWorkspace(workspace, options = {}) {
       }
       case 'work-item': {
         if (!input.id) fail('work-item requires id');
-        const found = [...workItems(input), ...(!input.project && (input.scope || 'personal') === 'personal' ? legacyWork() : [])].find(w => w.id === input.id);
+        const items = workItems(input);
+        const found = [...items, ...(!input.project && (input.scope || 'personal') === 'personal' ? legacyWork(false, items) : [])].find(w => w.id === input.id);
         return found || fail('Work item not found');
       }
       case 'work-save': return saveEntity('work', input);
@@ -803,6 +820,7 @@ function createWorkspace(workspace, options = {}) {
       case 'jira-refresh': return refreshJira(input);
       case 'search': {
         const query = text(input.query, 'query').toLowerCase();
+        if (input.scope) scopeRoot(input.scope);
         const view = overview(input.scope ? { scopes: [input.scope] } : {});
         const fieldsOf = r => [r.title, r.body, r.context, r.purpose, r.scope_description, r.id].filter(v => typeof v === 'string');
         const snippet = r => {

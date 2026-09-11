@@ -147,6 +147,7 @@ test('update keeps pre-existing root files, backs up legacy ones, reports drift 
  const manifest=fs.readFileSync(path.join(target,'.ddt/runtime/manifest.claude.txt'),'utf8');assert.match(manifest,/^kept README.md$/m);assert.match(manifest,/^managed .ddt\/runtime\/ddt.js$/m);assert.match(manifest,/^runtime claude$/m);assert.match(manifest,/^toolkit_version \d/m);
  assert.equal(fs.readdirSync(target).some(f=>f.includes('before-update')),false);
  const legacy=scratch(t);install(legacy,'claude');fs.unlinkSync(path.join(legacy,'.ddt/runtime/manifest.claude.txt'));
+ write(path.join(legacy,'.ddt/runtime/ddt.js'),'STALE RUNTIME');out=install(legacy,'claude');assert.match(out,/notice: this workspace already has the toolkit runtime but no manifest/);assert.match(out,/skip: .ddt\/runtime\/ddt.js already exists \(toolkit-managed\)/);fs.unlinkSync(path.join(legacy,'.ddt/runtime/manifest.claude.txt'));
  write(path.join(legacy,'README.md'),'OLD TOOLKIT README\n');write(path.join(legacy,'.claude/dashboard/template.html'),'<old>');
  write(path.join(legacy,'.claude/settings.json'),JSON.stringify({hooks:{SessionStart:[{matcher:'',hooks:[{type:'command',command:'sh $CLAUDE_PROJECT_DIR/.claude/hooks/session-sync.sh'}]}]}}));
  out=install(legacy,'claude',true);

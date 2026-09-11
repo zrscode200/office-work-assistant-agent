@@ -368,3 +368,19 @@ test('mergeRecords keeps the later updated_at, honors removed keys, and refuses 
  assert.deepEqual(mergeRecords(base,upstream,{...local,id:'other'},{id:'local'},['id']).conflicts,['id (identity; cannot be chosen)']);
  assert.equal(redact('fatal: https://user:secret@example.invalid/x?access_token=abc'),'fatal: https://***@example.invalid/x?access_token=***');
 });
+
+test('duplicate legacy ids stay index-keyed; a blocked HEAD update restores the working tree; search validates scope',async t=>{
+ const {root,store}=fixture(t);const todo=path.join(root,'.ddt/personal/todo.json');write(todo,{items:[{id:'x',what:'One'},{id:'x',what:'Two'}]});
+ const first=(await store.run('work')).find(w=>w.original?.what==='One');await store.run('work-adopt',{id:first.id,expected_source:first.revision,author:'Maya'});
+ assert.deepEqual((await store.run('work')).filter(w=>w.legacy).map(w=>w.original.what),['Two']);
+ await assert.rejects(store.run('search',{query:'x',scope:'nowhere'}),/Unknown team scope/);
+ const {b,one,two}=await teamFixture(t);await project(one,'team');await one.run('publish',await publishRequest(one,['projects/atlas/project.json']));await two.run('sync-pull',{scope:'team'});
+ const n=await note(one,{},{scope:'team',project:'atlas'});await one.run('publish',await publishRequest(one,[`projects/atlas/notes/${n.id}.md`]));
+ await two.run('project-save',{scope:'team',project:'atlas',expected:1,author:'Theo',fields:{context:'Theo'}});
+ const rejected=await two.run('publish',await publishRequest(two,['projects/atlas/project.json']));const {destination}=await two.run('sync-fetch',{scope:'team'});
+ const branch=git(b,'branch','--show-current');write(path.join(b,'.git/refs/heads',branch+'.lock'),'');
+ await assert.rejects(two.run('sync-rebase',{scope:'team',expected_commit:rejected.committed,destination,confirm:true}),/HEAD could not be updated; working tree restored/);
+ fs.unlinkSync(path.join(b,'.git/refs/heads',branch+'.lock'));
+ assert.equal(git(b,'status','--porcelain'),'');assert.equal((await two.run('sync-status',{scope:'team'})).head,rejected.committed);
+ assert.equal((await two.run('sync-rebase',{scope:'team',expected_commit:rejected.committed,destination,confirm:true})).rebased,true);
+});

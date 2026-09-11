@@ -178,6 +178,14 @@ is_user_owned_file() {
   esac
 }
 
+# Paths only the toolkit writes; never a user's own file even without a manifest.
+is_toolkit_internal() {
+  case "$1" in
+    .ddt/runtime/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 is_root_doc() {
   case "$1" in
     README.md|CLAUDE.md|AGENTS.md) return 0 ;;
@@ -370,10 +378,10 @@ install_template_file() {
   fi
 
   if [ -e "$dst" ]; then
-    # Without a manifest, only a file identical to the template is known to be
-    # the toolkit's; anything else is recorded as yours. Use --update to refresh
-    # an older toolkit-installed workspace.
-    if manifest_has managed "$rel" || { [ "$HAVE_MANIFEST" = false ] && cmp -s "$src" "$dst"; }; then
+    # Without a manifest, a file identical to the template or inside the runtime
+    # folder is the toolkit's; anything else is recorded as yours. Use --update to
+    # refresh an older toolkit-installed workspace.
+    if manifest_has managed "$rel" || { [ "$HAVE_MANIFEST" = false ] && { cmp -s "$src" "$dst" || is_toolkit_internal "$rel"; }; }; then
       echo "skip: $rel already exists (toolkit-managed)"
       record managed "$rel"
     else
@@ -388,6 +396,8 @@ install_template_file() {
 
 if [ "$UPDATE_MODE" = true ]; then
   echo "=== Update mode: refreshing toolkit-managed files for $RUNTIME_INPUT ==="
+elif [ "$HAVE_MANIFEST" = false ] && [ -f "$TARGET_DIR/.ddt/runtime/ddt.js" ]; then
+  echo "notice: this workspace already has the toolkit runtime but no manifest; use --update to refresh toolkit files"
 fi
 
 while IFS= read -r rel; do
