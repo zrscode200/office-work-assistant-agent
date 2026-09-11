@@ -51,7 +51,7 @@ The hook in `.deepagents/hooks.json` prints the open and overdue follow-up count
 
 ## Check discovery
 
-`lc-code skills list` shows the three office skills beside the built-in `remember`, `skill-creator` and `deepagents-thread-inspector`; in a session, `/skill:office-projects` invokes one directly. Confirm the status bar shows the approval mode you expect before a write-capable session. After an update the refreshed manual is picked up on the next turn.
+`lc-code skills list` shows the three office skills beside the built-in `remember`, `skill-creator` and `deepagents-thread-inspector`; in a session, `/skill:office-projects` invokes one directly. Confirm the status bar shows the approval mode you expect before a write-capable session. After an update, start a new session so the refreshed manual is loaded; a resumed thread keeps the memory it loaded first.
 
 ## Dashboard and updates
 

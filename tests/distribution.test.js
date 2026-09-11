@@ -220,3 +220,11 @@ test('deepagents installer guards: own Git root, stamped alone, in-place manual 
   const hook=JSON.parse(execFileSync('sh',['-c',command],{cwd:sub,encoding:'utf8'}));assert.equal(hook.hookSpecificOutput.hookEventName,'SessionStart');assert.match(hook.hookSpecificOutput.additionalContext,/1 open/);
  });
 });
+
+test('deepagents stamping guard also recognizes workspaces installed before manifests existed',t=>{
+ const base=scratch(t);const a=path.join(base,'a');fs.mkdirSync(a);install(a,'codex');fs.unlinkSync(path.join(a,'.ddt/runtime/manifest.codex.txt'));
+ assert.throws(()=>install(a,'deepagents'),/stamped alone/);assert.equal(fs.existsSync(path.join(a,'.deepagents')),false);
+ const b=path.join(base,'b');fs.mkdirSync(b);install(b,'deepagents');fs.unlinkSync(path.join(b,'.ddt/runtime/manifest.deepagents.txt'));
+ assert.throws(()=>install(b,'codex'),/stamped alone/);assert.equal(fs.existsSync(path.join(b,'.codex')),false);
+ assert.match(install(b,'deepagents',true),/Update complete/);
+});

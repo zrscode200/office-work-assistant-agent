@@ -167,6 +167,18 @@ for manifest in "$TARGET_DIR"/.ddt/runtime/manifest.*.txt; do
     exit 1
   fi
 done
+# Workspaces installed before manifests existed are recognized by their office skills.
+if [ "$RUNTIME_INPUT" = "deepagents" ]; then
+  for marker in .claude/skills/project-manager .codex/skills/project-manager .opencode/skills/project-manager .github/skills/office-projects; do
+    if [ -e "$TARGET_DIR/$marker" ]; then
+      echo "Error: this workspace carries another runtime's office skills ($marker); deepagents workspaces are stamped alone. Use a separate folder." >&2
+      exit 1
+    fi
+  done
+elif [ -f "$TARGET_DIR/.deepagents/AGENTS.md" ] && grep -q '^Managed by the Office Work Assistant toolkit' "$TARGET_DIR/.deepagents/AGENTS.md"; then
+  echo "Error: this workspace is stamped for deepagents, whose root AGENTS.md is the client's memory file; stamp '$RUNTIME_INPUT' in a separate folder." >&2
+  exit 1
+fi
 
 MANIFEST_REL=".ddt/runtime/manifest.$RUNTIME_INPUT.txt"
 OLD_MANIFEST="$TARGET_DIR/$MANIFEST_REL"
@@ -486,7 +498,7 @@ if [ "$NO_GIT" = false ]; then
     # workspace must be its own repository even when nested inside another.
     toplevel=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || true)
     if [ -n "$toplevel" ]; then
-      toplevel=$(CDPATH= cd -- "$toplevel" && pwd -P)
+      toplevel=$( (CDPATH= cd -- "$toplevel" 2>/dev/null && pwd -P) || true)
     fi
     if [ "$toplevel" != "$TARGET_DIR" ]; then
       git -C "$TARGET_DIR" init
