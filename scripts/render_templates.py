@@ -20,6 +20,7 @@ TOKEN = "{{MANUAL}}"
 # Runtimes whose skill catalogue mixes with other skills get namespaced names.
 NAMESPACED_SKILLS = {"project-manager": "office-projects", "think-partner": "office-notes", "task-manager": "office-work"}
 SKILL_DIRS = {"claude": ".claude/skills", "codex": ".codex/skills", "opencode": ".opencode/skills", "copilot": ".github/skills", "deepagents": ".deepagents/skills"}
+NAMESPACED_RUNTIMES = ("copilot", "deepagents")
 INDEXED_RUNTIMES = ("copilot", "codex", "deepagents")
 # Every core command is assigned explicitly; the renderer refuses to guess an owner.
 COMMAND_OWNER = {
@@ -84,7 +85,7 @@ def render_all(out_root: Path) -> None:
         else:
             write(out / manual, manual_text + "\n" + (ROOT / "adapters" / runtime / manual).read_text())
         for skill in sorted((ROOT / "core/skills").iterdir()):
-            name = NAMESPACED_SKILLS[skill.name] if runtime in ("copilot", "deepagents") else skill.name
+            name = NAMESPACED_SKILLS[skill.name] if runtime in NAMESPACED_RUNTIMES else skill.name
             dest = out / SKILL_DIRS[runtime] / name
             copy_tree(skill, dest)
             # Native adapter guidance may specialize a common skill while the
@@ -100,7 +101,7 @@ def render_all(out_root: Path) -> None:
         for command in commands:
             owner = COMMAND_OWNER[command.stem]
             if runtime in INDEXED_RUNTIMES:
-                folder = NAMESPACED_SKILLS[owner] if runtime in ("copilot", "deepagents") else owner
+                folder = NAMESPACED_SKILLS[owner] if runtime in NAMESPACED_RUNTIMES else owner
                 dest = out / SKILL_DIRS[runtime] / folder / "references" / command.name
             else:
                 dest = out / f".{runtime}/commands" / command.name

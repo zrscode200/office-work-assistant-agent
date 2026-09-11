@@ -17,7 +17,9 @@ Installs the selected assistant surface and shared runtime:
 
 Fresh install: existing files are never overwritten. A pre-existing README.md,
 CLAUDE.md or AGENTS.md is kept and recorded as yours. The target becomes a Git
-repository unless it already is one or --no-git is given.
+repository unless it already is one or --no-git is given. A deepagents workspace
+is always made its own Git root, must be stamped for that runtime alone, and
+keeps the root AGENTS.md as the client's memory file.
 
 --update refreshes the files the manifest records as toolkit-managed and keeps
 files recorded as yours. User-owned files (.ddt/config.md, profile.md, norms.md,
@@ -148,6 +150,24 @@ if [ ! -d "$RUNTIME_TEMPLATE_ROOT" ]; then
   exit 1
 fi
 
+if [ "$RUNTIME_INPUT" = "deepagents" ] && [ "$NO_GIT" = true ]; then
+  echo "Error: deepagents clients locate the workspace by its Git root; --no-git is not supported for this runtime" >&2
+  exit 1
+fi
+
+# deepagents workspaces are stamped alone: the client loads the root AGENTS.md as
+# memory, and another runtime uses that same file as its manual.
+for manifest in "$TARGET_DIR"/.ddt/runtime/manifest.*.txt; do
+  [ -f "$manifest" ] || continue
+  name="${manifest##*/manifest.}"
+  name="${name%.txt}"
+  [ "$name" = "$RUNTIME_INPUT" ] && continue
+  if [ "$RUNTIME_INPUT" = "deepagents" ] || [ "$name" = "deepagents" ]; then
+    echo "Error: this workspace is stamped for '$name'; deepagents workspaces are stamped alone because the root AGENTS.md is the client's memory file and another runtime's manual. Use a separate folder." >&2
+    exit 1
+  fi
+done
+
 MANIFEST_REL=".ddt/runtime/manifest.$RUNTIME_INPUT.txt"
 OLD_MANIFEST="$TARGET_DIR/$MANIFEST_REL"
 HAVE_MANIFEST=false
@@ -192,6 +212,14 @@ is_user_owned_file() {
 is_toolkit_internal() {
   case "$1" in
     .ddt/runtime/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Files the agent itself may edit in place; keep a copy when an update replaces them.
+is_backup_on_update() {
+  case "$RUNTIME_INPUT:$1" in
+    deepagents:.deepagents/AGENTS.md) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -381,6 +409,9 @@ install_template_file() {
     if [ -e "$dst" ] && [ "$HAVE_MANIFEST" = false ] && is_root_doc "$rel" && ! cmp -s "$src" "$dst"; then
       cp -p "$dst" "$dst.before-update-$STAMP"
       echo "backup: $rel saved as $rel.before-update-$STAMP (no manifest; refreshing the toolkit version)"
+    elif [ -e "$dst" ] && is_backup_on_update "$rel" && ! cmp -s "$src" "$dst"; then
+      cp -p "$dst" "$dst.before-update-$STAMP"
+      echo "backup: $rel saved as $rel.before-update-$STAMP (edited in place; the managed copy is refreshed, move anything worth keeping to AGENTS.md)"
     fi
     copy_and_overwrite "$src" "$dst" "$rel"
     record managed "$rel"
@@ -449,9 +480,25 @@ mkdir -p "$(dirname -- "$OLD_MANIFEST")"
   sort -u "$NEW_MANIFEST_TMP"
 } > "$OLD_MANIFEST"
 
-if [ "$NO_GIT" = false ] && ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  git -C "$TARGET_DIR" init
-  echo "create: initialized git repository in $TARGET_DIR (use --no-git to skip)"
+if [ "$NO_GIT" = false ]; then
+  if [ "$RUNTIME_INPUT" = "deepagents" ]; then
+    # The client resolves memory, skills and hooks at the nearest Git root, so the
+    # workspace must be its own repository even when nested inside another.
+    toplevel=$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+    if [ -n "$toplevel" ]; then
+      toplevel=$(CDPATH= cd -- "$toplevel" && pwd -P)
+    fi
+    if [ "$toplevel" != "$TARGET_DIR" ]; then
+      git -C "$TARGET_DIR" init
+      echo "create: initialized git repository in $TARGET_DIR (deepagents clients need the workspace to be its own Git root)"
+      if [ -n "$toplevel" ]; then
+        echo "notice: this workspace sits inside the repository at $toplevel; it is now its own repository, which the outer one shows as an untracked folder"
+      fi
+    fi
+  elif ! git -C "$TARGET_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$TARGET_DIR" init
+    echo "create: initialized git repository in $TARGET_DIR (use --no-git to skip)"
+  fi
 fi
 
 if [ "$UPDATE_MODE" = true ]; then
@@ -466,7 +513,8 @@ else
     echo "Existing Copilot repository instructions are preserved; check /instructions and /skills list."
   fi
   if [ "$RUNTIME_INPUT" = "deepagents" ]; then
-    echo "deepagents: run lc-code (or your client) from the workspace; add --trust-project-hooks for the session hook."
+    echo "deepagents: run lc-code (or your client) from this folder, which must stay its own Git root."
+    echo "Allow project hooks when the client asks (headless: --trust-project-hooks) for follow-up counts at session start."
     echo "The manual is .deepagents/AGENTS.md (managed); AGENTS.md at the root is yours for learnings."
   fi
 fi

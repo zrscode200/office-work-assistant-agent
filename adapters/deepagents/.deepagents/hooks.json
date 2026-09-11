@@ -3,7 +3,7 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node .ddt/runtime/session.js" }
+          { "type": "command", "command": "cd \"$(git rev-parse --show-toplevel)\" && node .ddt/runtime/session.js" }
         ]
       }
     ]

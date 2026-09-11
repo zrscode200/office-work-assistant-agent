@@ -179,7 +179,7 @@ test('deepagents distribution: managed manual beside user memory, project skill 
  assert.ok(manual.startsWith('Managed by the Office Work Assistant toolkit'));assert.ok(manual.includes(fs.readFileSync(path.join(root,'core/manual.md'),'utf8')));assert.match(manual,/## deepagents surface/);
  const seed=fs.readFileSync(path.join(generated,'AGENTS.md'),'utf8');assert.ok(seed.length<1200);assert.match(seed,/\.deepagents\/AGENTS\.md/);
  const policy=fs.readFileSync(path.join(generated,'.deepagents/skills.toml'),'utf8');assert.match(policy,/^\[skills\]$/m);assert.match(policy,/^mode = "project"$/m);assert.match(policy,/^sources = \[".deepagents\/skills"\]$/m);assert.match(policy,/^include_builtin = true$/m);
- const hooks=JSON.parse(fs.readFileSync(path.join(generated,'.deepagents/hooks.json'),'utf8'));const command=hooks.hooks.SessionStart[0].hooks[0].command;assert.equal(command,'node .ddt/runtime/session.js');
+ const hooks=JSON.parse(fs.readFileSync(path.join(generated,'.deepagents/hooks.json'),'utf8'));const command=hooks.hooks.SessionStart[0].hooks[0].command;assert.match(command,/git rev-parse --show-toplevel/);assert.match(command,/node \.ddt\/runtime\/session\.js$/);
  const references=[];
  for(const name of ['office-projects','office-notes','office-work']){
   const dir=path.join(generated,'.deepagents/skills',name);const skill=fs.readFileSync(path.join(dir,'SKILL.md'),'utf8');
@@ -199,5 +199,24 @@ test('deepagents distribution: managed manual beside user memory, project skill 
  const {createWorkspace}=require('../core/runtime/ddt');return createWorkspace(target).run('work-save',{expected:0,fields:{title:'Personal task'}}).then(()=>{
   const hook=JSON.parse(execFileSync('sh',['-c',command],{cwd:target,encoding:'utf8'}));
   assert.equal(hook.hookSpecificOutput.hookEventName,'SessionStart');assert.match(hook.hookSpecificOutput.additionalContext,/1 open/);
+ });
+});
+
+test('deepagents installer guards: own Git root, stamped alone, in-place manual edits backed up, hook works from a subfolder',t=>{
+ const base=scratch(t);
+ const bare=path.join(base,'bare');fs.mkdirSync(bare);assert.throws(()=>execFileSync('sh',[installer,'--no-git','--runtime','deepagents',bare],{stdio:['ignore','pipe','pipe']}),/Git root/);assert.deepEqual(fs.readdirSync(bare),[]);
+ const outer=path.join(base,'outer');fs.mkdirSync(outer);execFileSync('git',['-C',outer,'init','-q']);const nested=path.join(outer,'ws');fs.mkdirSync(nested);
+ let out=install(nested,'deepagents');assert.match(out,/own Git root/);assert.match(out,/notice: this workspace sits inside the repository/);assert.ok(fs.existsSync(path.join(nested,'.git')));
+ assert.equal(fs.realpathSync(execFileSync('git',['-C',nested,'rev-parse','--show-toplevel'],{encoding:'utf8'}).trim()),fs.realpathSync(nested));
+ const codexWs=path.join(base,'codex');fs.mkdirSync(codexWs);install(codexWs,'codex');assert.throws(()=>install(codexWs,'deepagents'),/stamped alone/);assert.equal(fs.existsSync(path.join(codexWs,'.deepagents')),false);
+ assert.throws(()=>install(nested,'codex'),/stamped alone/);assert.equal(fs.existsSync(path.join(nested,'.codex')),false);
+ fs.appendFileSync(path.join(nested,'.deepagents/AGENTS.md'),'\n- agent edit\n');fs.appendFileSync(path.join(nested,'.deepagents/skills.toml'),'# mine\n');
+ out=install(nested,'deepagents',true);assert.match(out,/backup: .deepagents\/AGENTS.md/);assert.match(out,/differs: .deepagents\/skills.toml/);
+ const backup=fs.readdirSync(path.join(nested,'.deepagents')).find(f=>f.startsWith('AGENTS.md.before-update-'));assert.ok(backup);assert.match(fs.readFileSync(path.join(nested,'.deepagents',backup),'utf8'),/agent edit/);
+ assert.deepEqual(fs.readFileSync(path.join(nested,'.deepagents/AGENTS.md')),fs.readFileSync(path.join(root,'generated/deepagents/.deepagents/AGENTS.md')));assert.match(fs.readFileSync(path.join(nested,'.deepagents/skills.toml'),'utf8'),/# mine/);
+ write(path.join(nested,'.ddt/config.md'),'owner: Maya\ntodo_surfacing: proactive\n');const sub=path.join(nested,'sub');fs.mkdirSync(sub);
+ const command=JSON.parse(fs.readFileSync(path.join(nested,'.deepagents/hooks.json'),'utf8')).hooks.SessionStart[0].hooks[0].command;
+ const {createWorkspace}=require('../core/runtime/ddt');return createWorkspace(nested).run('work-save',{expected:0,fields:{title:'Personal task'}}).then(()=>{
+  const hook=JSON.parse(execFileSync('sh',['-c',command],{cwd:sub,encoding:'utf8'}));assert.equal(hook.hookSpecificOutput.hookEventName,'SessionStart');assert.match(hook.hookSpecificOutput.additionalContext,/1 open/);
  });
 });

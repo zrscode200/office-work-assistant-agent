@@ -742,7 +742,7 @@ launch date and cut the pilot to two regions.</pre>
             <tr><td><b>Claude Code</b></td><td><span class="mono">CLAUDE.md</span></td><td><span class="mono">.claude/skills</span>, 16 slash commands</td><td>session hook with open follow-up counts when surfacing is proactive</td></tr>
             <tr><td><b>Codex</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.codex/skills</span> with reference indexes</td><td></td></tr>
             <tr><td><b>OpenCode</b></td><td><span class="mono">AGENTS.md</span></td><td><span class="mono">.opencode/commands</span> and skills</td><td>edit and shell permissions set to ask</td></tr>
-            <tr><td><b>deepagents</b><br><span class="small muted">lc-code, ddt-agent</span></td><td><span class="mono">.deepagents/AGENTS.md</span> with the full manual, plus your root <span class="mono">AGENTS.md</span> memory</td><td><span class="mono">.deepagents/skills</span> office skills with references, selected by <span class="mono">skills.toml</span></td><td>session hook with <span class="mono">--trust-project-hooks</span>; helper calls approved in Manual mode</td></tr>
+            <tr><td><b>deepagents</b><br><span class="small muted">lc-code, ddt-agent</span></td><td><span class="mono">.deepagents/AGENTS.md</span> with the full manual, plus your root <span class="mono">AGENTS.md</span> memory</td><td><span class="mono">.deepagents/skills</span> office skills with references, selected by <span class="mono">skills.toml</span></td><td>session hook once project hooks are allowed; helper calls approved in Manual mode or allow-listed</td></tr>
           </tbody>
         </table>
       </div>
@@ -797,7 +797,7 @@ copilot --agent=office-work-assistant
           <p class="small">Clone the team's context repository next to your workspace, then add one line under <code>## Team Repos</code> in <code>.ddt/config.md</code>:</p>
           <pre class="code">product: /Users/maya/work/product-context</pre>
           <h3>Other runtimes</h3>
-          <p class="small">Same installer, different flag: <code>--runtime claude</code>, <code>codex</code>, <code>opencode</code> or <code>deepagents</code>. For deepagents, launch <code>lc-code --trust-project-hooks</code> from the workspace; the manual lives in <code>.deepagents/AGENTS.md</code> and your learnings in the root <code>AGENTS.md</code>.</p>
+          <p class="small">Same installer, different flag: <code>--runtime claude</code>, <code>codex</code>, <code>opencode</code> or <code>deepagents</code>. For deepagents, launch <code>lc-code</code> from the workspace and allow project hooks when asked; the manual lives in <code>.deepagents/AGENTS.md</code> and your learnings in the root <code>AGENTS.md</code>.</p>
           <h3>Later updates</h3>
           <p class="small"><code>./bootstrap/init-workspace.sh --update --runtime copilot ~/work/office</code> refreshes toolkit files. Your instructions file, configuration and records are kept, and <code>.ddt/runtime/manifest.copilot.txt</code> lists exactly what the toolkit manages.</p>
           <p class="small muted">Windows: install through WSL or another POSIX shell.</p>
