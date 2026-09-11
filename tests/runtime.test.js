@@ -406,6 +406,18 @@ test('team clones nested under teams/ publish and pull; containing, .ddt and non
  assert.equal(git(path.join(base,'maya/teams/product'),'ls-files').includes('.ddt'),false);assert.equal(git(path.join(base,'maya'),'status','--porcelain').includes('teams'),false);
  assert.equal(JSON.stringify(await maya.run('brief',{scope:'product',project:'atlas'})).includes('Only mine'),false);assert.equal((await maya.run('brief',{scope:'product',project:'atlas',audience:'personal'})).linked_private.notes[0].id,n.id);
  write(path.join(base,'maya/.gitignore'),'.ddt/personal/\n.ddt/projects/\n');assert.match((await maya.run('sync-status',{scope:'product'})).nested.workspace_ignore,/not ignored: add teams\//);
+ // A clone recorded as a pointer in the workspace repository is pointed out, not reported as ignored.
+ git(path.join(base,'maya'),'add','teams/product');assert.match((await maya.run('sync-status',{scope:'product'})).nested.workspace_ignore,/recorded in the workspace repository/);git(path.join(base,'maya'),'rm','--cached','-f','-q','teams/product');
+ write(path.join(base,'maya/.gitignore'),'.ddt/personal/\n.ddt/projects/\nteams/\n');assert.equal((await maya.run('sync-status',{scope:'product'})).nested.workspace_ignore,'ignored');
+ // Private storage cannot be referenced from a shared record in any spelling now that .ddt is a real relative path.
+ for(const ref of ['../../.DDT/personal/notes/x.md','../../.ddt','%2E%64%64%74/personal/x','..\\..\\.ddt\\personal\\x'])await assert.rejects(maya.run('note-save',{scope:'product',project:'atlas',expected:0,fields:{title:'Leak',body:'x',sources:[{label:'Leak',ref}]}}),/Private source/,ref);
+ // On a case-insensitive filesystem an aliased spelling of the workspace is still the workspace.
+ const ws=path.join(base,'maya');const alias=path.join(base,'MAYA');let insensitive=false;try{insensitive=fs.realpathSync.native(alias)===fs.realpathSync.native(ws);}catch{}
+ if(insensitive){
+  write(path.join(ws,'.ddt/config.md'),'owner: maya\n## Team Repos\nselfalias: '+alias+'\naliased: '+path.join(alias,'teams/product')+'\n');
+  const aliasWarnings=(await maya.run('projects')).warnings.map(w=>w.scope+': '+w.error);assert.match(aliasWarnings.find(w=>w.startsWith('selfalias')),/must not contain/);
+  assert.equal((await maya.run('sync-status',{scope:'aliased'})).nested.path,'teams/product');
+ }
  write(path.join(base,'maya/.ddt/config.md'),'owner: maya\n## Team Repos\nparent: '+base+'\nhidden: .ddt/team\nplain: teams/plain\nmissing: teams/none\n');
  git(base,'init','-b','main');fs.mkdirSync(path.join(base,'maya/.ddt/team'),{recursive:true});fs.mkdirSync(path.join(base,'maya/teams/plain'),{recursive:true});
  const warnings=(await maya.run('projects')).warnings.map(w=>w.scope+': '+w.error);

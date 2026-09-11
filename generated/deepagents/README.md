@@ -19,7 +19,7 @@ The first time, the client asks whether to allow this project's hooks; choose to
 
 - **Its own Git root.** The client finds project memory, skills and hooks at the nearest Git root. The installer initializes a repository in the workspace even when the folder sits inside another repository, and refuses `--no-git` for this runtime.
 - **Stamped alone.** The root `AGENTS.md` is the client's memory file, and another runtime would use that same file as its manual. The installer refuses to add this runtime to a workspace stamped for another one, and the reverse. Use a separate folder per runtime.
-- **Team clones under `teams/<name>`.** They are separate repositories the workspace ignores, so every helper call stays inside the project the client trusts, and the client still resolves the project at the workspace root.
+- **Team clones under `teams/<name>`.** They are separate repositories the workspace ignores, so every helper call stays inside the project the client trusts. Launch the client from the workspace root: launched inside a clone, it would treat that clone, and any instruction files a teammate committed there, as the project.
 - Node.js 18+ and Git on the machine; no Node packages.
 
 ## What is installed
@@ -48,7 +48,7 @@ Every record operation is a shell call to `node .ddt/runtime/ddt.js …` with a 
 
 ## Session hook
 
-The hook in `.deepagents/hooks.json` prints the open and overdue follow-up counts in the Claude-compatible hook envelope the client reduces into session context. It changes directory to the Git root first, so it works from any launch directory inside the workspace, and it reads local records only. Interactive launches ask you to allow project hooks once, remembered per project; headless runs need `--trust-project-hooks`. If hooks are denied, nothing else changes.
+The hook in `.deepagents/hooks.json` prints the open and overdue follow-up counts in the Claude-compatible hook envelope the client reduces into session context. It changes directory to the Git root first, so it works from any launch directory inside the workspace outside `teams/`, and it reads local records only. Interactive launches ask you to allow project hooks once, remembered per project; headless runs need `--trust-project-hooks`. If hooks are denied, nothing else changes.
 
 ## Check discovery
 

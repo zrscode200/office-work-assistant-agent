@@ -153,12 +153,20 @@ function mutate(file, expected, author, build) {
   } finally { releaseLock(fd, lock); }
 }
 
+// A reference names private storage when any path segment is .ddt, in any
+// letter case, with or without percent-encoding.
+function privateReference(ref) {
+  let decoded = ref;
+  try { decoded = decodeURIComponent(ref); } catch {}
+  return decoded.split(/[\\/]+/).some(segment => segment.toLowerCase() === '.ddt');
+}
+
 function validateSources(sources, scope) {
   if (!Array.isArray(sources)) fail('sources must be an array');
   return sources.map(source => {
     if (!object(source)) fail('Invalid source');
     text(source.label, 'source label'); text(source.ref, 'source reference');
-    if (scope !== 'personal' && (source.scope === 'personal' || /\.ddt[\\/]/.test(source.ref))) fail('Private source references cannot be written into shared records');
+    if (scope !== 'personal' && (source.scope === 'personal' || privateReference(source.ref))) fail('Private source references cannot be written into shared records');
     return { label: source.label, ref: source.ref, ...(source.scope ? { scope: source.scope } : {}) };
   });
 }
@@ -196,7 +204,9 @@ function mergeRecords(base, upstream, local, choices = {}, identity = []) {
 }
 
 function createWorkspace(workspace, options = {}) {
-  const root = fs.realpathSync(workspace);
+  // Native realpath canonicalizes letter case as well as symlinks, so an aliased
+  // path cannot slip past containment checks on case-insensitive filesystems.
+  const root = fs.realpathSync.native(workspace);
   const fetcher = options.fetch || globalThis.fetch;
   const gitEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0', ...(options.env || {}) };
   let cache = null; // Per-run memo for configuration and scope roots.
@@ -206,10 +216,12 @@ function createWorkspace(workspace, options = {}) {
     const teamSection = content.split(/^## Team Repos\s*$/m)[1]?.split(/^## /m)[0] || '';
     const teams = {};
     for (const line of teamSection.split('\n')) {
-      const m = line.match(/^([a-z0-9][a-z0-9-]*):\s*([^\r\n]+?)\s*$/);
-      if (!m || /[\u0000-\u001f]/.test(m[2]) || m[2].startsWith('#')) continue;
-      // Relative locations are inside the workspace, typically teams/<name>.
-      teams[m[1]] = path.isAbsolute(m[2]) ? m[2] : path.resolve(root, m[2]);
+      const m = line.match(/^([a-z0-9][a-z0-9-]*):\s*([^\r\n]*)$/);
+      const value = m ? m[2].trim() : '';
+      if (!value || /[\u0000-\u001f]/.test(value) || value.startsWith('#')) continue;
+      // Relative locations resolve from the workspace, typically teams/<name>;
+      // one that resolves outside it is treated like an absolute location.
+      teams[m[1]] = path.isAbsolute(value) ? value : path.resolve(root, value);
     }
     return { owner: content.match(/^owner:\s*(.*)$/m)?.[1]?.trim() || '', teams };
   }
@@ -232,7 +244,7 @@ function createWorkspace(workspace, options = {}) {
     const location = config().teams[scope];
     if (!location) fail('Unknown team scope');
     let resolved;
-    try { resolved = fs.realpathSync(location); } catch { fail(`Team location does not exist: ${location}`); }
+    try { resolved = fs.realpathSync.native(location); } catch { fail(`Team location does not exist: ${location}`); }
     if (resolved === root || root.startsWith(resolved + path.sep)) fail('Team storage must not contain the personal workspace');
     if (resolved.startsWith(root + path.sep)) {
       // A nested clone is fine when it is its own repository outside .ddt; the
@@ -592,8 +604,12 @@ function createWorkspace(workspace, options = {}) {
     if (!teamRoot.startsWith(root + path.sep)) return null;
     const rel = path.relative(root, teamRoot);
     const top = rel.split(path.sep)[0];
+    const workspaceGit = args => execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000, env: gitEnv }).trim();
+    let recorded = '';
+    try { recorded = workspaceGit(['ls-files', '-s', '--', rel]); } catch {}
+    if (recorded) return { path: rel, workspace_ignore: `recorded in the workspace repository as a pointer; run git rm --cached -f ${rel} there, then keep ${top}/ ignored` };
     try {
-      execFileSync('git', ['-C', root, 'check-ignore', '-q', '--', rel], { encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], timeout: 30000, env: gitEnv });
+      workspaceGit(['check-ignore', '-q', '--no-index', '--', rel]);
       return { path: rel, workspace_ignore: 'ignored' };
     } catch (e) {
       if (e.status === 1) return { path: rel, workspace_ignore: `not ignored: add ${top}/ to the workspace .gitignore` };

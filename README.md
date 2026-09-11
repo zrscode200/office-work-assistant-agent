@@ -52,7 +52,7 @@ See the [deepagents guide](adapters/deepagents/README.md) for launch, approvals,
 
 ## Team use
 
-Each teammate has a personal workspace and a separate local clone of the shared Git repository. Keep the clone inside the workspace under `teams/<name>`, which the workspace's own repository ignores, or anywhere else by absolute path; a workspace can never sit inside a team clone. Add it under `## Team Repos` in `.ddt/config.md`, for example `product: teams/product`.
+Each teammate has a personal workspace and a separate local clone of the shared Git repository. Keep the clone inside the workspace under `teams/<name>`, which the workspace's own repository ignores, or anywhere else by absolute path; a workspace can never sit inside a team clone. Add it under `## Team Repos` in `.ddt/config.md`, for example `product: teams/product`. Launch your assistant from the workspace root, not from inside a team clone: instruction files a teammate commits there are their data, not your assistant's instructions.
 
 Team records live under `projects/<slug>/`; private notes, projects, work, Jira connections, and snapshots stay in the personal workspace. A private note or follow-up can link to a team project without being shared. Repository permissions control access; author names provide attribution only.
 
